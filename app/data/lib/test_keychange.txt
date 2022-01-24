@@ -1,0 +1,44 @@
+KEY CHANGE TESTER
+
+(C) C C# D D# E F F# G G# A A# B
+Going up on every line!
+(C#) C C# D D# E F F# G G# A A# B
+(D)  C C# D D# E F F# G G# A A# B
+(D#) C C# D D# E F F# G G# A A# B
+(E)  C C# D D# E F F# G G# A A# B
+(F)  C C# D D# E F F# G G# A A# B
+(F#) C C# D D# E F F# G G# A A# B
+(G)  C C# D D# E F F# G G# A A# B
+(G#) C C# D D# E F F# G G# A A# B
+(A)  C C# D D# E F F# G G# A A# B
+(A#) C C# D D# E F F# G G# A A# B
+(B)  C C# D D# E F F# G G# A A# B
+
+DRAMATIC HEADER
+Time to go to minor keys!
+(eventually this will register as a BV)
+
+(Cm) C C# D D# E F F# G G# A A# B
+(C#m) C C# D D# E F F# G G# A A# B
+(Dm) C C# D D# E F F# G G# A A# B
+(D#m) C C# D D# E F F# G G# A A# B
+(Em) C C# D D# E F F# G G# A A# B
+(Fm) C C# D D# E F F# G G# A A# B
+(F#m) C C# D D# E F F# G G# A A# B
+(Gm) C C# D D# E F F# G G# A A# B
+(G#m) C C# D D# E F F# G G# A A# B
+(Am) C C# D D# E F F# G G# A A# B
+(A#m) C C# D D# E F F# G G# A A# B
+(Bm) C C# D D# E F F# G G# A A# B
+
+You'll notice the original notation is
+respected until you run the transposer.
+Then the typical accidental for a particular
+key will be used instead. To get original
+notation, disable transpose, or to fix
+original notation without changing key,
+enable and apply a transposition of 12.
+TODO: transpo of 0 should give same result,
+and the preview view shouldn't reset when
+testing keys (this is a regression and will
+be fixed soon).

@@ -1,0 +1,23 @@
+*****TEST STUFF (Am)
+
+A    G     Bm     Am          Gmaj7
+A is not a chord on this line, but it 
+is above.
+
+G#        Am              Bm
+Am is not a chord on this line,
+but it is above.
+
+If you're not confident about a chart,
+put asterisks (*) at the beginning of
+the file. Each * reduces the confidence
+from 10 by 1.
+
+A A# B Bb C C# D D# E Eb F F# Gb G G#
+
+CHANGE KEY (B)
+
+A A# B Bb C C# D D# E Eb F F# Gb G G#
+
+---
+Put your end notes here!

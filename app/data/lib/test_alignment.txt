@@ -1,0 +1,15 @@
+ALIGNMENT TESTER (C)
+
+C/G  B/F#  A/E
+^    ^     ^   should anchor to letter before the slash
+
+(D)  v
+     ^  if the ^ and v align when key has an accidental,
+	key ws management is working!
+
+Am I a chord? No. A chord wouldn't be here.
+Am    A
+Valid chords above though! Currently not IDing these
+correctly (bit of an outlier to have consecutive ambiguous
+elements on a line) but will soon rewrite the method to
+deal with this.
