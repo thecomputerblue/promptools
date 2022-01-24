@@ -1,5 +1,5 @@
 # promptools
-teleprompter software for live music
+Teleprompter software for live music.
 
 This is my first app, which I began shortly after beginning to study python
 in late 2020. It aims to solve some of the issues of teleprompting for music,
