@@ -4,13 +4,17 @@ Teleprompter software for live music.
 This is my first app, which I began shortly after beginning to study python
 in late 2020. It aims to solve some of the issues of teleprompting for music,
 like dealing with large song libraries, different song arragements, choatic 
-rehearsal environments, and the need to rapidly transpose music. These are 
-problems I've dealt with for several years as a professional teleprompter, and
-nothing on the market solves all of them in one place.
+rehearsal environments, and the need to rapidly transpose and format music.
+These are problems I've dealt with for several years as a professional
+teleprompter, nothing I've found solves them all in one place, and a
+few aren't solved anywhere!
 
-The gui is built with tkinter. I think the only thing used here outside of
-standard python library stuff is striprtf. This is mac only, for now.
-I haven't learned anything about dependency management but will get around
+The gui is built with tkinter. I plan to port it to kivy if they make it more
+desktop friendly (ie. need two screens without strange workarounds).
+I think the only thing used here outside of standard python library stuff is
+striprtf. This is mac only, for now.
+
+I haven't learned much about dependency management but will get around
 to it. In fact, me publishing this to github is "getting around to" learning
 how to use github, so I'm sure this repo will become a nasty mess before long.
 Just about everything detail of this project is "my first experience with x" so
