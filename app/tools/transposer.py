@@ -69,11 +69,8 @@ class Transposer:
         'slashchord': self.transpose_slashchord_tk,
         }
 
-        for i in range(len(parts)):
-
-            # unpack
-            pos, tag, word = parts[i]
-            # print(f'"{pos}", "{tag}", "{word}"')
+        for i, tup in enumerate(parts):
+            pos, tag, word = tup
 
             # transpose transposible words with appropriate strategy
             for k, v in strategies.items():
@@ -223,12 +220,11 @@ class Transposer:
 
             style = word
 
-            for i in range(len(active_styles)):
-
-                if active_styles[i][1] == style:
+            for i, tup in enumerate(active_styles):
+                if tup[1] == style:
 
                     # apply the style tag then pop from active
-                    start = active_styles[i][0]
+                    start = tup[0]
                     frame.text.tag_add(style, start, pos)
                     active_styles.pop(i)
                     logging.info(f'popped tag {style} from active')
@@ -315,9 +311,8 @@ class Transposer:
         }
 
         #iterate over the list of tuples, dumping to tktext and managing various tags
-        for i in range(len(tups)):
-            
-            pos, tag, word = tups[i]
+        for i, tup in enumerate(tups):
+            pos, tag, word = tup
 
             for k,v in strategies.items():
                 v() if k() else None

@@ -127,12 +127,20 @@ class SongViewTop(tk.Frame):
         self.tree = self.treeview.tree
 
         # dumping details. TODO: move to fn
-        for i in range(len(self.data)):
+        # for i in range(len(self.data)):
+
             # TODO: sort this in the db, probably, or deconstruct on load. so you
             # can do this arbitrarily.
-            song_id, lib_id, name, created, modified, comments, confidence, def_key = self.data[i]
+            # song_id, lib_id, name, created, modified, comments, confidence, def_key = self.data[i]
+            # ordered = [song_id, lib_id, name, created, modified, confidence, def_key, comments]
+            # self.tree.insert(parent='', index="end", iid=i, values=ordered)
+
+        # replaces previous block using enumerate
+        for _, meta in enumerate(self.data):
+            song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
             ordered = [song_id, lib_id, name, created, modified, confidence, def_key, comments]
             self.tree.insert(parent='', index="end", iid=i, values=ordered)
+
 
         # infobox (right side)
         self.songdetail = SongDetailView(self)

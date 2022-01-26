@@ -146,6 +146,8 @@ class LoadTool():
     def push(self, frame, song, reset_view=None):
         """Push song to a target frame with settings."""
 
+        logging.info('push in LoadTool')
+
         if not song:
             return
 

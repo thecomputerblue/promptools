@@ -130,3 +130,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+promptools.sublime-workspace
+promptools.sublime-project
+.DS_Store
+.DS_Store
+.DS_Store
+design_doc.txt
+roadmap.txt
+text_dump_example.txt

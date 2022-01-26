@@ -4,10 +4,9 @@
 import regex as re
 import logging
 
-# Lists for chord id & transposition
+# tuples for chord id & transposition
 import common.ids as ids
-
-# Regex objects for slicing, id
+# regex objects for slicing, id
 import common.res as res
 
 
@@ -111,9 +110,7 @@ class WordFactory:
         output = []  # output may be longer than slices due to typo splits etc.
         line = []  # keep line as a unit to resolve ambiguities
 
-        for i in range(len(slices)):
-
-            word = slices[i]
+        for i, word in enumerate(slices):
             match = re.match(res.id_transposible, word)
             typos = self.flag_typos(match)
 
@@ -134,7 +131,6 @@ class WordFactory:
                 song=song, match=match
             ) if tag == "key" and not song.key.default else None
 
-            logging.info(f"tag: {tag}, word: {word}")
             # append word to line with extra typos list at [3]
             line.append((pointers.pos, tag, word, typos))
 
@@ -158,8 +154,8 @@ class WordFactory:
         line = self.resolve_ambiguities(line)
 
         # dump line to elements
-        for i in range(len(line)):
-            elements.append(line[i])
+        for word in line:
+            elements.append(word)
 
         return elements
 
@@ -188,10 +184,10 @@ class WordFactory:
 
         fixed = []
 
-        for i in range(len(line)):
+        for i, tup in enumerate(line):
             # unpack
-            pos, tag, word = self.unpack_tk_tuple(line[i])
-            typos = line[i][3]
+            pos, tag, word = self.unpack_tk_tuple(tup)
+            typos = tup[3]
 
             if typos:
                 for test, fix in typo_strategies.items():
@@ -252,9 +248,8 @@ class WordFactory:
         ignore = ("ws", "key", "bar", "nl", "chord", "slashchord")
 
         # TODO: mess!
-        for i in range(len(line)):
-
-            pos, tag, word = self.unpack_tk_tuple(line[i])
+        for i, tup in enumerate(line):
+            pos, tag, word = self.unpack_tk_tuple(tup)
 
             # ignore tags with low false positive rate
             if tag in ignore:
@@ -305,18 +300,18 @@ class WordFactory:
         if word != "A" and word != "Am":
             return False
 
-        for w in range(len(line)):
+        for w, tup in enumerate(line):
 
             # TODO: strategy
             # ignore the word in question or it's
             # ambiguity will trigger chord assignment!
             if w == i:
                 continue
-            elif line[w][1] in self.chordy_neighbors:
+            elif tup[1] in self.chordy_neighbors:
                 return "chord"
-            elif line[w][1] == "header":
+            elif tup[1] == "header":
                 return "header"
-            elif line[w][1] == "lyric":
+            elif tup[1] == "lyric":
                 return "lyric"
 
         return "lyric"

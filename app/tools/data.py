@@ -175,7 +175,9 @@ class SongCollection:
         """Return songs with numbers."""
         
         # TODO: move the (#) formatting to settings so you can change it everywhere.
-        return [style(i) + self.songs[i].name for i in range(len(self.songs))] if self.songs else None
+        return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else None
+        # TODO: old, delete
+        # return [style(i) + self.songs[i].name for i in range(len(self.songs))] if self.songs else None
 
 class SetlistCollection(SongCollection):
     """Generic class for holding collection of songs, as is setlist, pool."""

@@ -43,14 +43,22 @@ class Preview(tk.Frame):
 		# callback
 		self.app.deck.add_callback('cued', self.push_deck)
 
-	def push(self, song, reset_view=False):
+	def push(self, song, reset_view=None):
 		"""Refresh contents of preview window."""
-		# TODO: move push method to this frame
-		self.app.tools.loader.push(frame=self, song=song, reset_view=True)
+
+		logging.info('push in Preview')
+
+		if reset_view is None:
+			reset_view = False if song is self.song else True
+
+		self.app.tools.loader.push(frame=self, song=song, reset_view=reset_view)
 
 	def push_deck(self):
+
 		cued = self.app.deck.cued
-		self.app.tools.loader.push(frame=self, song=cued, reset_view=True)
+		reset_view = False if cued is self.song else True
+
+		self.app.tools.loader.push(frame=self, song=cued, reset_view=reset_view)
 
 	def empty(self):
 		"""Set preview when nothing is loaded or invalid file selected."""

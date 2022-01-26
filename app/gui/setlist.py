@@ -262,11 +262,12 @@ class SetlistFrame(tk.Frame):
             # lambda song: song.name in played:                       lambda i: l.itemconfig(i, overstrike=1)
         }
 
-        for i in range(len(names)):
-            # add to list
+        # TODO: messy
+        for i, name in enumerate(names):
 
-            # strikethrough if played
-            if names[i] in played:
+            # strikeout played songs
+            # TODO: switch from name list to using song objs
+            if name in played:
                 l.insert("end", self.strike(numbered_names[i]))
             else:
                 l.insert("end", numbered_names[i])
@@ -291,8 +292,8 @@ class SetlistFrame(tk.Frame):
 
         # TODO: fix janky strikethru appearance...
         result = ""
-        for c in range(len(text)):
-            result += text[c] + "\u0336"
+        for _, c in enumerate(text):
+            result += c + "\u0336"
         return result
 
     def mark_previous(self, pos):
@@ -305,8 +306,9 @@ class SetlistFrame(tk.Frame):
         colors = self.app.settings.setlist.colors
 
         # clear old
-        for i in range(len(d.songs)):
-            if m.previous and d.songs[i].name == m.previous.name:
+        # TODO: check for identity equivalence on song objs instead
+        for i, song in enumerate(d.songs):
+            if m.previous and song.name == m.previous.name:
                 l.itemconfig(i, bg=colors.default)
                 break
 
@@ -403,7 +405,7 @@ class SetlistManager:
         songs = self.data.songs
 
         return [
-            " (" + str(i + 1) + ") " + songs[i].meta.name for i in range(len(songs))
+            " (" + str(i + 1) + ") " + songs[i].meta.name for i, _ in enumerate(songs)
         ]
 
     @property
@@ -415,7 +417,7 @@ class SetlistManager:
         if not songs:
             return
 
-        return [style(i) + songs[i].name for i in range(len(songs))]
+        return [style(i) + songs[i].name for i, _ in enumerate(songs)]
 
     @property
     def names(self):

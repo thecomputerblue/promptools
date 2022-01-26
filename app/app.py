@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import logging
 
-# allows drag-n-drop from finder, but kinda sketchy. not using
+# allows drag-n-drop from finder, but kinda sketchy. not using for now.
 # import tkinterDnD as tkd
 
 # app settings
@@ -15,6 +15,7 @@ from tools.cache import Cache
 from tools.deck import SongDeck
 
 # gui components
+# TODO: package?
 from gui.collections import CollectionsSuite
 from gui.browser import FileBrowserSuite
 from gui.talent import TalentWindow

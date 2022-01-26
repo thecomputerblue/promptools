@@ -248,8 +248,8 @@ class DatabaseManager:
 
             # add setlist song pointers to setlist_songs
             # TODO: store previous, current, next_up, skip, strike, etc.
-            for i in range(len(song_ids)):
-                song_id = song_ids[i]
+
+            for i, song_id in enumerate(song_ids):
                 query = "INSERT INTO setlist_songs (setlist_id, pos, song_id) VALUES (?, ?, ?)"
                 cur.execute(query, (setlist_id, i, song_id))
 
@@ -285,8 +285,7 @@ class DatabaseManager:
 
             # add setlist song pointers to setlist_songs
             # TODO: store previous, current, next_up, skip, strike, etc.
-            for i in range(len(song_ids)):
-                song_id = song_ids[i]
+            for i, song_id in enumerate(song_ids):
                 query = "INSERT INTO pool_songs (pool_id, pos, song_id) VALUES (?, ?, ?)"
                 cur.execute(query, (pool_id, i, song_id))
 

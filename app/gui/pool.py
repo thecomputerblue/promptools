@@ -53,6 +53,9 @@ class EditPoolFrame(tk.Frame):
 
     def clicked_trash(self):
         """Trash any selected songs."""
+
+        logging.info('clicked_trash in EditPoolFrame')
+
         d = self.data
         m = self.manager
 
@@ -69,6 +72,13 @@ class EditPoolFrame(tk.Frame):
                     logging.info(f'deleting {song.name} from pool')
                     del d.songs[i]
                     break
+
+            # # replaces previous block
+            # for song in d.songs:
+            #     if song is target:
+            #         logging.info(f'deleting {song.name} from pool')
+            #         del song
+            #         break                    
 
         self.listbox_update()
 
@@ -164,6 +174,8 @@ class PoolManager:
     def delete_song(self, target):
         """Delete song from pool."""
 
+        logging.info('delete_song in PoolManager')
+
         d = self.data
 
         # Untested!
@@ -206,6 +218,7 @@ class PoolControlRow(tk.Frame):
         # context
         self.parent = parent
         self.app = parent.app
+        self.suite = parent
   
         # cross out played song
         self.scratch = tk.Button(self, text="Scratch", command=None)
@@ -215,8 +228,8 @@ class PoolControlRow(tk.Frame):
         self.rename = tk.Button(self, text="Rename", command=None)
         self.rename.pack(side="left")
 
-        self.remove = tk.Button(self, text="\u2715", command=None)
-        self.remove.pack(side="left")
+        self.trash = tk.Button(self, text="\u2715", command=self.suite.clicked_trash)
+        self.trash.pack(side="left")
 
         self.undo = tk.Button(self, text="Undo", command=None)
         self.undo.pack(side="left")
@@ -227,6 +240,6 @@ class PoolControlRow(tk.Frame):
         self.lock.pack(side="right")
 
         # keep all buttons in a list for lock toggle fn
-        self.allbuttons = [self.scratch, self.rename, self.remove]
+        self.allbuttons = [self.scratch, self.rename, self.trash]
 
 

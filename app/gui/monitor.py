@@ -155,10 +155,13 @@ class TalentMonitor(tk.Frame):
         self.app.deck.add_callback('live', self.push)
 
     def push(self):
-        """Push live song to monitor."""
+        """Push live song to monitor with appropriate view reset."""
 
         live = self.app.deck.live
-        self.app.tools.loader.push(frame=self, song=live)
+        prev = self.app.deck.previous
+        reset_view = False if live is prev else True
+        
+        self.app.tools.loader.push(frame=self, song=live, reset_view=reset_view)
 
     @property
     def song(self):

@@ -447,6 +447,8 @@ class Song:
     @property
     def lines(self):
         """Return words sorted into lines."""
+
+        # TODO: not used anywhere, will replace.
         # TODO: only refresh when changed.
         # TODO: lots of work happening for a property, bad
         tups = self.tk_tuples
@@ -457,11 +459,11 @@ class Song:
         for i in range(line_ct):
             lol.append([])
 
-        for i in range(len(tups)):
-            word = tups[i][2]
+        for i, tup in enumerate(tups):
+            word = tup[2]
             # ignore empty strings
             if word:
-                line = int(tups[i][0].split('.')[0]) - 1
+                line = int(tup[0].split('.')[0]) - 1
                 lol[line].append(word)
 
         return lol
