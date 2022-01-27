@@ -335,8 +335,6 @@ class DatabaseManager:
 
         logging.warning('failed to assign a library_id!')
 
-
-
     def get_all_song_meta_from_db(self):
         """Return all song metadata from db."""
 

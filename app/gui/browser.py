@@ -10,24 +10,16 @@ from os import listdir
 from os.path import isfile, join, exists
 
 
-class FileBrowserSuite(tk.Frame):
+class BrowserSuite(tk.Frame):
     """Quick browser for files and the library database."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent.frame)
 
-        # orient
         self.parent = parent
         self.app = parent
         self.suite = self
         self.settings = parent.settings
-
-        # vars for file loading
-        self.directory = self.app.settings.paths.library.get()
-        self.filename = ""
-        self.files = []
-
-        # widgets
 
         # search bar
         self.search = SearchBar(self)
@@ -35,17 +27,23 @@ class FileBrowserSuite(tk.Frame):
 
         # tk notebook with file + library tabs.
         # TODO: tab with integrated finder-like browser?
-        self.tabs = LibrariesNotebook(self)
+        self.tabs = BrowserNotebook(self)
         self.tabs.pack(side="bottom", anchor="n", fill="both", expand=True)
 
-        # bindings
-        # self.search.entry.bind("<KeyRelease>", self.search_on_key_release)
+        # expose tab contents more shallowly
+        self.files = self.tabs.files
+        self.library = self.tabs.library 
+
+        # trace search & update files / library filters
+        query = self.search.query
+        query.trace("w", lambda *args: self.files.search_trace(query.get()))
+        query.trace("w", lambda *args: self.library.search_trace(query.get()))
 
         # frame settings   
         # stop frame from resizing when info spills.
         # self.pack_propagate(False)
 
-        # Weigh column so it fills correctly.
+        # weigh column so it fills correctly
         # self.columnconfigure(0, weight=1)
 
         # prevent h-scroll
@@ -53,12 +51,29 @@ class FileBrowserSuite(tk.Frame):
 
         # generate the file list and update the window
         # TODO: probably move this into the FilesTab class
-        self.gen_file_list(self.directory)
-        self.listbox_update(self.files)
 
-    @property
-    def file_path(self):
-        return self.directory + "/" + self.filename
+class SearchBar(tk.Frame):
+    """Frame for the search bar and any options."""
+
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent)
+
+        # orient
+        self.parent = parent
+        self.app = parent.app
+        self.suite = parent.suite
+        self.settings = parent.settings
+
+        # search query var
+        self.query = tk.StringVar()
+
+        self.entry = tk.Entry(self, textvariable=self.query)
+        self.header = QuickSearchHeader(self, entry=self.entry)
+
+        self.header.pack(side="top", fill="x")
+        self.entry.pack(side="top", fill="x")
+
+        self.entry.bind("<Down>", self.focus_set_listbox_from_entry)
 
     def focus_set_listbox_from_entry(self, event):
         """When you press the down arrown in search field,
@@ -73,108 +88,14 @@ class FileBrowserSuite(tk.Frame):
         # change (0) to whatever the widget variable is for focused item.
         if not l.curselection():
             l.select_set(0)
-            # TODO: Do something with onselect to refresh selected
             self.filename = l.get(0)
             #TODO: what is this line doing
             self.app.cued.selected.set(self.truncate_label(self.filename))
             # Refresh song with new info. TODO: repeated code!!!
             self.parent.cue_from_file()
 
-    def focus_set_search(self, event):
-        self.search.entry.focus_set()
-        # TODO: setting focus refreshes the list, which deselects
 
-    def search_trace(self):
-        # get text from entry and strip capitalization, punctuation
-
-        # TODO: sloppy
-        query = self.search.query.get()
-        query = query.strip().lower()
-        query = self.strip_punctuation(query)
-
-        # get data from file_list
-        if query == "":
-            data = self.files
-        else:
-            data = []
-            # TODO: needs to ignore punctuation when filtering
-            for item in self.files:
-                data.append(item) if query in self.strip_punctuation(item.lower()) else None
-
-        self.listbox_update(data)
-
-    def strip_punctuation(self, entry):
-        """Strip punctuation from strings for search."""
-        return entry.translate(str.maketrans('', '', string.punctuation))
-
-    def listbox_update(self, data):
-
-        l = self.tabs.files.listbox
-
-        # clear old
-        l.delete(0, "end")
-        data = sorted(data, key=str.lower)
-
-        # insert sorted
-        for item in data:
-            l.insert("end", item)
-
-    def listbox_on_select(self, event):
-
-        # do nothing if you click out of list
-        current = event.widget.curselection()
-        if current:
-            # TODO: untangle
-            self.filename = event.widget.get(event.widget.curselection())
-            self.app.tools.loader.cue_from_file()
-
-    def gen_file_list(self, target):
-        """Generate file list from the target directory."""
-
-        if target:
-            self.directory = target
-            # filter out directories and anything not beginning with an accepted file extension
-            valid_ext = ('.rtf', '.txt') # TODO: move to settings
-            self.files = [f for f in listdir(target) if isfile(join(target, f)) and f.endswith(valid_ext)]
-            # self.files = list(filter(f for f in listdir(target))
-            self.listbox_update(self.files)
-        else:
-            logging.warning(f"gen_file_list in browser recieved no target: target = '{target}'")
-
-    def import_to_song(self, filename):
-        """Import a text file and convert it into a song object."""
-        # TODO: replace self.app.cue_from_file with this
-        pass
-
-
-class SearchBar(tk.Frame):
-    """Frame for the search bar and any options."""
-
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent)
-
-        # orient
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-        self.settings = parent.settings
-
-        # TODO: spaghetti
-
-        # search query var
-        self.query = tk.StringVar()
-        self.query.trace("w", lambda *args: parent.search_trace())
-
-        self.entry = tk.Entry(self, textvariable=self.query)
-        self.entry.bind("<Down>", parent.focus_set_listbox_from_entry)
-
-        self.header = QuickSearch(self)
-        self.header.pack(side="top", fill="x")
-
-        self.entry.pack(side="top", fill="x")
-
-
-class LibrariesNotebook(ttk.Notebook):
+class BrowserNotebook(ttk.Notebook):
     """Notebook whose pages are different targets for the quick search.
     By default this will have a file browser for quick import, and a
     simplified library browser (references the DB)."""
@@ -204,8 +125,75 @@ class LibraryTab(tk.Frame):
 
         self.app = parent.app
 
-        self.placeholder = tk.Label(self, text="LIBRARY VIEW WILL GO HERE")
-        self.placeholder.pack()
+        self.tree = ScrolledTreeview(self)
+        self.tree.pack(fill='both', expand=True)
+
+    def search_trace(self, query):
+        """Filter library tree by search contents."""
+        # TODO
+        pass
+
+
+class ScrolledTreeview(tk.Frame):
+    """Attach a scrollbar to treeview."""
+
+    def __init__(self, parent):
+        tk.Frame.__init__(self, parent)
+
+        self.app = parent.app
+
+        # library data tree (left side of frame)
+        tree = ttk.Treeview(self, selectmode="browse", show="tree")
+        tree['columns']=("song_id", "lib_id", "name")
+        
+        tree.column("#0", width=0, stretch=False)
+        tree.column("song_id", width=0, anchor="center", stretch=False)
+        tree.column("lib_id", width=0, anchor="center",stretch=False)
+        tree.column("name", anchor="w", stretch=True)
+
+
+        tree.heading("#0", text='', anchor="center")
+        tree.heading("song_id", text="song_id", anchor="center")
+        tree.heading("lib_id", text="lib_id", anchor="center")
+        tree.heading("name", text="title", anchor="w")
+
+        tree.pack(side="left", fill="both", expand=True)
+        self.tree = tree
+
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical")
+        self.scrollbar.config(command=self.tree.yview)
+        self.tree.configure(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.pack(side="left", fill="y")
+
+        self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+
+        # populate the treeview with library songs
+        # TODO: filter to only show library versions
+
+        self.gen_library()
+
+    def gen_library(self, data=None):
+        """Generate the library song list."""
+
+        if data is None:
+            data = self.app.tools.dbmanager.get_all_song_meta_from_db()
+
+        for i, meta in enumerate(data):
+            song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
+            ordered = (song_id, lib_id, name)
+            self.tree.insert(parent='', index="end", iid=i, values=ordered)
+
+    def on_tree_select(self, event):
+        """Make a song obj from library selection and push to cued."""
+
+        sel = self.tree.focus()
+        song_id = self.tree.set(sel, column="song_id")
+        song_data = self.app.tools.dbmanager.get_song_dict_from_db(song_id=song_id)
+        song_obj = self.app.tools.factory.new_song(dictionary=song_data)
+        self.app.deck.cued = song_obj
+
+
+
 
 class FilesTab(tk.Frame):
     """Frame for the file browser."""
@@ -216,6 +204,12 @@ class FilesTab(tk.Frame):
         self.app = parent.app
         self.suite = parent.suite
 
+        # vars for file loading
+        self.directory = self.app.settings.paths.library.get()
+        self.filename = ""
+        self.files = []
+
+        # tk widgets
         self.scrollbar = tk.Scrollbar(self, orient="vertical")
         self.scrollbar.pack(side="right", fill="y")
         
@@ -230,14 +224,96 @@ class FilesTab(tk.Frame):
             # height=11
         )
         self.listbox.pack(side="left", fill="both", expand=True, padx=5, pady=0)
-        self.listbox.bind("<<ListboxSelect>>", self.suite.listbox_on_select)
+        self.listbox.bind("<<ListboxSelect>>", self.files_listbox_on_select)
         self.listbox.bind("<Shift-Up>", lambda _: self.entry.focus_set)
 
         self.scrollbar.config(command=self.listbox.yview)
 
+        # populate the listbox
+        self.gen_file_list(self.directory)
+        self.listbox_update(self.files)
 
-class QuickSearch(tk.Frame):
-    """Class for the quick search bar."""
+    @property
+    def path(self):
+        return self.directory + "/" + self.filename
+
+    def files_listbox_on_select(self, event):
+        """When you select a file from the file listbox, push selection to preview."""
+
+        # do nothing if you click out of list
+        current = event.widget.curselection()
+        if current:
+            # TODO: untangle
+            self.filename = event.widget.get(event.widget.curselection())
+            self.app.tools.loader.cue_from_file()
+
+    def listbox_update(self, data):
+
+        l = self.listbox
+
+        # clear old
+        l.delete(0, "end")
+        data = sorted(data, key=str.lower)
+
+        # insert sorted
+        for item in data:
+            l.insert("end", item)
+
+    def gen_file_list(self, target):
+        """Generate file list from the target directory."""
+
+        if target:
+            self.directory = target
+            # filter out directories and anything not beginning with an accepted file extension
+            valid_ext = ('.rtf', '.txt') # TODO: move to settings
+            self.files = [f for f in listdir(target) if isfile(join(target, f)) and f.endswith(valid_ext)]
+            # self.files = list(filter(f for f in listdir(target))
+            self.listbox_update(self.files)
+        else:
+            logging.warning(f"gen_file_list in browser recieved no target: target = '{target}'")
+
+    def search_trace(self, query):
+        # get text from entry and strip capitalization, punctuation
+
+        # scrub query
+        query = query.strip().lower()
+        query = self.strip_punctuation(query)
+
+        # get data from file_list
+        if not query:
+            data = self.files
+        else:
+            data = []
+            # TODO: needs to ignore punctuation when filtering
+            for item in self.files:
+                data.append(item) if query in self.strip_punctuation(item.lower()) else None
+
+        self.listbox_update(data)
+
+    def strip_punctuation(self, entry):
+        """Strip punctuation from strings for search."""
+        return entry.translate(str.maketrans('', '', string.punctuation))
+
+
+    # def listbox_on_select(self, event):
+
+    #     # do nothing if you click out of list
+    #     current = event.widget.curselection()
+    #     if current:
+    #         # TODO: untangle
+    #         self.filename = event.widget.get(event.widget.curselection())
+    #         self.app.tools.loader.cue_from_file()
+
+
+
+    def import_to_song(self, filename):
+        """Import a text file and convert it into a song object."""
+        # TODO: replace self.app.cue_from_file with this
+        pass
+
+
+class QuickSearchHeader(tk.Frame):
+    """Class for the quick search bar header."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
@@ -246,7 +322,7 @@ class QuickSearch(tk.Frame):
         self.label = tk.Label(self, text="Quick Search")
         self.label.pack(side="left", fill="y", anchor="w")
 
-        entry = parent.entry
+        entry = kwargs.get('entry')
         self.clear = tk.Button(self, text="Clear", command=lambda: entry.delete(0, 'end'))
         self.clear.pack(side="right", fill="y", anchor="e")
 
@@ -275,7 +351,7 @@ class QuickSearch(tk.Frame):
 #         self.entry = tk.Entry(self, textvariable=self.query)
 #         self.entry.bind("<Down>", parent.focus_set_listbox_from_entry)
 
-#         self.header = QuickSearch(self)
+#         self.header = QuickSearchHeader(self)
 #         self.header.pack(side="top", fill="x")
 
 #         self.entry.pack(side="top", fill="x")

@@ -17,7 +17,7 @@ from tools.deck import SongDeck
 # gui components
 # TODO: package?
 from gui.collections import CollectionsSuite
-from gui.browser import FileBrowserSuite
+from gui.browser import BrowserSuite
 from gui.talent import TalentWindow
 from gui.monitor import TalentMonitor
 from gui.preview import Preview
@@ -76,7 +76,7 @@ class MainApplication(tk.Frame):
             pady=5,
         )
 
-        self.browser = FileBrowserSuite(self)
+        self.browser = BrowserSuite(self)
         # self.browser = LibrarySuite(self) # this is the version that imports everything
         self.browser.grid(
             row=1,

@@ -123,24 +123,14 @@ class SongViewTop(tk.Frame):
         self.song = parent.song
 
         # make sure to assign to self!!!
-        self.treeview = SongTreeview(self)
+        self.treeview = SongTreeFrame(self)
         self.tree = self.treeview.tree
 
-        # dumping details. TODO: move to fn
-        # for i in range(len(self.data)):
-
-            # TODO: sort this in the db, probably, or deconstruct on load. so you
-            # can do this arbitrarily.
-            # song_id, lib_id, name, created, modified, comments, confidence, def_key = self.data[i]
-            # ordered = [song_id, lib_id, name, created, modified, confidence, def_key, comments]
-            # self.tree.insert(parent='', index="end", iid=i, values=ordered)
-
-        # replaces previous block using enumerate
-        for _, meta in enumerate(self.data):
+        # dump library into tree
+        for i, meta in enumerate(self.data):
             song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
             ordered = [song_id, lib_id, name, created, modified, confidence, def_key, comments]
             self.tree.insert(parent='', index="end", iid=i, values=ordered)
-
 
         # infobox (right side)
         self.songdetail = SongDetailView(self)
@@ -172,7 +162,7 @@ class SongLibraryFilters(tk.Frame):
         # so they're not deleted when you clean up
 
 
-class SongTreeview(tk.Frame):
+class SongTreeFrame(tk.Frame):
     """Class for the treeview and its scrollbar."""
 
     def __init__(self, parent):
@@ -184,7 +174,7 @@ class SongTreeview(tk.Frame):
         self.library_filters = SongLibraryFilters(self)
         self.library_filters.pack(side="top", fill="both")
 
-        self.scrolled_tree = ScrolledTreeview(self)
+        self.scrolled_tree = ScrolledSongTree(self)
         self.scrolled_tree.pack(side="top", fill="both", expand=True)
         self.tree = self.scrolled_tree.tree
 
@@ -255,7 +245,7 @@ class SearchFilters(tk.Frame):
         self.toggle_all.pack(side="left", anchor="w")
 
 
-class ScrolledTreeview(tk.Frame):
+class ScrolledSongTree(tk.Frame):
     """Attach a scrollbar to treeview."""
 
     def __init__(self, parent):

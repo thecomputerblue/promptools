@@ -208,9 +208,15 @@ class LoadTool():
     def cue_from_file(self, filename=None):
         """Creates song obj from file and pushes to cue."""
 
-        file = self.app.browser.file_path
+        file = self.app.browser.files.path
         song = self.app.tools.factory.new_song(file=file)
         self.app.deck.cued = song
+
+    def cue_from_library(self, tree_entry):
+        """Cue a library song from a tree_entry."""
+        
+        # get pass the tree_entry to the dbmanager, returning a song obj from lib
+        # push the song obj to deck
 
     def clone_tk_text(self, source, dest):
         """Clone a tk_text frames contents & formatting to another."""
@@ -241,6 +247,7 @@ class LoadTool():
         """Load the cued song to monitor and talent with current settings
         and preserve cursor selection in collection if present."""
 
+        # TODO: make sure event.widget is a listbox before trying to get curselection
         sel = event.widget.curselection() if event else None
 
         self.app.deck.live = self.app.deck.cued

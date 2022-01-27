@@ -13,10 +13,7 @@ class AppData():
         self.dbmanager = app.tools.dbmanager
         # connect the dbmanager 
         self.dbmanager.data = self
-
-        # initialize db tables if necessary
         self.db = app.settings.paths.db.get()
-        self.init_db(self.db)
 
         # init workspace collections
         self.workspace = WorkspaceData(self)
@@ -52,7 +49,7 @@ class AppData():
         con = sqlite3.connect(db)
         cur = con.cursor()
 
-        # prove there is somethign in the db
+        # prove there is something in the db
         # TODO: maybe use this with con formulation for other methods.
         with con:
             cur.execute("SELECT * FROM songs")
@@ -60,11 +57,6 @@ class AppData():
 
             query = "SELECT name FROM sqlite_master WHERE type='table';"
             cur.execute(query)
-            # print(cur.fetchall())
-
-            # query = "SELECT * FROM setlist_0"
-            # cur.execute(query)
-            # print(cur.fetchall())
 
 
         # retrieval method
@@ -113,8 +105,6 @@ class AppData():
             for collection in self.collections:
                 collection.refresh_list()
 
-
-
     def clear_collections(self):
         """Clear current contents of setlist / pool / additional active collections."""
 
@@ -122,24 +112,6 @@ class AppData():
         for collection in self.collections:
             # clears and refreshes associated listbox
             collection.clear_collection_songs()
-
-    def init_db(self, db):
-        """Create to db and toplevel tables if they don't exist."""
-
-        con = sqlite3.connect(db)
-        cur = con.cursor()
-
-        with con:
-            cur.execute('''CREATE TABLE if not exists songs
-                (song_id PRIMARY KEY, collection, collection_index)''')
-
-            cur.execute('''CREATE TABLE if not exists songs_meta
-                            (song_id PRIMARY KEY, song_name, created, modified, confidence, song_info)''')
-
-            cur.execute('''CREATE TABLE if not exists songs_markers
-                            (song_id PRIMARY KEY, previous, current, next, skipped, played)''')
-
-        con.close()
 
 
 class SongCollection:
