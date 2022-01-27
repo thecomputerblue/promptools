@@ -17,12 +17,28 @@ def pack_pos(line: int, col: int) -> str:
 
     return str(line) + "." + str(col)
 
-
 class LoadTool():
     """Contain functions for loading songs between frames."""
 
     def __init__(self, app):
         self.app = app
+
+    def preserve_sel(method):
+        """Preserve selection while executing a method."""
+        def inner(self, *args, **kwargs):
+
+            logging.info('preserve_sel in LoadTool')
+            event = kwargs.get('event')
+             # TODO: make sure event.widget is a listbox before trying to get curselection
+            sel = event.widget.curselection() if event else None       
+
+            method(self, *args, **kwargs)
+
+            event.widget.selection_set(sel) if event else None
+            event.widget.activate(sel) if event else None
+
+        return inner
+
 
     # TODO: this cant yet handle instances where you
     # don't want to reset yview
@@ -243,17 +259,11 @@ class LoadTool():
 
         return widget
 
+    @preserve_sel
     def load_cued_to_live(self, event=None):
-        """Load the cued song to monitor and talent with current settings
-        and preserve cursor selection in collection if present."""
-
-        # TODO: make sure event.widget is a listbox before trying to get curselection
-        sel = event.widget.curselection() if event else None
-
+        """Push cued song to live."""
+        logging.info('load_cued_to_live in LoadTool')
         self.app.deck.live = self.app.deck.cued
-
-        event.widget.selection_set(sel) if event else None
-        event.widget.activate(sel) if event else None
 
     def get_key(self):
         """Return target key from transposer, or '0' if not enabled."""
