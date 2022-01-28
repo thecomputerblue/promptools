@@ -173,7 +173,7 @@ class SongFactory:
         return song
 
     def empty_song(self, song):
-        """If you try to ingest a bad file, and the song doens't
+        """If you try to ingest a bad file, and the song doesn't
         have any tuples, create a dummy song."""
         
         # TODO: rethink this...

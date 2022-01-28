@@ -175,13 +175,26 @@ class ScrolledTreeview(tk.Frame):
     def gen_library(self, data=None):
         """Generate the library song list."""
 
+        # get song metadata
+        # TODO: ONLY get library versions
         if data is None:
-            data = self.app.tools.dbmanager.get_all_song_meta_from_db()
+            data = self.app.tools.dbmanager.get_all_song_meta_from_db(option='library')
 
+        # filter non-library versions
+
+
+        # sort by song name
+        # TODO: retrieve name index dynamically
+        name_index = 2
+        data.sort(key=lambda t:t[name_index])
+
+        # insert to tree
         for i, meta in enumerate(data):
             song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
-            ordered = (song_id, lib_id, name)
-            self.tree.insert(parent='', index="end", iid=i, values=ordered)
+            needed = (song_id, lib_id, name)
+            self.tree.insert(parent='', index="end", iid=i, values=needed)
+
+        # self.treeview_sort()
 
     def on_tree_select(self, event):
         """Make a song obj from library selection and push to cued."""
@@ -191,6 +204,21 @@ class ScrolledTreeview(tk.Frame):
         song_data = self.app.tools.dbmanager.get_song_dict_from_db(song_id=song_id)
         song_obj = self.app.tools.factory.new_song(dictionary=song_data)
         self.app.deck.cued = song_obj
+
+    def treeview_sort(self):
+        """Sort the treeview alphabetically."""
+        logging.info('treeview_sort in ScrolledTreeview')
+        reverse = False
+        t = self.tree
+
+        l = [(t.item(k)["text"], k) for k in t.get_children()]
+        print(l)
+        l.sort(key=lambda t: t[1], reverse=reverse)
+
+        for index, (val, k) in enumerate(l):
+            t.move(k, '', index)
+
+        # t.heading(col, command=lambda: treeview_sort_column())
 
 
 

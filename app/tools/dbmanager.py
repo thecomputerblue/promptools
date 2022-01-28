@@ -143,6 +143,7 @@ class DatabaseManager:
             keys.append(tup[0])
 
         # TODO: perhaps keys are inherently sorted and this is unnecessary?
+        # TODO: enumerate?
         keys = keys.sort()
         count = len(keys)
 
@@ -155,17 +156,17 @@ class DatabaseManager:
 
         return new_id
 
-    def add_song_to_db(self, db, song):
+    def add_song_to_db(self, song):
         """Add a song to the db"""
 
         # TODO: keep the song_id with the song obj 
         # so you have the option to dump back into the same cells.
 
         # connect
-        con = sqlite3.connect(db)
+        con = sqlite3.connect(self.db)
         cur = con.cursor()
 
-        logging.info(f'began adding {song.name} to {db}')
+        logging.info(f'began adding {song.name} to {self.db}')
 
         # generate song_id by increasing the largest song_id by 1
         with con:
@@ -229,17 +230,16 @@ class DatabaseManager:
     def dump_setlist_to_db(self, setlist):
         """Dump a setlist into the database."""
 
-        db = self.db
         # track song_ids as you dump them
         # so when you dump the setlist it contains references
         song_ids = []
 
         # first dump all songs into the db, retrieve their ids
         for song in setlist.songs:
-            song_ids.append(self.add_song_to_db(db, song))
+            song_ids.append(self.add_song_to_db(song))
 
         # now connect to the db
-        con = sqlite3.connect(db)
+        con = sqlite3.connect(self.db)
         cur = con.cursor()
 
         with con:
@@ -260,45 +260,7 @@ class DatabaseManager:
 
         con.close()
 
-    # TODO: these follow the same pattern,can be combined probably...
-
-    def dump_pool_to_db(self, pool):
-        """Dump a song pool to db. While similar to setlists, pool stores
-        different metadata. TODO: Might combine later."""
-
-        db = self.db
-        # track song_ids as you dump them
-        # so when you dump the setlist it contains references
-        song_ids = []
-
-        # first dump all songs into the db, retrieve their ids
-        for song in pool.songs:
-            song_ids.append(self.add_song_to_db(db, song))
-
-        # now connect to the db
-        con = sqlite3.connect(db)
-        cur = con.cursor()
-
-        with con:
-            # choose appropriate pool_id
-            pool_id = self.pool_id_strategies(pool, cur)
-
-            # add setlist song pointers to setlist_songs
-            # TODO: store previous, current, next_up, skip, strike, etc.
-            for i, song_id in enumerate(song_ids):
-                query = "INSERT INTO pool_songs (pool_id, pos, song_id) VALUES (?, ?, ?)"
-                cur.execute(query, (pool_id, i, song_id))
-
-            # add setlist metadata to setlist_meta
-            # TODO: generate gig_meta_id and save gig_metadata
-            query = "INSERT INTO pool_data (pool_id, name) VALUES (?, ?)"
-            cur.execute(query, (pool_id, pool.name))
-
-        con.close()
-
-    def pool_id_strategies(self, pool, cursor):
-        # TODO: do this. might just be tied directly to gig id.
-        return 0
+    # TODO: dump pool strategy
 
     def setlist_id_strategies(self, setlist, cursor):
         """Return an appropriate setlist_id for storing to database
@@ -335,22 +297,27 @@ class DatabaseManager:
 
         logging.warning('failed to assign a library_id!')
 
-    def get_all_song_meta_from_db(self):
-        """Return all song metadata from db."""
+    def get_all_song_meta_from_db(self, option='all'):
+        """Return all song metadata from db. Option filters to either
+        library versions, alternate versions, or all by default."""
 
-        db = self.app.data.db
-        con = sqlite3.connect(db)
+        con = sqlite3.connect(self.db)
         cur = con.cursor()
+
+        options = {
+        'library': "SELECT * FROM song_meta WHERE song_id == library_id",
+        'alternates': "SELECT * FROM song_meta WHERE song_id != library_id",
+        'all': "SELECT * FROM song_meta",
+        }
 
         with con:
 
-            query = "SELECT * FROM song_meta"
+            query = options.get(option)
             cur.execute(query)
             data = cur.fetchall()
 
         con.close()
 
-        logging.info('got all song metadata from db')
         return data
 
     def get_song_dict_from_db(self, song_id):

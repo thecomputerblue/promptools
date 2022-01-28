@@ -153,14 +153,13 @@ class MainApplication(tk.Frame):
             self.root.destroy()
 
         else:
-            pass
-            # logging.info('canceled quit operation')
+            logging.info('canceled quit operation')
 
 
 def main():
     """Application main loop."""
-    root = tk.Tk()  # change to tkd.Tk ify you're using drag n drop!
-    root.title("PrompTools 0.1")
+    root = tk.Tk()  # change to tkd.Tk if you end up using dnd package!
+    root.title("PrompTools alpha")
 
     # TODO: decouple tkinter components from main app
     app = MainApplication(root)
