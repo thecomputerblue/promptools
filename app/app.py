@@ -133,8 +133,8 @@ class MainApplication(tk.Frame):
 
         # TODO: see if state has changed since last save, only show message if it has.
         choice = messagebox.askyesnocancel(
-            "Save Workspace Before Quitting",
-            "Save before quitting? Any unsaved changes to the workspace will be lost.",
+            "Save Workspace",
+            "Save before quitting? Any unsaved changes to the workspace / settings will be lost.",
         )
 
         self.app.settings.dump_settings(path=None)

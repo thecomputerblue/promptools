@@ -10,7 +10,6 @@ import io
 
 from tools.scroll import AutoscrollBehavior
 
-
 # helpers
 def merge(defaults, custom): 
     """Merge two settings dicts, prioritizing custom"""
@@ -180,8 +179,10 @@ class PathSettings(SettingsBaseClass):
         # these three defaults and should not be made configurable,
         # always want the default paths available to browse 
 
-        self.library = tk.StringVar()
-        self.library.set("./data/lib")
+        self.texts = tk.StringVar()
+        txtdir = './data/text_files'
+        os.makedirs(txtdir) if not os.path.exists(txtdir) else None
+        self.texts.set(txtdir)
 
         # sqlite3 database
         self.db = tk.StringVar()

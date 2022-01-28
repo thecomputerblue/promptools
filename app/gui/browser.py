@@ -205,7 +205,7 @@ class FilesTab(tk.Frame):
         self.suite = parent.suite
 
         # vars for file loading
-        self.directory = self.app.settings.paths.library.get()
+        self.directory = self.app.settings.paths.texts.get()
         self.filename = ""
         self.files = []
 

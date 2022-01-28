@@ -1,4 +1,4 @@
-*****TEST STUFF (Am)
+*****TEST AMBIGUOUS, KEY CHANGES (Am)
 
 A    G     Bm     Am          Gmaj7
 A is not a chord on this line, but it 

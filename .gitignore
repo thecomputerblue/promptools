@@ -17,7 +17,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-#lib/
+lib/
 lib64/
 parts/
 sdist/
@@ -138,3 +138,4 @@ promptools.sublime-project
 design_doc.txt
 roadmap.txt
 text_dump_example.txt
+*.rtf
