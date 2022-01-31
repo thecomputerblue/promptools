@@ -9,6 +9,13 @@ import logging
 from os import listdir
 from os.path import isfile, join, exists
 
+# helpers
+def scrub_text(text):
+    """Remove text formatting for search comparison."""
+    text = text.strip().lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    return text
+
 
 class BrowserSuite(tk.Frame):
     """Quick browser for files and the library database."""
@@ -73,9 +80,9 @@ class SearchBar(tk.Frame):
         self.header.pack(side="top", fill="x")
         self.entry.pack(side="top", fill="x")
 
-        self.entry.bind("<Down>", self.focus_set_listbox_from_entry)
+        self.entry.bind("<Down>", self.focus_set_files_listbox_from_entry)
 
-    def focus_set_listbox_from_entry(self, event):
+    def focus_set_files_listbox_from_entry(self, event):
         """When you press the down arrown in search field,
         move focus to the search field."""
 
@@ -124,14 +131,81 @@ class LibraryTab(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         self.app = parent.app
+        self.suite = parent.suite
 
-        self.tree = ScrolledTreeview(self)
-        self.tree.pack(fill='both', expand=True)
+        self.tv = ScrolledTreeview(self)
+        self.tv.pack(fill='both', expand=True)
+
+        # expose treeview
+        self.tree = self.tv.tree
+
+        self.refresh_library()
 
     def search_trace(self, query):
         """Filter library tree by search contents."""
-        # TODO
-        pass
+
+        self.refresh_library(query=query)
+
+    def refresh_library(self, data=None, query=None):
+        """Generate the library song list."""
+
+        # clear tree
+        self.clear_tree()
+
+        # get song metadata
+        if data is None:
+            dbmanager = self.app.tools.dbmanager
+            data = dbmanager.get_all_song_meta_from_db(option='library')
+
+        # filter by search
+        data = self.filter_library(data, query) if query else data
+
+        # sort by song name
+        # TODO: retrieve name index dynamically
+        name_index = 2
+        data.sort(key=lambda t:t[name_index])
+
+        # insert to tree
+        for i, meta in enumerate(data):
+            song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
+            needed = (song_id, lib_id, name)
+            self.tree.insert(parent='', index="end", iid=i, values=needed)
+
+        # self.treeview_sort()
+
+    def filter_library(self, data, query):
+        """Return data filtered by query."""
+
+        if not query:
+            return data
+
+        # TODO: filter() / comprehension?
+        filtered = []
+        for tup in data:
+            filtered.append(tup) if scrub_text(query) in scrub_text(tup[2]) else None
+
+        return filtered
+
+    def clear_tree(self):
+        """Clear the tree."""
+
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+    def treeview_sort(self):
+        """Sort the treeview alphabetically."""
+        logging.info('treeview_sort in ScrolledTreeview')
+        reverse = False
+        t = self.tree
+
+        l = [(t.item(k)["text"], k) for k in t.get_children()]
+        print(l)
+        l.sort(key=lambda t: t[1], reverse=reverse)
+
+        for index, (val, k) in enumerate(l):
+            t.move(k, '', index)
+
+        # t.heading(col, command=lambda: treeview_sort_column())
 
 
 class ScrolledTreeview(tk.Frame):
@@ -141,6 +215,7 @@ class ScrolledTreeview(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         self.app = parent.app
+        self.suite = parent.suite
 
         # library data tree (left side of frame)
         tree = ttk.Treeview(self, selectmode="browse", show="tree")
@@ -167,35 +242,6 @@ class ScrolledTreeview(tk.Frame):
 
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
-        # populate the treeview with library songs
-        # TODO: filter to only show library versions
-
-        self.gen_library()
-
-    def gen_library(self, data=None):
-        """Generate the library song list."""
-
-        # get song metadata
-        # TODO: ONLY get library versions
-        if data is None:
-            data = self.app.tools.dbmanager.get_all_song_meta_from_db(option='library')
-
-        # filter non-library versions
-
-
-        # sort by song name
-        # TODO: retrieve name index dynamically
-        name_index = 2
-        data.sort(key=lambda t:t[name_index])
-
-        # insert to tree
-        for i, meta in enumerate(data):
-            song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
-            needed = (song_id, lib_id, name)
-            self.tree.insert(parent='', index="end", iid=i, values=needed)
-
-        # self.treeview_sort()
-
     def on_tree_select(self, event):
         """Make a song obj from library selection and push to cued."""
 
@@ -204,23 +250,6 @@ class ScrolledTreeview(tk.Frame):
         song_data = self.app.tools.dbmanager.get_song_dict_from_db(song_id=song_id)
         song_obj = self.app.tools.factory.new_song(dictionary=song_data)
         self.app.deck.cued = song_obj
-
-    def treeview_sort(self):
-        """Sort the treeview alphabetically."""
-        logging.info('treeview_sort in ScrolledTreeview')
-        reverse = False
-        t = self.tree
-
-        l = [(t.item(k)["text"], k) for k in t.get_children()]
-        print(l)
-        l.sort(key=lambda t: t[1], reverse=reverse)
-
-        for index, (val, k) in enumerate(l):
-            t.move(k, '', index)
-
-        # t.heading(col, command=lambda: treeview_sort_column())
-
-
 
 
 class FilesTab(tk.Frame):
@@ -304,8 +333,7 @@ class FilesTab(tk.Frame):
         # get text from entry and strip capitalization, punctuation
 
         # scrub query
-        query = query.strip().lower()
-        query = self.strip_punctuation(query)
+        query = scrub_text(query)
 
         # get data from file_list
         if not query:
@@ -314,25 +342,9 @@ class FilesTab(tk.Frame):
             data = []
             # TODO: needs to ignore punctuation when filtering
             for item in self.files:
-                data.append(item) if query in self.strip_punctuation(item.lower()) else None
+                data.append(item) if query in scrub_text(item) else None
 
         self.listbox_update(data)
-
-    def strip_punctuation(self, entry):
-        """Strip punctuation from strings for search."""
-        return entry.translate(str.maketrans('', '', string.punctuation))
-
-
-    # def listbox_on_select(self, event):
-
-    #     # do nothing if you click out of list
-    #     current = event.widget.curselection()
-    #     if current:
-    #         # TODO: untangle
-    #         self.filename = event.widget.get(event.widget.curselection())
-    #         self.app.tools.loader.cue_from_file()
-
-
 
     def import_to_song(self, filename):
         """Import a text file and convert it into a song object."""
@@ -353,175 +365,6 @@ class QuickSearchHeader(tk.Frame):
         entry = kwargs.get('entry')
         self.clear = tk.Button(self, text="Clear", command=lambda: entry.delete(0, 'end'))
         self.clear.pack(side="right", fill="y", anchor="e")
-
-
-# TODO: old stuff below, confirm you don't want
-# to reuse any of this code and delete.
-
-# class FileSearch(tk.Frame):
-#     """Class for the file search and its label."""
-
-#     def __init__(self, parent, *args, **kwargs):
-#         tk.Frame.__init__(self, parent)
-
-#         # orient
-#         self.parent = parent
-#         self.app = parent.app
-#         self.suite = parent.suite
-#         self.settings = parent.settings
-
-#         # TODO: spaghetti
-
-#         # search query var
-#         self.query = tk.StringVar()
-#         self.query.trace("w", lambda *args: parent.search_trace())
-
-#         self.entry = tk.Entry(self, textvariable=self.query)
-#         self.entry.bind("<Down>", parent.focus_set_listbox_from_entry)
-
-#         self.header = QuickSearchHeader(self)
-#         self.header.pack(side="top", fill="x")
-
-#         self.entry.pack(side="top", fill="x")
-
-#         self.scrollbar = tk.Scrollbar(self, orient="vertical")
-#         self.scrollbar.pack(side="right", fill="y")
-        
-#         self.listbox = tk.Listbox(
-#             self,
-#             # font=self.app.settings.fonts.library,
-#             yscrollcommand=self.scrollbar.set,
-#             bg="lightgrey",
-#             fg="black",
-#             exportselection=False,
-#             width=30,
-#             # height=11
-#         )
-#         self.listbox.pack(side="left", fill="both", expand=True, anchor='n', padx=5, pady=0)
-#         self.listbox.bind("<<ListboxSelect>>", parent.listbox_on_select)
-#         self.listbox.bind("<Shift-Up>", lambda _: self.entry.focus_set)
-
-#         self.scrollbar.config(command=self.listbox.yview)
-
-
-# class FileFolderSelector(tk.Frame):
-#     """Select customsong library folder."""
-
-#     # TODO: refactor into browser, probably.
-
-#     def __init__(self, parent, *args, **kwargs):
-#         tk.Frame.__init__(self, parent)
-
-#         self.parent = parent
-#         self.app = parent.app
-#         self.suite = parent.suite
-
-#         self.mainframe()
-
-#     def mainframe(self):
-#         self.make_vars()
-#         self.make_widgets()
-#         self.pack_widgets()
-
-#     def make_vars(self):
-#         """Make frame variables."""
-#         # Initialize variables.
-#         self.folder_path = self.app.settings.library_dir
-#         self.display_folder = tk.StringVar()
-#         self.display_folder.set("No folder specified. Using root.")
-
-#     def make_widgets(self):
-#         # Make button and label
-#         self.folder_button = tk.Button(self, text="Custom Folder", command=self.click,)
-#         self.folder_label = tk.Label(self, textvariable=self.display_folder)
-
-#     def pack_widgets(self):
-#         # Pack elements into local frame
-#         self.folder_button.pack(side="left")
-#         self.folder_label.pack(side="right")
-
-#     def click(self) -> None:
-#         """On click, open file browser."""
-#         # Choose a target folder.
-#         target = tk.filedialog.askdirectory(
-#             initialdir=root_directory, title="Choose script library folder"
-#         )
-
-#         # Update path if valid path selected.
-#         self.folder_path = self.update_path(self.folder_path, target)
-
-#         # Forward path to file list
-#         self.parent.browser.gen_file_list(self.folder_path)
-
-#         # Generate label from new path
-#         label = self.gen_folder_label(self.folder_path)
-
-#         # Display folder name on label
-#         self.display_folder.set(label)
-
-#     def update_path(self, current, target):
-#         return target if target else current
-
-#     def gen_folder_label(self, target, maxlength=45):
-#         """Generate truncated label text for folder button."""
-#         if target == ".":
-#             return "No folder specified. Using root."
-#         if target:
-#             # Truncate
-#             if len(target) > maxlength - 3:  # -3 makes room for elipses...
-#                 e = "..."
-#                 t = -maxlength
-#             else:
-#                 e = ""
-#                 t = -len(target)
-#             return e + target[t:]
-#         return "No folder specified. Using root."
-
-# class FileBatchImporter:
-#     """Towards containing the entire library within a file."""
-#     def __init__(self, parent):
-#         self.parent = parent
-#         self.app = parent.app
-#         self.suite = parent.suite
-
-#         # Default library file
-#         self.path = 'library.pickle'
-#         self.load_previous_library()
-
-#         # If no library file exists, import from the txt file directory
-#         if not self.library:
-#             self.import_all_from_folder(directory='lib')
-
-#     def load_previous_library(self):
-#         file_exists = exists(self.path)
-#         if file_exists:
-#             with open(self.path, 'rb') as lib:
-#                 self.library = pickle.load(lib)
-#                 self.list_library_songs()
-#         else:
-#             self.library = []
-
-#     def list_library_songs(self):
-#         for song in self.library:
-#             print(song.name)
-
-#     def import_all_from_folder(self, directory):
-#         for filename in listdir(directory):
-#             path = directory + '/' + filename
-#             # song=Song(file=path, tagger=self.app.tagger, factory=self.app.factory)
-#             song = self.app.song_factory.create_song(file=path)
-#             self.library.append(song)
-
-#     def print_library(self):
-#         for song in self.library:
-#             print(song.name)
-
-#     def pickle_library(self):
-#         """Dump library back to file."""
-#         # TODO: can't pickle regex >:(
-#         with open(self.path, 'wb') as lib:
-#             pickle.dump(self.library, lib)
-
 
 
 
