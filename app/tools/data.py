@@ -20,98 +20,28 @@ class AppData():
         self.setlist = self.workspace.get_active_setlist()
         self.pool = self.workspace.pool
 
-        self.collections = [self.setlist, self.pool]
+        self.collections = (self.setlist, self.pool)
 
-    def dump_all_collections_to_db(self):
-        for collection in self.collections:
-            self.dump_collection_to_db(collection)
+    def dump_workspace_to_db(self):
+        """Dump the workspace to db at program exit."""
 
-    def reload_all_collections_from_db(self):
-        for collection in self.collections:
-            self.reload_collection_from_db(collection)
+        logging.info('dump_workspace_to_db in AppData')
 
-    def dump_collection_to_db(self, collection):
-        """Dump a song collection into the database."""
-        # identify if collection is pool or setlist and call the appropriate dbmanager method.
-        c = collection
-        m = self.dbmanager
-        
-        m.dump_pool_to_db(c) if c.name == "pool" else m.dump_setlist_to_db(c)
-
-    def reload_collection_from_db(self, collection):
-        """Reload a collection from the db, overwriting whatever collection is in memory."""
-
-        # get the song factory
-        factory = self.app.tools.factory
-
-        # connect to db
-        db = self.db
-        con = sqlite3.connect(db)
-        cur = con.cursor()
-
-        # prove there is something in the db
-        # TODO: maybe use this with con formulation for other methods.
-        with con:
-            cur.execute("SELECT * FROM songs")
-            logging.info(f'all songs in db: {cur.fetchall()}')
-
-            query = "SELECT name FROM sqlite_master WHERE type='table';"
-            cur.execute(query)
+        # TODO:
+        # get lowest available gig_id, assign to settings.workspace.workspace_gig_id
+        # dump pool songs to db, tracking their song_ids
+        # dump pool song_ids list to pool meta with associated workspace_gig_id
+        # dump all songs in the setlists
+        # dump all gig setlists, tracking their setlist_ids in the order they are in memory
+            # before you dump each setlist, dump its songs, tracking their ids
+            # dump the setlist with song_ids to setlist_songs
+        # dump  the ordered setlist ids to gig_setlists table
 
 
-        # retrieval method
-        # - clear out active collections
-        self.clear_collections()
 
-        # - get all song_ids from songs table as a list.
-        with con:
-
-            # get song_ids
-            cur.execute("SELECT song_id FROM songs")
-            song_ids = cur.fetchall()
-
-            # reconstruct each song from stored data
-            for current in song_ids:
-                logging.info(f'extracting data from {current}')
-                # get collection data
-                # TODO: mutiple select isn't working, not sure why.
-
-                cur.execute("SELECT * FROM songs WHERE song_id = ?;", current)
-                # print(cur.fetchall())[0]
-                song_id, collection, collection_index = cur.fetchall()[0]
-
-                # get metadata
-                cur.execute("SELECT * FROM songs_meta WHERE song_id = ?;", current)
-                # print(cur.fetchall())[0]
-                song_id, song_name, created, modified, confidence, song_info = cur.fetchall()[0]
-
-                # get song contents
-                tk_tuples = []
-                query = f"SELECT * FROM {current[0]}"
-                cur.execute(query)
-                for row in cur.fetchall():
-                    tk_tuples.append(row)
-
-                # reconstruct song object and put it in the correct collection.
-                # first need to make a way to ingest meta info into a song object.
-                meta = factory.new_meta(name=song_name, info=song_info, confidence=confidence)
-                song = factory.new_song(formatted_tuples=tk_tuples, meta=meta)
-                # TODO: REST OF METADATA. probably want to rework the entire song factory, tbh. it is a mess.
-                # TODO: make sure order is preserved. only incidentally preserved now, maybe.
-                logging.info(f'appending to collection: {collection}')
-                exec(f'self.{collection}.songs.append(song)')
-
-            # update all the list representations when finished 
-            for collection in self.collections:
-                collection.refresh_list()
-
-    def clear_collections(self):
-        """Clear current contents of setlist / pool / additional active collections."""
-
-        # clear collections
-        for collection in self.collections:
-            # clears and refreshes associated listbox
-            collection.clear_collection_songs()
+    def get_last_workspace_from_db(self):
+        """Restore workspace from last session on load."""
+        logging.info('get_last_workspace_from_db in AppData')
 
 
 class SongCollection:

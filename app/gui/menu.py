@@ -241,8 +241,6 @@ class MenuBar(tk.Frame):
         setlist_menu = tk.Menu(menu_bar)
         # These next two are for testing db functionality. will be removed
         setlist_menu.add_command(label="DUMP SETLIST (TEMP)", command=self.dump_setlist)
-        setlist_menu.add_command(label="Dump All Collections (temp)", command=self.data.dump_all_collections_to_db)
-        setlist_menu.add_command(label="Reload All Collections (temp)", command=self.data.reload_all_collections_from_db)
         setlist_menu.add_separator()
         setlist_menu.add_command(label="Metadata")        
         setlist_menu.add_separator()
@@ -330,7 +328,7 @@ class MenuBar(tk.Frame):
 
     def dump_setlist(self):
         """Temporary test function, dumps setlist collection to db."""
-        self.app.tools.dbmanager.dump_setlist_to_db(self.app.data.setlist)
+        self.app.tools.dbmanager.dump_setlist(self.app.data.setlist)
 
     def reload_setlist(self):
         """Temporary test function, recovers setlist colelction from db, overwriting current."""

@@ -132,7 +132,7 @@ class LoadTool():
 
     def colors_enabled(self):
         """Return True if colors are enabled."""
-        return not self.app.settings.importer.raw
+        return not self.app.settings.importer.raw.get()
 
     def configure_text_tags(self, text, talent=False):
         """Apply tag settings to the tkinter text tags."""

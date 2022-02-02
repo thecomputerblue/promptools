@@ -19,6 +19,8 @@ def str_represents_int(s) -> bool:
     """Return True if s represents an int,
     including strings beginning with '+' or '-'."""
 
+    logging.info('str_represents_int in tools/transposer')
+
     if not s:
         return False
 
@@ -166,6 +168,8 @@ class Transposer:
     def convert_transposition_to_int_tk(self, song, target):
         """Convert key note to integer transposition."""
 
+        logging.info(f'target in convert_transposition_to_int_tk: {target}')
+        logging.info(f'convert_transposition_to_int_tk \n song.key.default_id = {song.key.default_id} \n song.key.initial_id = {song.key.initial_id}')
         match = re.match(res.id_transposible, target)
         note = match[3] if match else None
 

@@ -49,7 +49,7 @@ class CuedUp(tk.Frame):
             self.selected.set('')
             return
 
-        maxlength = self.app.settings.view.cue_truncate
+        maxlength = self.app.settings.view.cue_truncate.get()
         self.selected.set(self.truncate_title(song.name, maxlength))
 
     def truncate_title(self, string, maxlength=45):

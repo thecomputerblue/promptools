@@ -207,8 +207,8 @@ class TalentMonitor(tk.Frame):
         m = self.app.setlist.manager       
 
         elapsed = self.elapsed_time()
-        seconds = settings.played_seconds
-        yview_thresh = settings.played_yview
+        seconds = settings.played_seconds.get()
+        yview_thresh = settings.played_yview.get()
         yview = self.app.monitor.text.yview()[0]
 
         # tests for marking as played. if any return True, mark as played

@@ -247,7 +247,7 @@ class ScrolledTreeview(tk.Frame):
 
         sel = self.tree.focus()
         song_id = self.tree.set(sel, column="song_id")
-        song_data = self.app.tools.dbmanager.get_song_dict_from_db(song_id=song_id)
+        song_data = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
         song_obj = self.app.tools.factory.new_song(dictionary=song_data)
         self.app.deck.cued = song_obj
 

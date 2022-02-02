@@ -299,7 +299,7 @@ class ScrolledSongTree(tk.Frame):
         song_id = self.tree.set(sel, column="song_id")
 
         # retrieve and assign dict of the song, triggering callbacks
-        song_dict = self.app.tools.dbmanager.get_song_dict_from_db(song_id=song_id)
+        song_dict = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
 
         song = self.app.tools.factory.new_song(dictionary=song_dict)
         print(f'SONG CREATED IN ON_TREE_SELECT: {song.name}')

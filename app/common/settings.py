@@ -44,6 +44,7 @@ class Settings:
         # TODO: first try to reload the configurable dict.
 
         # self.misc_settings()
+        self.appset = AppSettings(self, "AppSettings")
         self.arrow = ArrowSettings(self, "ArrowSettings")
         self.chunk = ChunkSettings(self, "ChunkSettings")
         self.editor = EditSettings(self, "EditSettings")
@@ -88,10 +89,10 @@ class Settings:
 
         return custom if custom else {}
 
-    def dump_settings(self, path):
+    def dump_settings(self, path='./data/settings.json'):
         """Dump the settings dict back to a json file."""
 
-        with open('./data/settings.json', 'w') as f:
+        with open(path, 'w') as f:
             json.dump(self.custom, f)
 
 
@@ -113,54 +114,26 @@ class SettingsBaseClass:
 
     def update(self, name, value):
         """Updat an entry in the local custom settings dict."""
+
         self.custom[name] = value
 
+    def trace(self, tkvar, name):
+        """Add callback for tkvar."""
 
-# TODO: didn't work cleanly with tkinter vars, might be some use for this later
-# class Setting:
-#     """Class for an individual setting with setter method that automatically
-#     creates or updates the associated custom dictionary k:v."""
+        tkvar.trace("w", lambda *args: self.update(name, tkvar.get()))
 
-#     def __init__(self, name, value, custom_dict, obj=None):
-#         self.name = name
-#         # object of the setting if one exists (ie. tk.StringVar)
-#         self._obj = obj
-#         # value of the setting
-#         self._value = value
-#         # when the setting is changed, a reference to the new value
-#         # is stored in the custom dictionary.
-#         self.custom = custom_dict
+    def setting(self, tkvarclass, name: str, inits: dict):
+        """Make a new setting and assign a default value and callback,
+        returning a tkinter variable."""
 
-#     def __get__(self):
-#         """Interface with the value directly through the Setting object."""
-#         logging.info('returning self.value via Setting.__get__')
-#         return self.value
+        logging.info('setting in SettingsBaseClass')
 
-#     def __set__(self, new):
-#         """Interface with the value directly through the Setting object."""
-#         self.value = new
+        setting = tkvarclass()
+        setting.set(inits.get(name))
+        self.trace(setting, name)
 
-#     def set(self, new):
-#         logging.info('called Setting.set()')
-#         self._obj.set(new) if self._obj else None
-#         self._value = new
-#         self.custom[self.name] = new
+        return setting
 
-#     def get(self):
-#         return self._obj.get()
-
-#     @property
-#     def value(self):
-#         """Return value via the obj (trigger callbacks) if there is an object,
-#         else return the value bare."""
-
-#         return self._obj if self._obj else self._value
-
-#     @value.setter
-#     def value(self, new):
-#         """Update obj, value, custom dict."""
-#         self.set(new)
-    
 
 class PathSettings(SettingsBaseClass):
     """Class for directory defaults & custom."""
@@ -187,36 +160,6 @@ class PathSettings(SettingsBaseClass):
         # sqlite3 database
         self.db = tk.StringVar()
         self.db.set(inits.get("appdata"))
-
-    @property
-    def custom_library(self):
-        return self._custom_library
-
-    @custom_library.setter
-    def custom_library(self, new):
-        # when you set the custom library path, update the custom dict as well.
-        self.custom["custom_library"] = new 
-        self._custom_library.set(new)
-
-    @property
-    def custom_collections(self):
-        return self._custom_collections
-
-    @custom_collections.setter
-    def custom_collections(self, new):
-        # when you set the custom collections path, update the custom dict as well.
-        self.custom["custom_collections"] = new 
-        self._custom_collections.set(new)        
-
-    @property
-    def custom_workspaces(self):
-        return self._custom_workspaces
-
-    @custom_collections.setter
-    def custom_workspaces(self, new):
-        # when you set the custom collections path, update the custom dict as well.
-        self.custom["custom_workspaces"] = new 
-        self._custom_workspaces.set(new)        
 
 
 class ChunkSettings(SettingsBaseClass):
@@ -256,6 +199,23 @@ class ChunkSettings(SettingsBaseClass):
     def update_step(self):
         return self.duration_ms // self.pixels_advanced
 
+
+class AppSettings(SettingsBaseClass):
+    """Class for settings for overall app behavior. For example,
+    whether other settings are saved."""
+
+    def __init__(self, settings, name):
+        SettingsBaseClass.__init__(self, settings, name)
+
+        # set defaults
+        self.defaults = {
+        'recall_custom': True
+        }
+
+        inits = merge(self.defaults, self.custom)
+
+        self.recall_custom = self.setting(tk.BooleanVar, 'recall_custom', inits)
+
 # TODO: dataclass?
 class TransposerSettings(SettingsBaseClass):
     """Class for storing transposer settings."""
@@ -274,23 +234,15 @@ class TransposerSettings(SettingsBaseClass):
 
         inits = merge(self.defaults, self.custom)
 
-        self.enabled = tk.BooleanVar()
-        self.enabled.set(inits.get('enabled'))
-
-        self.nashville = tk.BooleanVar()
-        self.nashville.set(inits.get('nashville'))
-
-        self.apply_to_cued = tk.BooleanVar()
-        self.apply_to_cued.set(inits.get('apply_to_cued'))
-
-        self.apply_to_current = tk.BooleanVar()
-        self.apply_to_current.set(inits.get('apply_to_current'))
-
-        self.key = tk.StringVar()
-        self.key.set('')
+        self.enabled = self.setting(tk.BooleanVar, 'enabled', inits)
+        self.nashville = self.setting(tk.BooleanVar, 'nashville', inits)
+        self.apply_to_cued = self.setting(tk.BooleanVar, 'apply_to_cued', inits)
+        self.apply_to_current = self.setting(tk.BooleanVar, 'apply_to_current', inits)
+        self.key = self.setting(tk.StringVar, 'key', inits)
 
     def reset(self):
         """Clear transposer settings. Doesn't affect Nashville mode"""
+
         self.enabled.set(False)
         self.apply_to_cued.set(False)
         self.apply_to_current.set(False)
@@ -317,35 +269,13 @@ class ImportSettings(SettingsBaseClass):
         # apply settings to vars
 
         # import files raw by default
-        self._raw = tk.BooleanVar()
-        self._raw.set(inits.get('raw'))
+        self.raw = self.setting(tk.BooleanVar, 'raw', inits)
 
         # automatically tag text files on import
-        self._auto_tag = tk.BooleanVar()
-        self._auto_tag.set(inits.get('auto_tag'))
+        self.auto_tag = self.setting(tk.BooleanVar, 'auto_tag', inits)
 
         # valid extensions for imported files
         self.valid_ext = inits.get('valid_ext')
-
-    @property
-    def raw(self):
-        return self._raw.get()
-
-    @raw.setter
-    def raw(self, new):
-        """When you set raw in app, also update custom dict."""
-        self.custom['raw'] = new
-        self._raw.set(new)
-    
-    @property
-    def auto_tag(self):
-        return self._auto_tag.get()
-
-    @auto_tag.setter
-    def auto_tag(self, new):
-        """When you set autotag in app, also update custom dict."""
-        self.custom['auto_tag'] = new
-        self._auto_tag.set(new)
 
 
 class EditSettings(SettingsBaseClass):
@@ -354,9 +284,17 @@ class EditSettings(SettingsBaseClass):
     def __init__(self, settings, name):
         SettingsBaseClass.__init__(self, settings, name)
 
-        self.enabled = tk.BooleanVar()
-        self.talent_follows_monitor_when_editing = tk.BooleanVar()
-        # self.talent_follows_monitor_when_editing.set(True)
+        # define default settings here
+        self.defaults = {
+        'enabled': False,
+        'talent_follows_monitor_when_editing': True,
+        }
+
+        inits = merge(self.defaults, self.custom)
+
+        self.enabled = self.setting(tk.BooleanVar, 'enabled', inits)
+        self.talent_follows_monitor_when_editing = self.setting(tk.BooleanVar, 'talent_follows_monitor_when_editing', inits)
+
 
 class ScrollSettings(SettingsBaseClass):
     """Class for scroll settings."""
@@ -419,12 +357,20 @@ class ViewSettings(SettingsBaseClass):
     def __init__(self, settings, name):
         SettingsBaseClass.__init__(self, settings, name)
 
-        self.frozen = tk.BooleanVar()
-        self.text_wrap = "none"
-        self.fullscreen = tk.BooleanVar()
+        self.defaults = {
+        'frozen': False,
+        'text_wrap': "none",
+        "fullscreen": False,
+        "cue_truncate": 45
+        }
 
-        # max characters for cue titlecard
-        self.cue_truncate = 45
+        inits = merge(self.defaults, self.custom)
+
+        self.frozen = self.setting(tk.BooleanVar, 'frozen', inits)
+        self.text_wrap = inits.get('text_wrap')
+        self.fullscreen = self.setting(tk.BooleanVar, 'fullscreen', inits)
+        self.cue_truncate = self.setting(tk.IntVar, 'cue_truncate', inits)
+
 
 class FontSettings(SettingsBaseClass):
     """Class for font settings."""
@@ -493,6 +439,7 @@ class MetaSettings(SettingsBaseClass):
         SettingsBaseClass.__init__(self, settings, name)
 
         # TODO: defaults 
+        # TODO: necessary?
 
         # editable
         self.edit = tk.BooleanVar()
@@ -521,46 +468,32 @@ class SetlistSettings(SettingsBaseClass):
         'venue': "",
         'thanks': "",
         'band': {},
-        'muso': "",
         'guest_list': [],
-        'guest': ""
         }
 
         inits = merge(self.defaults, self.custom)
 
         # editable
-        self.edit = tk.BooleanVar()
-        self.edit.set(inits.get('edit'))
+        self.edit = self.setting(tk.BooleanVar, 'edit', inits)
 
         # mark as played if you unload a song past this point
-        self.played_yview = inits.get('played_yview')
+        self.played_yview = self.setting(tk.DoubleVar, 'played_yview', inits)
 
         # mark as played if you unload a song after it was loaded for this many seconds.
         # None = disable
-        self.played_seconds = inits.get('played_seconds')
+        self.played_seconds = self.setting(tk.IntVar, 'played_seconds', inits)
 
         # TODO: much of this should be stored in a setlist object, not settings
-        self.city = tk.StringVar()
-        self.city.set(inits.get('city'))
-
-        self.venue = tk.StringVar()
-        self.venue.set(inits.get('venue'))
-
-        # people / orgs to thank
-        self.thanks = tk.StringVar()
-        self.thanks.set(inits.get('thanks'))
+        self.city = self.setting(tk.StringVar, 'city', inits)
+        self.venue = self.setting(tk.StringVar, 'venue', inits)
+        self.thanks = self.setting(tk.StringVar, 'thanks', inits)
         
+        # TODO: make these work with self.setting constructor
         # dict of {musician: blurb}
         self.band = inits.get('band')
-        # construct muso from the dict "musician (blurb)" or something
-        self.muso = tk.StringVar()
-        self.muso.set(inits.get('muso'))
 
         # list of guests, pointer for selected guest
         self.guest_list = inits.get('guest_list')
-
-        self.guest = tk.StringVar()
-        self.guest.set(inits.get('guest'))
 
         # define colors in the setlist.
         # TODO: get these into custom settings pattern
@@ -588,7 +521,6 @@ class KeySettings(SettingsBaseClass):
 
         # use lists for multiple assignment
         self.scroll_toggle = ["<space>"]
-
 
 
 class TagSettings(SettingsBaseClass):
@@ -649,12 +581,17 @@ class WorkspaceSettings(SettingsBaseClass):
         # autosave_gig_id keeps workspace autosaves distinct from the last
         # loaded gig. all assets are duplicated for autosaves save so internal
         # changes don't mess up the gig assets.
-        'autosave_gig_id': None,
+        'workspace_gig_id': None,
         # commit_gig_id is where workspace overwrites when you "Save Gig".
         # all assets are duplicated for this save, and then any orphaned
         # assets are garbage collected.
         'commit_gig_id': None
         }
+
+        inits = merge(self.defaults, self.custom)
+
+        self.workspace_gig_id = self.setting(tk.IntVar, 'workspace_gig_id', inits)
+        self.commit_gig_id = self.setting(tk.IntVar, 'commit_gig_id', inits)
 
 class LibrarySettings(SettingsBaseClass):
     """Class for library settings, especially read/write behaviors."""
@@ -674,16 +611,6 @@ class LibrarySettings(SettingsBaseClass):
         # will overwrite the song / setlist at that ID. when disabled, a
         # new ID will be generated, potentially creating duplicates, but
         # ensuring that references are preserved across all setlists.
-        self.overwrite_songs = tk.BooleanVar()
-        self.overwrite_songs.set(inits.get('overwrite_songs'))
-
-        self.overwrite_setlists = tk.BooleanVar()
-        self.overwrite_setlists.set(inits.get('overwrite_setlists'))
-
-        # when enabled, when selecting a song in lib manager, it will be cued.
-        self.cue_selection = tk.BooleanVar()
-        self.cue_selection.set(inits.get('cue_selection'))
-        self.cue_selection.trace(
-            "w", lambda *args: self.update("cue_selection", self.cue_selection.get())
-            )
-
+        self.overwrite_songs = self.setting(tk.BooleanVar, "overwrite_songs", inits)
+        self.overwrite_setlists = self.setting(tk.BooleanVar, "overwrite_setlists", inits)
+        self.cue_selection = self.setting(tk.BooleanVar, "cue_selection", inits)

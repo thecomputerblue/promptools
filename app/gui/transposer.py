@@ -55,7 +55,7 @@ class FastTransposer(tk.Frame):
 
         # key entry variable
         self.key = self.app.settings.transposer.key
-        self.key_trace = self.key.trace("w", lambda *args: self.push_updates()) # lambda *args: self.update_key()
+        self.key_trace = self.key.trace("w", lambda *args: self.push_updates())
 
         # key entry label
         self.label = tk.Label(self, text="Custom starting key",)
@@ -106,7 +106,6 @@ class FastTransposer(tk.Frame):
     def refresh(self):
         """On any button click or edit to key, scan settings and refresh song views as needed."""
 
-        # TODO: this is refreshing everything, later make it just refresh targeted frames.
         self.app.deck.push('cued')
 
     def update_key(self):

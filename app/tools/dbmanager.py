@@ -2,6 +2,21 @@
 import sqlite3
 import logging
 
+# helpers
+
+def lowest_unused(l):
+    """Return lowest int that doesn't appear in a list."""
+
+    l.sort()
+    last = len(l)-1
+
+    for i, cur in enumerate(l):
+        if i == last:
+            return l[-1]+1
+        elif new := cur+1 != l[i+1]:
+            return new
+
+
 class DatabaseManager:
     """Handles all database interactions."""
 
@@ -117,86 +132,50 @@ class DatabaseManager:
 
         con.close()
 
-    def get_next_available_id(self, cursor, key, table):
-        """Return the next available id for a target parameter."""
+    def choose_id(self, cursor, key, table):
+        """Choose the an unused id for a given db key.
+        Currently finds lowest available."""
 
-        query = f"SELECT MAX({key}) FROM {table}"
-        highest_id = cursor.execute(query).fetchall()[0][0]
-        logging.info(f'highest_id is: {highest_id}')
-        new_id = highest_id + 1 if highest_id != None else 0
-        logging.info(f'new {key} generated: {new_id}')
-
-        return new_id
-
-    def get_lowest_available_id(self, cursor, key, table):
-        """Find the first unused id in a key."""
+        logging.info(f'choose_id in DatabaseManager')
 
         query = f"SELECT {key} FROM {table}"
         fetched =  cursor.execute(query).fetchall()
 
-        if not fetched:
-            return
+        return lowest_unused([tup[0] for tup in fetched]) if fetched else None
 
-        # extract keys
-        keys = []
-        for tup in fetched:
-            keys.append(tup[0])
-
-        # TODO: perhaps keys are inherently sorted and this is unnecessary?
-        # TODO: enumerate?
-        keys = keys.sort()
-        count = len(keys)
-
-        # initially assign to highest + 1, then try to find lower
-        new_id = keys[-1] + 1
-        for i in range(count-1):
-            new_id = keys[i] + 1 if (keys[i] + 1) != keys[i+1] else new_id
-
-        logging.info(f'returning new song_id {new_id}')
-
-        return new_id
-
-    def add_song_to_db(self, song):
-        """Add a song to the db"""
-
-        # TODO: keep the song_id with the song obj 
-        # so you have the option to dump back into the same cells.
-
-        # connect
-        con = sqlite3.connect(self.db)
-        cur = con.cursor()
+    def dump_song(self, song):
+        """Dump a song to the db."""
 
         logging.info(f'began adding {song.name} to {self.db}')
 
-        # generate song_id by increasing the largest song_id by 1
-        with con:
+        with sqlite3.connect(self.db) as con:
+            cur = con.cursor()
 
-            # song_id = self.get_next_available_id(cur, 'song_id', 'song_meta')
-            song.song_id = self.song_id_strategies(song, cur)
-            song.library_id = self.library_id_strategies(song, cur)
+            self.assign_song_ids(song, cur)
+            self.dump_song_script(song, cur)
+            self.dump_song_meta(song, cur)
 
-            # dump all song text data
-            for tup in song.tk_tuples:
-                self.dump_tk_tuple_to_db(cur, tup, song.song_id)
+    def assign_song_ids(self, song, cur):
+        """Assigns id tags to the song if they don't exist."""
 
-            # dump all song metadata
-            self.dump_song_meta_to_db(cur, song)
+        song.song_id = self.song_id_strategies(song, cur)
+        song.library_id = self.library_id_strategies(song, cur)
 
-        con.close()
+    def dump_song_script(self, song, cur):
+        """Dump song script to db."""
 
-        # return song_id so setlist / pool can track where the song went
-        return song.song_id
+        for tup in song.tk_tuples:
+            self.dump_script_tuple(cur, tup, song.song_id)
 
-    def dump_tk_tuple_to_db(self, cur, tup, song_id):
-        """Add a tk_tuple to the db."""
+    def dump_script_tuple(self, cur, tup, song_id):
+        """Dump the song script (a list of tuples) to the db."""
 
         pos, tag, word = tup
         data = (song_id, pos, tag, word)
         query = "INSERT INTO song_data (song_id, pos, flag, content) VALUES (?, ?, ?, ?)"
         cur.execute(query, data)
-        # logging.info(f'inserted {data} into song_data')
 
-    def dump_song_meta_to_db(self, cur, song):
+    def dump_song_meta(self, song, cur):
         """Dump the song metadata to the db."""
 
         query = """
@@ -227,42 +206,45 @@ class DatabaseManager:
             )
             )
 
-    def dump_setlist_to_db(self, setlist):
-        """Dump a setlist into the database."""
+    def dump_setlist(self, setlist):
+        """Dump a setlist and all its songs into the database."""
 
-        # track song_ids as you dump them
-        # so when you dump the setlist it contains references
-        song_ids = []
+        self.dump_setlist_songs(setlist)
 
-        # first dump all songs into the db, retrieve their ids
-        for song in setlist.songs:
-            song_ids.append(self.add_song_to_db(song))
+        with sqlite3.connect(self.db) as con:
+            cur = con.cursor()
 
-        # now connect to the db
-        con = sqlite3.connect(self.db)
-        cur = con.cursor()
-
-        with con:
             # choose appropriate setlist_id
-            setlist_id = self.setlist_id_strategies(setlist, cur)
+            setlist.setlist_id = self.choose_setlist_id(setlist, cur)
 
-            # add setlist song pointers to setlist_songs
             # TODO: store previous, current, next_up, skip, strike, etc.
+            song_ids = self.get_song_ids(setlist)
+            self.dump_song_ids_to_setlist_songs(song_ids, setlist.setlist_id, cur)
+            self.dump_setlist_metadata(setlist, cur)
 
-            for i, song_id in enumerate(song_ids):
-                query = "INSERT INTO setlist_songs (setlist_id, pos, song_id) VALUES (?, ?, ?)"
-                cur.execute(query, (setlist_id, i, song_id))
+    def get_song_ids(self, setlist):
+        """Get song ids."""
+        song_ids = []
+        for song in setlist.songs:
+            song_ids.append(song.song_id)
+        return song_ids
 
-            # add setlist metadata to setlist_meta
-            # TODO: generate gig_meta_id and save gig_metadata
-            query = "INSERT INTO setlist_meta (setlist_id, name) VALUES (?, ?)"
-            cur.execute(query, (setlist_id, setlist.name))
+    def dump_setlist_songs(self, setlist):
+        for song in setlist.songs:
+            self.dump_song(song)
 
-        con.close()
+    def dump_song_ids_to_setlist_songs(self, song_ids, setlist_id, cursor):
+        for i, song_id in enumerate(song_ids):
+            query = "INSERT INTO setlist_songs (setlist_id, pos, song_id) VALUES (?, ?, ?)"
+            cursor.execute(query, (setlist_id, i, song_id))
 
-    # TODO: dump pool strategy
+    def dump_setlist_metadata(self, setlist, cur):
+        sid = setlist.setlist_id
+        name = setlist.name
+        query = "INSERT INTO setlist_meta (setlist_id, name) VALUES (?, ?)"
+        cur.execute(query, (sid, name))
 
-    def setlist_id_strategies(self, setlist, cursor):
+    def choose_setlist_id(self, setlist, cur):
         """Return an appropriate setlist_id for storing to database
         based on overwrite settings, whether setlist exists in db already,
         etc."""
@@ -271,9 +253,9 @@ class DatabaseManager:
             if setlist.setlist_id != None:
                 return setlist.setlist_id
 
-        return self.get_next_available_id(cursor, 'setlist_id', 'setlist_meta')
+        return self.choose_id(cur, 'setlist_id', 'setlist_meta')
 
-    def song_id_strategies(self, song, cursor):
+    def song_id_strategies(self, song, cur):
         """Return an appropriate song_id for storing to database
         based on overwrite settings, whether song exists in db already, etc."""
 
@@ -281,7 +263,7 @@ class DatabaseManager:
             if song.song_id != None:
                 return song.song_id
 
-        return self.get_next_available_id(cursor, 'song_id', 'song_meta')
+        return self.choose_id(cur, 'song_id', 'song_meta')
 
     def library_id_strategies(self, song, cursor):
         """Return an appropriate library_id for storing to database
@@ -298,11 +280,8 @@ class DatabaseManager:
         logging.warning('failed to assign a library_id!')
 
     def get_all_song_meta_from_db(self, option='all'):
-        """Return all song metadata from db. Option filters to either
-        library versions, alternate versions, or all by default."""
-
-        con = sqlite3.connect(self.db)
-        cur = con.cursor()
+        """Return ALL song metadata from db by default. Option to filter to
+        library versions ('library'), or alternate versions ('alternates')."""
 
         options = {
         'library': "SELECT * FROM song_meta WHERE song_id == library_id",
@@ -310,25 +289,18 @@ class DatabaseManager:
         'all': "SELECT * FROM song_meta",
         }
 
-        with con:
-
-            query = options.get(option)
-            cur.execute(query)
+        with sqlite3.connect(self.db) as con:
+            cur = con.cursor()
+            cur.execute(options.get(option))
             data = cur.fetchall()
-
-        con.close()
 
         return data
 
-    def get_song_dict_from_db(self, song_id):
+    def make_song_dict_from_db(self, song_id):
         """Construct and return a dictionary for the song from db"""
 
-        # TODO: metadata becomes a misnomer the way this is carried out.
-
-        con = sqlite3.connect(self.db)
-        cur = con.cursor()
-
-        with con:
+        with sqlite3.connect(self.db) as con:
+            cur = con.cursor()
 
             # extract metadata to dict
             # TODO: create a generic song_dictionary template in tools/song
@@ -356,7 +328,4 @@ class DatabaseManager:
             song_data['tk_tuples'] = cur.fetchall()
             song_data['song_id'] = song_id
 
-        con.close()
-
         return song_data
-

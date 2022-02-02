@@ -135,3 +135,5 @@ promptools.sublime-project
 app/data/appdata.db
 *.DS_Store
 devnotes
+app/data/settings.json
+app/data/appdata.db
