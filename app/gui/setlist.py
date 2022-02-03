@@ -19,13 +19,18 @@ class SetlistFrame(tk.Frame):
         self.parent = parent
         self.app = parent.app
         self.suite = parent.suite
-        self.setlist = self
+        # TODO: confusing
+        self.setlist = self 
 
         # manages the song list & its representation in the listbox
-        self.data = self.app.data.setlist
-        self.manager = SetlistManager(self)
+        self.data = self.app.data.setlists
 
-        # expose songlist to the app more shallowly
+        # live setlist
+        self.live = self.data.live
+
+        # self.manager = SetlistManager(self)
+
+        # expose song pool
         self.songs = self.data.songs
 
         # widgets
@@ -65,15 +70,16 @@ class SetlistFrame(tk.Frame):
         """Refresh the markers when the live song changes."""
         logging.info("refresh_markers_deck in setlist")
         deck = self.app.deck
+        d = self.data
 
         # update marks
         if deck.live in self.songs:
             logging.info("refresh_markers_deck marked current song in setlist")
-            self.manager.current = deck.live
+            d.current = deck.live
 
         if deck.previous in self.songs:
             logging.info("refresh_markers_deck marked previous song in setlist")
-            self.manager.previous = deck.previous
+            d.previous = deck.previous
 
         # refresh
         self.listbox_update()
@@ -185,10 +191,9 @@ class SetlistFrame(tk.Frame):
             return
 
         l = self.listbox
-        m = self.manager
         d = self.data
 
-        skipped = m.skipped
+        skipped = d.skipped
         song = d.songs[sel]
 
         if song not in skipped:
@@ -211,9 +216,7 @@ class SetlistFrame(tk.Frame):
         """Push info to infobox, and song obj to preview frame."""
 
         app = self.app
-        m = self.manager
         d = self.data
-
         i = current[0]
 
         # if songs in setlist, get the song at index
@@ -224,22 +227,27 @@ class SetlistFrame(tk.Frame):
     def listbox_update(self):
         """Update listbox colors"""
 
+        # TODO: huge function, refactor
         self.update_marks()
 
         l = self.listbox
-        m = self.manager
         d = self.data
+        live = d.live
 
-        names = m.names
-        numbered_names = m.numbered
-        songs = d.songs
+        if not live.songs:
+            return
 
-        skipped = m.skipped
-        played = m.played
+        # live setlist specific
+        names = live.names
+        numbered_names = live.numbered
+        songs = live.songs
 
-        nextup = m.nextup
-        previous = m.previous
-        current = m.current
+        # markers
+        skipped = d.skipped
+        played = d.played
+        nextup = d.nextup
+        previous = d.previous
+        current = d.current
 
         sel = l.curselection() if l.curselection() else None
 
@@ -301,134 +309,68 @@ class SetlistFrame(tk.Frame):
         TODO: Eventually integrate the song chain."""
 
         l = self.listbox
-        m = self.manager
         d = self.data
         colors = self.app.settings.setlist.colors
 
         # clear old
         # TODO: check for identity equivalence on song objs instead
         for i, song in enumerate(d.songs):
-            if m.previous and song.name == m.previous.name:
+            if d.previous and song.name == d.previous.name:
                 l.itemconfig(i, bg=colors.default)
                 break
 
         # apply new previous
-        m.previous = d.songs[pos]
+        d.previous = d.songs[pos]
 
     def update_marks(self):
         """Mark current and next song."""
 
-        m = self.manager
-        d = self.data
+        d = self.data 
+        d.current = None
 
-        # clear manager current var
-        m.current = None
+        live_song = self.app.deck.live
 
-        live = self.app.deck.live
-        if not live:
+        if not live_song:
             return
 
-        count = len(d.songs)
-
-        # search for current in list
-        for i in range(count):
-            # logging.info(f"current: {d.songs[i].name}, live: {live.name}")
-            if d.songs[i].name == live.name:
-                # logging.info(f"current: {d.songs[i].name} MATCHES live: {live.name}")
-                m.current = d.songs[i]
-                self.mark_nextup(target=i + 1, count=count)
+        for i, song in enumerate(d.songs):
+            if song.name == live_song.name:
+                d.current = song
+                self.mark_nextup(target=i+1, count=len(d.songs))
                 break
-
-        # refresh view
-        # self.listbox_update()
 
     def mark_nextup(self, target, count):
         """Manage the previous and next pointers."""
 
         l = self.listbox
-        m = self.manager
         d = self.data
 
         if target >= count:
-            m.nextup = None
+            d.nextup = None
             return
 
-        skipped = m.skipped
+        skipped = d.skipped
         songs = d.songs
 
         # starting with the target, find the first not-skipped song.
         for i in range(target, count):
             if songs[i].name not in skipped:
-                m.nextup = songs[i]
+                d.nextup = songs[i]
                 return
 
         # if everything was skipped, no nextup
-        m.nextup = None
+        d.nextup = None
 
     def add_song(self, song):
         """Add song to setlist."""
         d = self.data
 
         d.songs.append(song)
+        d.live.songs.append(song)
+
         # TODO: I suspect there is some redundancy to work out here...
         self.update_marks()
         self.listbox_update()
-
-
-# TODO: either move the bulk of setlist functions here or move these out...
-class SetlistManager:
-    """Class for managing setlists."""
-
-    def __init__(self, parent):
-
-        # context
-        self.app = parent.app
-        self.parent = parent
-        self.data = parent.data
-
-        # vars for managing playback sequence
-        # store song.name of skipped
-        self.skipped = []
-
-        # store song.name of songs that were loaded for a certain amount of time,
-        # or scrolled to at least 75%
-        self.played = []
-
-        self.nextup = None
-        self.current = None
-        self.previous = None
-
-    @property
-    def numbered_names(self):
-        """Return names formatted for the listbox with song number."""
-
-        songs = self.data.songs
-
-        return [
-            " (" + str(i + 1) + ") " + songs[i].meta.name for i, _ in enumerate(songs)
-        ]
-
-    @property
-    def numbered(self, style=lambda i: " (" + str(i + 1) + ") "):
-        """Return songs with numbers."""
-
-        songs = self.data.songs
-
-        if not songs:
-            return
-
-        return [style(i) + songs[i].name for i, _ in enumerate(songs)]
-
-    @property
-    def names(self):
-        """Return names of songs."""
-        songs = self.data.songs
-        return [song.name for song in songs]
-
-    def add_song(self, song):
-        """Add song to setlist."""
-        self.data.songs.append(song)
-        self.parent.listbox_update()
 
 
 class SetlistHeader(tk.Frame):

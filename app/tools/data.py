@@ -17,10 +17,10 @@ class AppData():
 
         # init workspace collections
         self.workspace = WorkspaceData(self)
-        self.setlist = self.workspace.get_active_setlist()
+        self.setlists = self.workspace.setlists
         self.pool = self.workspace.pool
 
-        self.collections = (self.setlist, self.pool)
+        self.collections = (self.setlists, self.pool)
 
     def dump_workspace_to_db(self):
         """Dump the workspace to db at program exit."""
@@ -72,28 +72,63 @@ class SongCollection:
 
         return [song.name for song in self.songs] if self.songs else None
 
-    @property
-    def numbered(self, style=lambda i: " (" + str(i) + ") "):
-        """Return songs with numbers."""
-        
-        # TODO: move the (#) formatting to settings so you can change it everywhere.
-        return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else None
-        # TODO: old, delete
-        # return [style(i) + self.songs[i].name for i in range(len(self.songs))] if self.songs else None
 
 class SetlistCollection(SongCollection):
-    """Generic class for holding collection of songs, as is setlist, pool."""
+    """Holds a song pool, and a list of Setlist versions that reference the song pool."""
 
-    def __init__(self, name=None):
-        SongCollection.__init__(name)
+    def __init__(self):
+        SongCollection.__init__(self)
         # TODO: on init, attempt to load previous.
 
-        self.pointers = SetlistPointers(self)
+        self.setlists = [Setlist(self)]
+        self.live = self.setlists[0]
 
-        # library pointers. TODO: maybe rename to collection_id
-        self.setlist_id = None
-        self.library_id = None
-   
+        # markers determine visual style and play navigation. they are shared
+        # between versions, so if you switch setlists mid-show you don't lose
+        # track of what has been played
+        self.skipped = []
+        self.played = []
+        self.nextup = None
+        self.current = None 
+        self.previous = None
+
+    def new_setlist(self, name=None):
+        """Add a new setlist to the setlists."""
+        self.setlists.append(Setlist(self, name))
+
+    def add_song(self, song):
+        if song not in self.songs:
+            self.songs.append(song)
+            self.live.songs.append(song)
+
+
+class Setlist:
+    """Class for a setlist."""
+
+    def __init__(self, parent, *args, **kwargs):
+        # pool contains all available songs
+
+        self.title = kwargs.get('title')
+        
+        self.pool = parent.songs
+        # songs contains songs as they are ordered in this setlist
+        self.songs = []
+
+        # db pointers
+        self.setlist_id = None 
+        self.library_id = None 
+
+    @property
+    def names(self):
+        """Return names of all songs in the collection."""
+        return [song.name for song in self.songs] if self.songs else None
+
+    @property
+    def numbered(self, style=lambda i: " (" + str(i+1) + ") "):
+        """Return songs with numbers."""
+        return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else None
+
+
 class PoolCollection(SongCollection):
     """Song collection with properties specific to pool."""
 
@@ -164,22 +199,8 @@ class WorkspaceData:
         self.app = app
 
         # hold all workspace setlists
-        self.setlists = []
-        # index of live setlist
-        self.live_setlist = 0
-
+        self.setlists = SetlistCollection()
         self.pool = SongCollection(name='pool')
-
-        # TODO: import last loaded setlists and pool from db.
-        # for now just put a song collection in.
-        self.setlists.append(SongCollection(name='setlist'))
-
-    def get_active_setlist(self):
-        """Return the active setlist."""
-
-        return self.setlists[self.live_setlist]
-
-
 
 
 """

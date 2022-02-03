@@ -5,7 +5,7 @@ import logging
 # helpers
 
 
-def lowest_unused(l):
+def lowest_unused(l: list) -> int:
     """Return lowest int that doesn't appear in a list."""
 
     l.sort()
@@ -156,7 +156,7 @@ class DatabaseManager:
 
     def choose_id(self, cursor, key, table):
         """Choose the an unused id for a given db key.
-        Currently finds lowest available. If db is empty, starts at 0."""
+        Currently finds lowest available. If table is empty, starts at 0."""
 
         logging.info(f"choose_id in DatabaseManager")
 
@@ -246,28 +246,37 @@ class DatabaseManager:
             # TODO: store previous, current, next_up, skip, strike, etc.
 
     def get_song_ids(self, setlist):
-        """Get song ids."""
+        """Get all song ids from setlist."""
+
         song_ids = []
+
         for song in setlist.songs:
             song_ids.append(song.song_id)
+
         return song_ids
 
     def dump_setlist_songs(self, setlist):
+        """Dump all songs from setlist."""
+
         for song in setlist.songs:
             self.dump_song(song)
 
-    def dump_song_ids_to_setlist_songs(self, song_ids, setlist_id, cursor):
+    def dump_song_ids_to_setlist_songs(self, song_ids, setlist_id, cur):
+        """Dump song_ids and pos info to setlist_songs. This allows setlists
+        to be restored with correct references in the correct order."""
+
         for i, song_id in enumerate(song_ids):
             query = (
                 "INSERT INTO setlist_songs (setlist_id, pos, song_id) VALUES (?, ?, ?)"
             )
-            cursor.execute(query, (setlist_id, i, song_id))
+            cur.execute(query, (setlist_id, i, song_id))
 
     def dump_setlist_metadata(self, setlist, cur):
-        sid = setlist.setlist_id
-        name = setlist.name
+        """Dump setlist metadata to table."""
+
+        # TODO: additional metadata
         query = "INSERT INTO setlist_meta (setlist_id, name) VALUES (?, ?)"
-        cur.execute(query, (sid, name))
+        cur.execute(query, (setlist.setlist_id, setlist.title))
 
     def choose_setlist_id(self, setlist, cur):
         """Return an appropriate setlist_id for storing to database
@@ -295,6 +304,7 @@ class DatabaseManager:
         based on extant song_id."""
 
         logging.info(f'library_id_stategies \n song_id: {song.song_id}')
+
         if song.library_id is not None:
             logging.info("song already had a library_id, so it was returned")
             return song.library_id
@@ -302,9 +312,6 @@ class DatabaseManager:
         if song.song_id is not None:
             logging.info("song had no library_id, so song_id was assigned")
             return song.song_id
-
-        # TODO: an empty library will fail to assign an id to the first song added
-        # with this method.
 
         logging.warning("failed to assign a library_id!")
 
@@ -344,19 +351,29 @@ class DatabaseManager:
                 "default_key": None,
             }
 
-            for k, v in song_data.items():
-                query = f'SELECT {k}  FROM song_meta WHERE song_id="{song_id}"'
-                cur.execute(query)
-                v = cur.fetchone()
-                song_data[k] = v[0] if v != None else v
-                # logging.info(f'retrieved {k}:{v} from {song_id}')
-
-            # get the song script
-            query = (
-                f'SELECT pos, flag, content FROM song_data WHERE song_id="{song_id}"'
-            )
-            cur.execute(query)
-            song_data["tk_tuples"] = cur.fetchall()
+            # TODO: sloppy
+            self.get_song_metadata(song_data, song_id, cur)
+            song_data["tk_tuples"] = self.get_script(song_id, cur)
             song_data["song_id"] = song_id
 
         return song_data
+
+    def get_song_metadata(self, song_data, song_id, cur):
+        """Get song metadata from db and add to song_data dict."""
+
+        for k, v in song_data.items():
+            query = f'SELECT {k}  FROM song_meta WHERE song_id="{song_id}"'
+            cur.execute(query)
+            v = cur.fetchone()
+            song_data[k] = v[0] if v is not None else v
+            # logging.info(f'retrieved {k}:{v} from {song_id}')
+
+    def get_script(self, song_id, cur):
+        """Return song script as list of tuples."""
+
+        query = (
+            f'SELECT pos, flag, content FROM song_data WHERE song_id="{song_id}"'
+        )
+        cur.execute(query)
+
+        return cur.fetchall()

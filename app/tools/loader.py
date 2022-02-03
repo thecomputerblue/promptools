@@ -40,11 +40,11 @@ class LoadTool():
         return inner
 
 
-    # TODO: this cant yet handle instances where you
-    # don't want to reset yview
     def with_tk_text(self, widget, wrapped, reset=None):
         """Snapshot a text widget, perform an action, restore state.
         Pass wrapped functiona as lambda with arguments."""
+
+        # TODO: change to decorator fn
 
         # reset view if cue and live mismatch
         if reset == None:
@@ -69,14 +69,6 @@ class LoadTool():
         """Get edit state and yview from text widget."""
 
         return widget.cget("state"), widget.yview()
-
-    def capture_frame_state_and_yview(self, frame):
-        """Return edit state and yview."""
-
-        state = frame.text.cget("state")
-        yview = frame.scrollbar.get()
-
-        return state, yview
 
     def update_song_mods(self, song: Song, key: str):
         """Pass current transpose / formatting settings
@@ -108,6 +100,8 @@ class LoadTool():
         else:
             self.show_plain(self, song)
 
+        # size tag across entire doc makes it scalable
+        # TODO: check for extant size tag and don't apply if it already exists
         self.add_size_tag(frame.text)
 
     def add_size_tag(self, text):

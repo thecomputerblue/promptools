@@ -198,29 +198,29 @@ class TalentMonitor(tk.Frame):
         # song = factory.update_song(old=song, tk_text_dump=dump)
     
     def mark_played(self):
-        """Mark song as played in setlist if it was loaded for enough time or yview is substantially below the top."""
+        """Mark song as played in setlist if it was loaded for
+        enough time or yview is substantially below the top."""
 
-        # TODO: might make more sense in the setlist pane
         song = self._song
-
-        settings = self.app.settings.setlist
-        m = self.app.setlist.manager       
-
-        elapsed = self.elapsed_time()
-        seconds = settings.played_seconds.get()
-        yview_thresh = settings.played_yview.get()
-        yview = self.app.monitor.text.yview()[0]
+        setlist = self.app.data.setlists.live
 
         # tests for marking as played. if any return True, mark as played
-        tests = (
-        lambda:  elapsed > seconds,
-        lambda: yview > yview_thresh
-        )
+        if song and song.name in setlist.names:
 
-        if song and song.name in m.names:
+            settings = self.app.settings.setlist
+            elapsed = self.elapsed_time()
+            seconds = settings.played_seconds.get()
+            yview_thresh = settings.played_yview.get()
+            yview = self.app.monitor.text.yview()[0]
+
+            tests = (
+            lambda:  elapsed > seconds,
+            lambda: yview > yview_thresh
+            )
+
             for test in tests:
                 if test():
-                    m.played.append(song.name)
+                    setlist.played.append(song.name)
                     break
 
     def elapsed_time(self):

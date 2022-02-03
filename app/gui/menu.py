@@ -328,7 +328,7 @@ class MenuBar(tk.Frame):
 
     def dump_setlist(self):
         """Temporary test function, dumps setlist collection to db."""
-        self.app.tools.dbmanager.dump_setlist(self.app.data.setlist)
+        self.app.tools.dbmanager.dump_setlist(self.app.data.setlists.live)
 
     def reload_setlist(self):
         """Temporary test function, recovers setlist colelction from db, overwriting current."""

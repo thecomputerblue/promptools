@@ -225,11 +225,11 @@ class TransposerSettings(SettingsBaseClass):
 
         # set defaults here
         self.defaults = {
-        'enabled': False,
-        'nashville': False,
-        'apply_to_cued': True,
-        'apply_to_current': False,
-        'key': '',
+            'enabled': False,
+            'nashville': False,
+            'apply_to_cued': True,
+            'apply_to_current': False,
+            'key': '',
         }
 
         inits = merge(self.defaults, self.custom)
