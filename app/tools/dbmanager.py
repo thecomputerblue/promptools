@@ -39,8 +39,7 @@ class DatabaseManager:
 
         self.db = "./data/appdata.db"
         self.init_db(self.db)
-
-        self.data = None
+        self.settings = self.app.settings.library
 
     def init_db(self, db):
         """If the db path doesn't exist, create a db with the correct tables."""
@@ -171,6 +170,24 @@ class DatabaseManager:
 
         return lowest_unused([tup[0] for tup in fetched]) if fetched else 0
 
+    def dump_gig(self, gig):
+        """Dump the workspace ('gig') to db."""
+
+        logging.info('dump_gig in DatabaseManager')
+
+        # TODO:
+        # get lowest available gig_id, assign to settings.workspace.workspace_gig_id
+        # dump pool songs to db, tracking their song_ids
+        # dump pool song_ids list to pool meta with associated workspace_gig_id
+        # dump all songs in the setlists
+        # dump all gig setlists, tracking their setlist_ids in the order they are in memory
+            # before you dump each setlist, dump its songs, tracking their ids
+            # dump the setlist with song_ids to setlist_songs
+        # dump  the ordered setlist ids to gig_setlists table
+
+    def get_gig(self, gig_id):
+        """Retrieve workspace ('gig') from db."""
+
     def dump_song(self, song):
         """Dump a song to the db."""
 
@@ -285,7 +302,7 @@ class DatabaseManager:
         based on overwrite settings, whether setlist exists in db already,
         etc."""
 
-        if self.app.settings.library.overwrite_setlists.get():
+        if self.settings.overwrite_setlists.get():
             if setlist.setlist_id is not None:
                 return setlist.setlist_id
 
@@ -295,7 +312,7 @@ class DatabaseManager:
         """Return an appropriate song_id for storing to database
         based on overwrite settings, whether song exists in db already, etc."""
 
-        if self.app.settings.library.overwrite_songs.get():
+        if self.settings.overwrite_songs.get():
             if song.song_id is not None:
                 return song.song_id
 

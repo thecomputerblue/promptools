@@ -9,15 +9,12 @@ import logging
 # helpers
 def strike(text):
     """Strikethru text."""
-
-    # TODO: fix janky strikethru appearance...
-    result = ""
-    for _, c in enumerate(text):
-        result += c + "\u0336"
-    return result
+    # TODO: looks weird
+    return ''.join([u'\u0336{}'.format(c) for c in text])
 
 def number(n: int, name: str) -> str:
     """Return item formatted for list."""
+    # TODO: styles
     return '(' + str(n) + ') ' + name
 
 class SetlistFrame(tk.Frame):
@@ -33,17 +30,18 @@ class SetlistFrame(tk.Frame):
         self.app = parent.app
         self.suite = parent.suite
         # TODO: confusing
-        self.setlist = self 
+        self.setlist = self
+        self.settings = self.app.settings.setlist
 
         # manages the song list & its representation in the listbox
         self.data = self.app.data.setlists
         self.pool = self.data.songs
-        # TODO: move markers in the setlists module
-        self.markers = self.app.data.setlists.markers
+        self.markers = self.data.markers
 
         # live setlist & songs
-        self.live = self.data.live
+        self.live = self.app.data.setlists.live
         self.songs = self.live.songs
+        self.deck = self.app.deck
 
         # widgets
         self.header = SetlistHeader(self)
@@ -60,7 +58,7 @@ class SetlistFrame(tk.Frame):
         self.locked = tk.BooleanVar()  # TODO: move to settings
 
         self.controls = SetlistControlRow(self)
-        self.controls.pack(anchor="s", side="left", fill="both", expand=False)
+        self.controls.pack(anchor="s", side="left", fill="both", expand=True)
 
         # add the lock trace and set to locked TODO: move this stuff into control row maybe
         self.locked.trace("w", lambda *args: self.toggle_controls())
@@ -75,28 +73,50 @@ class SetlistFrame(tk.Frame):
         # TODO: best method? weakref?
 
         # deck callback
-        self.app.deck.add_callback("live", self.listbox_update)
+        self.deck.add_callback("live", self.listbox_update)
         self.data.add_callback(self.listbox_update)
-
 
         # make strategies for updating listbox
         self.make_listbox_strategies()
 
+    def do_sel(self, sel):
+        """Clear and apply new target listbox selection."""
+
+        l = self.listbox
+        l.selection_clear(0, "end")
+        l.selection_set(sel) if sel < l.size() else l.selection_set("end")
+        l.activate(sel)
+
     def preserve_sel(method):
         """Capture then restore listbox selection after executing inner method"""
+
         def inner(self, *args, **kwargs):
 
-            l = self.listbox
-            sel = l.curselection() if l.curselection() else None
-
-            method(self, *args, **kwargs)
-
-            if sel:
-                l.selection_clear(0, "end")
-                l.selection_set(sel)
-                l.activate(sel)
+            sel = self.get_sel()
+            method(self, sel, *args, **kwargs)
+            self.do_sel(sel) if sel else None
 
         return inner
+
+    def pass_sel(method):
+        """Capture listbox selection and do decorated function only
+        if there is a selection."""
+
+        def inner(self, *args, **kwargs):
+
+            sel = self.get_sel()
+            if sel is None:
+                return
+
+            method(self, sel, *args, **kwargs)
+
+        return inner
+
+    def get_sel(self):
+        """Get selection index."""
+
+        sel = self.listbox.curselection()
+        return sel[0] if sel else None
 
     def toggle_controls(self, event=None):
         """Update state of setlist controls based on toggle."""
@@ -127,49 +147,24 @@ class SetlistFrame(tk.Frame):
 
         l = self.listbox
         sel = l.nearest(event.y)
-        self.lb_sel(sel)
+        self.do_sel(sel)
         self.menu.do_popup(event, sel)
 
-    def on_remove(self):
+    @preserve_sel
+    def on_remove(self, sel, *args, **kwargs):
         """Remove selected song."""
-
-        sel = self.get_selection()
-
-        if sel is None:
-            return
 
         self.live.remove_song(i=sel)
         self.listbox_update()
-        self.lb_sel(sel)
 
-    def get_selection(self):
-        """Get selected index."""
-
-        l = self.listbox
-        sel = l.curselection()
-
-        return sel[0] if sel else None
-
-    def move(self, target: str or int):
+    @pass_sel
+    def move(self, sel, target: str or int):
         """Move song within list."""
-
-        sel = self.get_selection()
-
-        if sel is None:
-            return
 
         dest = self.target_to_i(start_i=sel, target=target)
         self.data.move_song(self.live, sel, dest)
         self.listbox_update()
-        self.lb_sel(dest)
-
-    def lb_sel(self, sel):
-        """Clear and apply new target listbox selection."""
-
-        l = self.listbox
-        l.selection_clear(0, "end")
-        l.selection_set(sel) if sel < l.size() else l.selection_set("end")
-        l.activate(sel)
+        self.do_sel(dest)
 
     def target_to_i(self, start_i, target):
         """Convert a listbox target to an index."""
@@ -181,54 +176,40 @@ class SetlistFrame(tk.Frame):
         new = start_i + target
         return new if new >=0 else 0
 
-    def on_skip(self):
-        """What to do when song is skipped."""
+    @pass_sel
+    def on_toggle(self, sel, mark):
+        """Toggle a songs presence within a marker list."""
+        self.data.toggle_mark(mark, self.songs[sel])
+        self.listbox_update()
 
-        sel = self.get_selection()
-
-        if sel is None:
-            return
-
-        d = self.data
-        l = self.listbox
-        song = self.songs[sel]
-
-        d.skip_toggle(song)
-        l.itemconfig(sel, bg="grey") if song in d.skipped else l.itemconfig(sel, bg="light grey")
-
-    def on_listbox_select(self, event):
+    @pass_sel
+    def on_listbox_select(self, sel, event):
         """What to do when clicking an item in the setlist."""
+        self.push_song_to_preview(sel) if sel is not None else None
 
-        # TODO: this method will not work once search is implemented.
-        current = event.widget.curselection()
-        self.push_song_to_preview(current) if current else None
-
-    def push_song_to_preview(self, current):
+    def push_song_to_preview(self, i):
         """Push info to infobox, and song obj to preview frame."""
 
-        app = self.app
-        d = self.data
-        i = current[0]
-
-        # if songs in setlist, get the song at index
-        song = d.live.songs[i] if d.live.songs else None
-        app.deck.cued = song
-        app.meta.song_detail.refresh_callback = self.listbox_update
+        # TODO: this method will not work if you implement search
+        # TODO: think of a way to automate this refresh callback
+        self.deck.cued = self.songs[i] if self.songs else None
+        self.app.meta.song_detail.refresh_callback = self.listbox_update
 
     def make_listbox_strategies(self):
         """Define strategies for formatting listbox items."""
 
         # TODO: clunky...
-        colors = self.app.settings.setlist.colors
+        colors = self.settings.colors
+        l = self.listbox
 
         self.listbox_strategies = {
-            lambda song: self.song_is_skipped(song): lambda l, i: l.itemconfig(i, bg=colors.skipped),
-            lambda song: self.song_is_nextup(song): lambda l, i: l.itemconfig(i, bg=colors.nextup),
-            lambda song: self.song_is_previous(song): lambda l, i: l.itemconfig(i, bg=colors.previous),
-            lambda song: self.song_is_live(song): lambda l, i: l.itemconfig(i, bg=colors.live),
-            # lambda song: song.name in played: lambda i: l.itemconfig(i, overstrike=1)
+            lambda song: self.song_is_skipped(song): lambda i: l.itemconfig(i, bg=colors.skipped),
+            lambda song: self.song_is_nextup(song): lambda i: l.itemconfig(i, bg=colors.nextup),
+            lambda song: self.song_is_previous(song): lambda i: l.itemconfig(i, bg=colors.previous),
+            lambda song: self.song_is_live(song): lambda i: l.itemconfig(i, bg=colors.live),
         }
 
+    # TODO: hmmm
     def song_is_skipped(self, song):
         return song in self.markers.get('skipped') if self.markers.get('skipped') else False
 
@@ -242,47 +223,31 @@ class SetlistFrame(tk.Frame):
         return song is self.markers.get('previous')
 
     @preserve_sel
-    def listbox_update(self):
+    def listbox_update(self, sel=None):
         """Update listbox contents and formatting."""
 
         self.listbox.delete(0, "end")
-        # self.update_marks()
-
-        live = self.data.live
-        if not live.songs:
+        if not self.live.songs:
             return
 
-        for i, name in enumerate(live.names):
-            name = strike(name) if name in self.markers.get('played') else name
+        for i, name in enumerate(self.live.names):
+            name = strike(name) if self.songs[i] in self.markers.get('played') else name
             name = number(i+1, name)
             self.listbox.insert("end", name)
-            self.apply_colors(i)
+            self.color_item(i)
 
-    def apply_colors(self, i:int) -> None:
-        """Apply colors to listbox items."""
+    def color_item(self, i:int) -> None:
+        """Apply appropriate color to a listbox item."""
 
-        logging.info('apply_colors in SetlistFrame')
-        l = self.listbox
-
+        logging.info('color_item in SetlistFrame')
         for k, v in self.listbox_strategies.items():
             if k(self.songs[i]):
+                v(i)
                 logging.info('color applied!')
-                v(l, i)
                 break
 
     def add_to_listbox(self, item: str):
         self.listbox.insert("end", item)
-
-    def add_song(self, song):
-        """Add song to setlist."""
-        d = self.data
-
-        d.songs.append(song)
-        d.live.songs.append(song)
-
-        # TODO: I suspect there is some redundancy to work out here...
-        # self.update_marks()
-        self.listbox_update()
 
 
 class SetlistHeader(tk.Frame):
@@ -317,9 +282,10 @@ class SetlistControlRow(tk.Frame):
 
         # TODO: move these functions in?
         move = self.setlist.move
-        on_skip = self.setlist.on_skip
         on_remove = self.setlist.on_remove
+        toggle = self.setlist.on_toggle
         locked = self.setlist.locked
+
 
         # move selection up
         self.move_up = tk.Button(self, text="\u25B2", command=lambda: move(-1), width=1)
@@ -333,19 +299,19 @@ class SetlistControlRow(tk.Frame):
         self.move_down.pack(side="left")
 
         # toggle selection skip
-        self.skip = tk.Button(self, text="\u2938", command=lambda: on_skip(), width=1)
+        self.skip = tk.Button(self, text="\u2938", command=lambda: toggle('skipped'), width=1)
         self.skip.pack(side="left")
 
         # cross out played song
-        self.playmark = tk.Button(self, text="\u2713", command=None)
+        self.playmark = tk.Button(self, text="\u2713", command=lambda: toggle('played'))
         self.playmark.pack(side="left")
 
         self.remove = tk.Button(self, text="\u2715", command=on_remove)
         self.remove.pack(side="left")
 
         # cue selection in play order TODO: find an appropriate unicode symbol for this
-        self.cue = tk.Button(self, text="CUE")
-        self.cue.pack(side="left")
+        self.nextup = tk.Button(self, text="NEXT", command=lambda: toggle('nextup'))
+        self.nextup.pack(side="left")
 
         # lock
         self.lock = tk.Label(
@@ -353,16 +319,16 @@ class SetlistControlRow(tk.Frame):
             text="\U0001F512",
         )
         self.lock.bind("<Button-1>", lambda e: self.suite.toggle_lock())
-        self.lock.pack(side="right")
+        self.lock.pack(side="right", anchor="e", expand=True)
 
         # keep all buttons in a list for lock toggle fn
-        self.togglable = [
+        self.togglable = (
             self.move_up,
             self.move_down,
             self.skip,
             self.playmark,
             self.remove,
-        ]
+        )
 
 
 class RightClickMenu(tk.Frame):
@@ -379,39 +345,23 @@ class RightClickMenu(tk.Frame):
 
         # self.main_menu = main_menu
 
-    def do_popup(self, event, ind):
+    def do_popup(self, event, i):
         """Popup right click menu."""
 
-        # update selection param(s)
-        self.update_selection(ind)
+        # update selection params
+        self.update_selection(i)
+        menu = self.build_menu(i)
 
-        # build menu
-        menu = self.build_menu(ind)
-
-        logging.info(f"right clicked on setlist selection: {ind}")
-        logging.info("trying popup in setlist")
         try:
-            logging.info(
-                f"setlist right click popup @ coords: {event.x_root}, {event.y_root}"
-            )
             menu.tk_popup(event.x_root, event.y_root)
-            # TODO: get and aassign listbox selection.
-
         finally:
             menu.grab_release()
 
-    def build_menu(self, ind):
+    def build_menu(self, i):
         """Construct menu based on context."""
 
-        # make empty menu
         menu = tk.Menu(self.parent, title="Setlist Options")
-
-        # Options for empty setlist
-        if ind < 0:
-            return self.add_empty_options(menu)
-
-        menu = self.add_song_options(menu)
-        return menu
+        return self.add_empty_options(menu) if i < 0 else self.add_song_options(menu)
 
     def add_empty_options(self, menu):
         """Options when nothing is in the setlist."""
@@ -460,16 +410,10 @@ class RightClickMenu(tk.Frame):
         [v() for k, v in strategies.items() if k()]
         return menu
 
-    def update_selection(self, selection):
+    def update_selection(self, i):
         """Get selection and update selection properties."""
-        i = selection
         setlist = self.app.setlist
-
-        if i >= 0:
-            self.sel.name.set(setlist.songs[i].name)
-        else:
-            self.sel.name.set(None)
-
+        self.sel.name.set(setlist.songs[i].name) if i>=0 else self.sel.name.set(None)
 
 class SelectionProperties:
     """Class for holding the properties of selected song to update context menu."""

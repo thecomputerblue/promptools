@@ -122,11 +122,9 @@ class SettingsBaseClass:
 
         tkvar.trace("w", lambda *args: self.update(name, tkvar.get()))
 
-    def setting(self, tkvarclass, name: str, inits: dict):
+    def setting(self, tkvarclass, name: str, inits: dict) -> object:
         """Make a new setting and assign a default value and callback,
         returning a tkinter variable."""
-
-        logging.info('setting in SettingsBaseClass')
 
         setting = tkvarclass()
         setting.set(inits.get(name))

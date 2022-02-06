@@ -201,31 +201,28 @@ class TalentMonitor(tk.Frame):
         """Mark song as played in setlist if it was loaded for
         enough time or yview is substantially below the top."""
 
-        song = self._song
-        setlist = self.app.data.setlists.live
+        if not self.song:
+            return
+
+        live = self.app.data.setlists.live.songs
+        markers = self.app.data.setlists.markers
 
         # tests for marking as played. if any return True, mark as played
-        if song and song.name in setlist.names:
-
-            settings = self.app.settings.setlist
-            elapsed = self.elapsed_time()
-            seconds = settings.played_seconds.get()
-            yview_thresh = settings.played_yview.get()
-            yview = self.app.monitor.text.yview()[0]
+        if self.song in live:
+            logging.info('song and song in live')
 
             tests = (
-            lambda:  elapsed > seconds,
-            lambda: yview > yview_thresh
+            lambda:  self.elapsed_time() > self.settings.setlist.played_seconds.get(),
+            lambda: self.app.monitor.text.yview()[0] > self.settings.setlist.played_yview.get()
             )
 
             for test in tests:
                 if test():
-                    setlist.played.append(song.name)
+                    markers['played'].append(self.song)
                     break
 
     def elapsed_time(self):
         """Get elapsed time from last load action."""
-
         return time.time() - self.loaded
 
     def double_clicked_text(self, event):
@@ -485,7 +482,6 @@ class RightClickMenu(tk.Frame):
 
         # get selection and textbox
         start, end, contents = self.suite.selection_info()
-
 
         # return if nothing selected or not in edit mode
         if not self.suite.editable:

@@ -9,33 +9,18 @@ class AppData():
     def __init__(self, app):
         self.app = app
 
-        # local ref to db manager
+        # local refs to modules
         self.dbmanager = app.tools.dbmanager
+        self.deck = app.deck
         # connect the dbmanager 
-        self.dbmanager.data = self
         self.db = app.settings.paths.db.get()
 
         # init workspace collections
-        self.workspace = WorkspaceData(self)
-        self.setlists = self.workspace.setlists
-        self.pool = self.workspace.pool
+        self.gig = GigData(self)
+        self.setlists = self.gig.setlists
+        self.pool = self.gig.pool
 
         self.collections = (self.setlists, self.pool)
-
-    def dump_workspace_to_db(self):
-        """Dump the workspace to db at program exit."""
-
-        logging.info('dump_workspace_to_db in AppData')
-
-        # TODO:
-        # get lowest available gig_id, assign to settings.workspace.workspace_gig_id
-        # dump pool songs to db, tracking their song_ids
-        # dump pool song_ids list to pool meta with associated workspace_gig_id
-        # dump all songs in the setlists
-        # dump all gig setlists, tracking their setlist_ids in the order they are in memory
-            # before you dump each setlist, dump its songs, tracking their ids
-            # dump the setlist with song_ids to setlist_songs
-        # dump  the ordered setlist ids to gig_setlists table
 
     def get_last_workspace_from_db(self):
         """Restore workspace from last session on load."""
@@ -84,6 +69,7 @@ class SetlistCollection(SongCollection):
 
         self.setlists = [Setlist(self)]
         self.live = self.setlists[0]
+        self.deck = self.app.deck
         self.markers = {
         'played': [],
         'skipped': [],
@@ -92,13 +78,14 @@ class SetlistCollection(SongCollection):
         'nextup': None
         }
 
-        self.app.deck.add_callback('live', self.update_marks)
+
+        self.deck.add_callback('live', self.update_marks)
 
     def update_marks(self):
         """Update song markers based on deck."""
         logging.info('update_marks in SetlistCollection')
-        self.try_mark('previous', self.app.deck.previous)
-        self.try_mark('live', self.app.deck.live)
+        self.try_mark('previous', self.deck.previous)
+        self.try_mark('live', self.deck.live)
         self.mark_nextup()
 
     def try_mark(self, local, deck):
@@ -138,15 +125,24 @@ class SetlistCollection(SongCollection):
     def add_live(self):
         """Add the live song to the setlist."""
 
-        self.add_song(self.app.deck.live)
+        self.add_song(self.deck.live)
 
-    def skip_toggle(self, song):
+    # TODO: combine following functions as they all follow the same form!
+
+    def toggle_mark(self, param, song):
+        """Toggle a song within a marker list."""
+        l = self.markers[param]
+        l.remove(song) if song in l else l.append(song)
+
+    def on_skip(self, song):
         """Toggle song skip."""
+        skipped = self.markers['skipped']
+        skipped.remove(song) if song in skipped else skipped.append(song)
 
-        if song not in self.skipped:
-            self.skipped.append(song)
-        else:
-            self.skipped.remove(song)
+    def on_playmark(self, song):
+        """Toggle played marker."""
+        played = self.markers['played']
+        played.remove(song) if song in played else played.append(song)
 
     def move_song(self, setlist, song_i, dest):
         """Move song within a setlist."""
@@ -265,7 +261,7 @@ class PoolPointers:
 
         # TODO: define pointers.
 
-class WorkspaceData:
+class GigData:
     """Class for holding the workspace data. Pool, setlists, notepad, config."""
 
     def __init__(self, parent):
