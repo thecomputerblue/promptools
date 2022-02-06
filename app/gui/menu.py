@@ -390,27 +390,8 @@ class MenuBar(tk.Frame):
     def on_add_song_to_setlist(self):
         """Add current monitor contets to setlist."""
         
-        monitor = self.app.monitor
+        self.app.data.setlists.add_live()
         
-        if not monitor.song:
-            return
-
-        app = self.app
-        monitor = app.monitor
-        setlist = app.setlist
-
-        if monitor.song:
-            # make sure it's not already in setlist!
-            names = [song.name for song in setlist.songs]
-            song = monitor.song
-
-            # TODO: untangle
-            if song.name not in names:
-                monitor.add_to_list(target=setlist)
-
-            else:
-                logging.info('song already in setlist. if you need duplicates, rename one.')
-
     def on_load_cued_to_live(self, event):
 
         app = self.app

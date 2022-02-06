@@ -46,15 +46,15 @@ class MainApplication(tk.Frame):
         # tools for creating and moving data within the app, and scrolling
         self.tools = AppTools(self)
 
+        # manages callbacks for updating cued / live / previous
+        # TODO: expand to include history
+        self.deck = SongDeck(self)
+
         # sqlite3 / data mgmt
         self.data = AppData(self)
 
         # song cache, use weak references so old songs get gc'd
         self.cache = Cache(self)
-
-        # manages callbacks for updating cued / live / previous
-        # TODO: expand to include history
-        self.deck = SongDeck(self)
 
         # 2nd window for talent
         self.talent = TalentWindow(self)

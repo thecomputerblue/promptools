@@ -1,8 +1,20 @@
 # import tkinter as tk
 import sqlite3
 import logging
+from contextlib import contextmanager
 
 # helpers
+@contextmanager
+def open_db(file_name: str):
+    """Conext manager for sqlite3 connections."""
+    connection = sqlite3.connect(file_name)
+    try:
+        cursor =connection.cursor()
+        yield cursor
+    finally:
+        connection.commit()
+        connection.close()
+
 
 
 def lowest_unused(l: list) -> int:
@@ -33,12 +45,8 @@ class DatabaseManager:
     def init_db(self, db):
         """If the db path doesn't exist, create a db with the correct tables."""
 
-        con = sqlite3.connect(db)
-        cur = con.cursor()
-
         logging.info(f"initializing app database: {db}")
-
-        with con:
+        with open_db(self.db) as cur:
             # TODO: use ISO8601 string format: "YYYY-MM-DD HH:MM:SS.SSS" on created/modified
             # I think my timestamp constructs already use this.
             cur.execute(
@@ -152,8 +160,6 @@ class DatabaseManager:
                 )"""
             )
 
-        con.close()
-
     def choose_id(self, cursor, key, table):
         """Choose the an unused id for a given db key.
         Currently finds lowest available. If table is empty, starts at 0."""
@@ -170,9 +176,7 @@ class DatabaseManager:
 
         logging.info(f"began adding {song.name} to {self.db}")
 
-        with sqlite3.connect(self.db) as con:
-            cur = con.cursor()
-
+        with open_db(self.db) as cur:
             self.assign_song_ids(song, cur)
             self.dump_song_script(song, cur)
             self.dump_song_meta(song, cur)
@@ -235,9 +239,7 @@ class DatabaseManager:
 
         self.dump_setlist_songs(setlist)
 
-        with sqlite3.connect(self.db) as con:
-            cur = con.cursor()
-
+        with open_db(self.db) as cur:
             # choose appropriate setlist_id
             setlist.setlist_id = self.choose_setlist_id(setlist, cur)
             song_ids = self.get_song_ids(setlist)
@@ -325,8 +327,7 @@ class DatabaseManager:
             "all": "SELECT * FROM song_meta",
         }
 
-        with sqlite3.connect(self.db) as con:
-            cur = con.cursor()
+        with open_db(self.db) as cur:
             cur.execute(options.get(option))
             data = cur.fetchall()
 
@@ -335,9 +336,7 @@ class DatabaseManager:
     def make_song_dict_from_db(self, song_id):
         """Construct and return a dictionary for the song from db"""
 
-        with sqlite3.connect(self.db) as con:
-            cur = con.cursor()
-
+        with open_db(self.db) as cur:
             # extract metadata to dict
             # TODO: create a generic song_dictionary template in tools/song
             # and import here

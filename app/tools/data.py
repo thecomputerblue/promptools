@@ -37,8 +37,6 @@ class AppData():
             # dump the setlist with song_ids to setlist_songs
         # dump  the ordered setlist ids to gig_setlists table
 
-
-
     def get_last_workspace_from_db(self):
         """Restore workspace from last session on load."""
         logging.info('get_last_workspace_from_db in AppData')
@@ -47,24 +45,21 @@ class AppData():
 class SongCollection:
     """Generic class for containing a list of songs."""
 
-    def __init__(self, name=None):
+    def __init__(self, app, name=None):
         # TODO: on init, attempt to load previous.
 
         # name collection
+        self.app = app
         self.name = name
         self.songs = []
-        self.callback = None
+
+        self.callbacks = {}
 
     def clear_collection_songs(self):
         """Delete all songs in the collection."""
 
         self.songs.clear()
-        self.refresh_list()
-
-    def refresh_list(self):
-        """Refresh the list representation if it has been assigned via callback."""
-
-        self.callback.listbox_update() if self.callback else None
+        self.do_callbacks()
 
     @property
     def names(self):
@@ -72,35 +67,114 @@ class SongCollection:
 
         return [song.name for song in self.songs] if self.songs else None
 
+    def add_callback(self, fn, *args, **kwargs):
+        self.callbacks[fn] = (args, kwargs)
+
+    def do_callbacks(self):
+        for fn, v in self.callbacks.items():
+            fn(*v[0], **v[1]) if v else fn()
+
 
 class SetlistCollection(SongCollection):
     """Holds a song pool, and a list of Setlist versions that reference the song pool."""
 
-    def __init__(self):
-        SongCollection.__init__(self)
-        # TODO: on init, attempt to load previous.
+    def __init__(self, app):
+        SongCollection.__init__(self, app)
+        # TODO: on init, attempt to load previous from db.
 
         self.setlists = [Setlist(self)]
         self.live = self.setlists[0]
+        self.markers = {
+        'played': [],
+        'skipped': [],
+        'live': None,
+        'previous': None,
+        'nextup': None
+        }
 
-        # markers determine visual style and play navigation. they are shared
-        # between versions, so if you switch setlists mid-show you don't lose
-        # track of what has been played
-        self.skipped = []
-        self.played = []
-        self.nextup = None
-        self.current = None 
-        self.previous = None
+        self.app.deck.add_callback('live', self.update_marks)
+
+    def update_marks(self):
+        """Update song markers based on deck."""
+        logging.info('update_marks in SetlistCollection')
+        self.try_mark('previous', self.app.deck.previous)
+        self.try_mark('live', self.app.deck.live)
+        self.mark_nextup()
+
+    def try_mark(self, local, deck):
+        """Try to update mark from deck"""
+
+        if deck in self.live.songs:
+            self.markers[local] = deck
+
+    def mark_nextup(self):
+        logging.info('mark_nextup in SetlistCollection')
+        count = len(self.live.songs)
+        for i, song in enumerate(self.live.songs):
+            if song is self.markers.get('live'):
+                self.markers['nextup'] = self.live.songs[i+1] if i < count-1 else None
+                break
 
     def new_setlist(self, name=None):
         """Add a new setlist to the setlists."""
         self.setlists.append(Setlist(self, name))
 
     def add_song(self, song):
-        if song not in self.songs:
-            self.songs.append(song)
-            self.live.songs.append(song)
+        """Add a song to the setlist."""
 
+        if not song:
+            return
+
+        names = self.live.names
+        if names is not None and song.name in names:
+            logging.info('same named song already in setlist!')
+            return
+
+        self.songs.append(song)
+        self.live.songs.append(song)
+        self.update_marks()
+        self.do_callbacks()
+
+    def add_live(self):
+        """Add the live song to the setlist."""
+
+        self.add_song(self.app.deck.live)
+
+    def skip_toggle(self, song):
+        """Toggle song skip."""
+
+        if song not in self.skipped:
+            self.skipped.append(song)
+        else:
+            self.skipped.remove(song)
+
+    def move_song(self, setlist, song_i, dest):
+        """Move song within a setlist."""
+
+        logging.info('move_song in SetlistCollection')
+        if not setlist.songs:
+            return
+
+        # constrain dest to length of list
+        if dest > len(setlist.songs) - 1:
+            dest = song_i
+
+        # move the song, refresh the list representation
+        setlist.songs.insert(dest, setlist.songs.pop(song_i))
+        self.update_marks()
+
+    def remove_song_if_orphaned(self, song):
+        """If a song no longer exists in any of the setlists,
+        remove it from the pool."""
+
+        logging.info(f'remove_song_if_orphaned in SetlistCollection')
+        for setlist in self.setlists:
+            if song in setlist.songs:
+                logging.info('song in setlist.songs, keeping in pool')
+                return
+
+        logging.info('song no longer in any setlist versions, removing from pool')
+        self.songs.remove(song)
 
 class Setlist:
     """Class for a setlist."""
@@ -108,9 +182,11 @@ class Setlist:
     def __init__(self, parent, *args, **kwargs):
         # pool contains all available songs
 
+        self.parent = parent
         self.title = kwargs.get('title')
-        
+
         self.pool = parent.songs
+
         # songs contains songs as they are ordered in this setlist
         self.songs = []
 
@@ -121,12 +197,24 @@ class Setlist:
     @property
     def names(self):
         """Return names of all songs in the collection."""
-        return [song.name for song in self.songs] if self.songs else None
+        return [song.name for song in self.songs] if self.songs else []
 
     @property
     def numbered(self, style=lambda i: " (" + str(i+1) + ") "):
         """Return songs with numbers."""
-        return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else None
+
+        # TODO: inefficient
+        return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else []
+
+    def remove_song(self, i):
+        """Remove song from the setlist, 
+        and pool if it has no other references."""
+        logging.info(f'remove_song in Setlist recieved index: {i}')
+        song = self.songs[i]
+        self.songs.remove(song)
+        self.parent.remove_song_if_orphaned(song)
+        # TODO: if deleted song is currently in song info, clear the song info
+        # achieve with listeners within song? more comprehensive callback manager?
 
 
 class PoolCollection(SongCollection):
@@ -141,24 +229,9 @@ class PoolCollection(SongCollection):
         self.pool_id = None
         self.library_id = None
 
-
-class SetlistPointers:
-    """Class for pointers used to determine visualization
-    in a song list and play behavior."""
-
-    def __init__(self, setlist):
-        self.setlist = setlist
-        self.songs = setlist.songs
-
-        self.skipped = []
-        self.played = []
-
-        self.nextup = None
-        self.current = None 
-        self.previous = None
-
 class SetlistMetadata:
     """Class for storing setlist metadata."""
+    # TODO: use dict instead, class probably not needed
 
     def __init__(self, setlist):
         self.setlist = setlist
@@ -195,12 +268,13 @@ class PoolPointers:
 class WorkspaceData:
     """Class for holding the workspace data. Pool, setlists, notepad, config."""
 
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, parent):
+        self.app = parent.app
+        self.suite = parent
 
         # hold all workspace setlists
-        self.setlists = SetlistCollection()
-        self.pool = SongCollection(name='pool')
+        self.setlists = SetlistCollection(self.app)
+        self.pool = SongCollection(self.app, name='pool')
 
 
 """

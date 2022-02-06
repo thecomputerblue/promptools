@@ -6,6 +6,19 @@ import logging
 
 # from tools.tooltip import CreateToolTip
 
+# helpers
+def strike(text):
+    """Strikethru text."""
+
+    # TODO: fix janky strikethru appearance...
+    result = ""
+    for _, c in enumerate(text):
+        result += c + "\u0336"
+    return result
+
+def number(n: int, name: str) -> str:
+    """Return item formatted for list."""
+    return '(' + str(n) + ') ' + name
 
 class SetlistFrame(tk.Frame):
     """Class for the setlist manager"""
@@ -24,14 +37,13 @@ class SetlistFrame(tk.Frame):
 
         # manages the song list & its representation in the listbox
         self.data = self.app.data.setlists
+        self.pool = self.data.songs
+        # TODO: move markers in the setlists module
+        self.markers = self.app.data.setlists.markers
 
-        # live setlist
+        # live setlist & songs
         self.live = self.data.live
-
-        # self.manager = SetlistManager(self)
-
-        # expose song pool
-        self.songs = self.data.songs
+        self.songs = self.live.songs
 
         # widgets
         self.header = SetlistHeader(self)
@@ -61,28 +73,30 @@ class SetlistFrame(tk.Frame):
         # create a reference to this frame in the collection
         # so it can be refresshed when there is db activity.
         # TODO: best method? weakref?
-        self.data.callback = self
 
         # deck callback
-        self.app.deck.add_callback("live", self.refresh_markers_deck)
+        self.app.deck.add_callback("live", self.listbox_update)
+        self.data.add_callback(self.listbox_update)
 
-    def refresh_markers_deck(self):
-        """Refresh the markers when the live song changes."""
-        logging.info("refresh_markers_deck in setlist")
-        deck = self.app.deck
-        d = self.data
 
-        # update marks
-        if deck.live in self.songs:
-            logging.info("refresh_markers_deck marked current song in setlist")
-            d.current = deck.live
+        # make strategies for updating listbox
+        self.make_listbox_strategies()
 
-        if deck.previous in self.songs:
-            logging.info("refresh_markers_deck marked previous song in setlist")
-            d.previous = deck.previous
+    def preserve_sel(method):
+        """Capture then restore listbox selection after executing inner method"""
+        def inner(self, *args, **kwargs):
 
-        # refresh
-        self.listbox_update()
+            l = self.listbox
+            sel = l.curselection() if l.curselection() else None
+
+            method(self, *args, **kwargs)
+
+            if sel:
+                l.selection_clear(0, "end")
+                l.selection_set(sel)
+                l.activate(sel)
+
+        return inner
 
     def toggle_controls(self, event=None):
         """Update state of setlist controls based on toggle."""
@@ -112,41 +126,28 @@ class SetlistFrame(tk.Frame):
         """When right clicking in listbox, update selection and bring up context options."""
 
         l = self.listbox
-        selection = l.nearest(event.y)
-
-        # Update selection
-        l.selection_clear(0, "end")
-        l.selection_set(selection)
-        l.activate(selection)
-
-        # Popup
-        self.menu.do_popup(event, selection)
+        sel = l.nearest(event.y)
+        self.lb_sel(sel)
+        self.menu.do_popup(event, sel)
 
     def on_remove(self):
         """Remove selected song."""
 
-        d = self.data
-        l = self.listbox
-        sel = l.curselection()
+        sel = self.get_selection()
 
-        if not sel:
+        if sel is None:
             return
 
-        # TODO: if deleted song is currently in song info, clear the song info
-        # achieve with listeners within song? more comprehensive callback manager?
-        i = sel[0]
-        del d.songs[i]
+        self.live.remove_song(i=sel)
         self.listbox_update()
-        # move cursor back to where it was, or end of the list.
-        # TODO: confirm its necessary to clear after a deletion
-        l.selection_clear("1", "end")
-        l.selection_set(sel[0]) if i < l.size() else l.selection_set("end")
+        self.lb_sel(sel)
 
     def get_selection(self):
         """Get selected index."""
 
         l = self.listbox
         sel = l.curselection()
+
         return sel[0] if sel else None
 
     def move(self, target: str or int):
@@ -154,56 +155,46 @@ class SetlistFrame(tk.Frame):
 
         sel = self.get_selection()
 
-        if sel == None:
+        if sel is None:
             return
 
-        l = self.listbox
-        d = self.data
-
-        # TODO: refactor
-        # accept 'top' or 'end' to force
-        if target == "top":
-            new = 0
-        elif target == "end":
-            new = -1
-        else:
-            new = sel + target
-
-            # if it's at the edge of the list, don't do anything.
-            if new > len(d.songs) - 1 or new < 0:
-                new = sel
-
-        # move the song, refresh the list representation
-        d.songs.insert(new, d.songs.pop(sel))
-
-        # move within list representation
+        dest = self.target_to_i(start_i=sel, target=target)
+        self.data.move_song(self.live, sel, dest)
         self.listbox_update()
+        self.lb_sel(dest)
 
+    def lb_sel(self, sel):
+        """Clear and apply new target listbox selection."""
+
+        l = self.listbox
         l.selection_clear(0, "end")
-        l.selection_set(new)
+        l.selection_set(sel) if sel < l.size() else l.selection_set("end")
+        l.activate(sel)
+
+    def target_to_i(self, start_i, target):
+        """Convert a listbox target to an index."""
+
+        if target == "top":
+            return 0
+        elif target == "end":
+            return -1
+        new = start_i + target
+        return new if new >=0 else 0
 
     def on_skip(self):
         """What to do when song is skipped."""
 
         sel = self.get_selection()
 
-        if sel == None:
+        if sel is None:
             return
 
-        l = self.listbox
         d = self.data
+        l = self.listbox
+        song = self.songs[sel]
 
-        skipped = d.skipped
-        song = d.songs[sel]
-
-        if song not in skipped:
-            # skip
-            l.itemconfig(sel, bg="grey")
-            skipped.append(song.name)
-        else:
-            # unskip
-            l.itemconfig(sel, bg="light grey")
-            skipped.remove(song.name)
+        d.skip_toggle(song)
+        l.itemconfig(sel, bg="grey") if song in d.skipped else l.itemconfig(sel, bg="light grey")
 
     def on_listbox_select(self, event):
         """What to do when clicking an item in the setlist."""
@@ -220,146 +211,67 @@ class SetlistFrame(tk.Frame):
         i = current[0]
 
         # if songs in setlist, get the song at index
-        song = d.songs[i] if d.songs else None
+        song = d.live.songs[i] if d.live.songs else None
         app.deck.cued = song
         app.meta.song_detail.refresh_callback = self.listbox_update
 
+    def make_listbox_strategies(self):
+        """Define strategies for formatting listbox items."""
+
+        # TODO: clunky...
+        colors = self.app.settings.setlist.colors
+
+        self.listbox_strategies = {
+            lambda song: self.song_is_skipped(song): lambda l, i: l.itemconfig(i, bg=colors.skipped),
+            lambda song: self.song_is_nextup(song): lambda l, i: l.itemconfig(i, bg=colors.nextup),
+            lambda song: self.song_is_previous(song): lambda l, i: l.itemconfig(i, bg=colors.previous),
+            lambda song: self.song_is_live(song): lambda l, i: l.itemconfig(i, bg=colors.live),
+            # lambda song: song.name in played: lambda i: l.itemconfig(i, overstrike=1)
+        }
+
+    def song_is_skipped(self, song):
+        return song in self.markers.get('skipped') if self.markers.get('skipped') else False
+
+    def song_is_nextup(self, song):
+        return song is self.markers.get('nextup')
+
+    def song_is_live(self, song):
+        return song is self.markers.get('live')
+
+    def song_is_previous(self, song):
+        return song is self.markers.get('previous')
+
+    @preserve_sel
     def listbox_update(self):
-        """Update listbox colors"""
+        """Update listbox contents and formatting."""
 
-        # TODO: huge function, refactor
-        self.update_marks()
+        self.listbox.delete(0, "end")
+        # self.update_marks()
 
-        l = self.listbox
-        d = self.data
-        live = d.live
-
+        live = self.data.live
         if not live.songs:
             return
 
-        # live setlist specific
-        names = live.names
-        numbered_names = live.numbered
-        songs = live.songs
+        for i, name in enumerate(live.names):
+            name = strike(name) if name in self.markers.get('played') else name
+            name = number(i+1, name)
+            self.listbox.insert("end", name)
+            self.apply_colors(i)
 
-        # markers
-        skipped = d.skipped
-        played = d.played
-        nextup = d.nextup
-        previous = d.previous
-        current = d.current
+    def apply_colors(self, i:int) -> None:
+        """Apply colors to listbox items."""
 
-        sel = l.curselection() if l.curselection() else None
-
-        l.delete(0, "end")
-
-        # colors
-        colors = self.app.settings.setlist.colors
-
-        # assign skipped
-        strategies = {
-            lambda song: song.name
-            in skipped: lambda i: l.itemconfig(i, bg=colors.skipped),
-            lambda song: nextup
-            and song.name == nextup.name: lambda i: l.itemconfig(i, bg=colors.nextup),
-            lambda song: previous
-            and song.name
-            == previous.name: lambda i: l.itemconfig(i, bg=colors.previous),
-            lambda song: current
-            and song.name == current.name: lambda i: l.itemconfig(i, bg=colors.current),
-            # lambda song: song.name in played:                       lambda i: l.itemconfig(i, overstrike=1)
-        }
-
-        # TODO: messy
-        for i, name in enumerate(names):
-
-            # strikeout played songs
-            # TODO: switch from name list to using song objs
-            if name in played:
-                l.insert("end", self.strike(numbered_names[i]))
-            else:
-                l.insert("end", numbered_names[i])
-
-            # assign color / format
-            for k, v in strategies.items():
-                if k(songs[i]):
-                    v(i)
-                    break
-
-        # restore listbox selection if there was one.
-        # TODO:
-        if sel:
-            l.selection_set(sel)
-            l.activate(sel)
-
-        # update current and next markers
-        # self.update_marks()
-
-    def strike(self, text):
-        """Strikethru text."""
-
-        # TODO: fix janky strikethru appearance...
-        result = ""
-        for _, c in enumerate(text):
-            result += c + "\u0336"
-        return result
-
-    def mark_previous(self, pos):
-        """Mark song at target index as previous, updating flag & listbox.
-        TODO: Eventually integrate the song chain."""
-
+        logging.info('apply_colors in SetlistFrame')
         l = self.listbox
-        d = self.data
-        colors = self.app.settings.setlist.colors
 
-        # clear old
-        # TODO: check for identity equivalence on song objs instead
-        for i, song in enumerate(d.songs):
-            if d.previous and song.name == d.previous.name:
-                l.itemconfig(i, bg=colors.default)
+        for k, v in self.listbox_strategies.items():
+            if k(self.songs[i]):
+                logging.info('color applied!')
+                v(l, i)
                 break
 
-        # apply new previous
-        d.previous = d.songs[pos]
-
-    def update_marks(self):
-        """Mark current and next song."""
-
-        d = self.data 
-        d.current = None
-
-        live_song = self.app.deck.live
-
-        if not live_song:
-            return
-
-        for i, song in enumerate(d.songs):
-            if song.name == live_song.name:
-                d.current = song
-                self.mark_nextup(target=i+1, count=len(d.songs))
-                break
-
-    def mark_nextup(self, target, count):
-        """Manage the previous and next pointers."""
-
-        l = self.listbox
-        d = self.data
-
-        if target >= count:
-            d.nextup = None
-            return
-
-        skipped = d.skipped
-        songs = d.songs
-
-        # starting with the target, find the first not-skipped song.
-        for i in range(target, count):
-            if songs[i].name not in skipped:
-                d.nextup = songs[i]
-                return
-
-        # if everything was skipped, no nextup
-        d.nextup = None
+    def add_to_listbox(self, item: str):
+        self.listbox.insert("end", item)
 
     def add_song(self, song):
         """Add song to setlist."""
@@ -369,7 +281,7 @@ class SetlistFrame(tk.Frame):
         d.live.songs.append(song)
 
         # TODO: I suspect there is some redundancy to work out here...
-        self.update_marks()
+        # self.update_marks()
         self.listbox_update()
 
 

@@ -504,12 +504,13 @@ class SetlistColors(SettingsBaseClass):
 
     def __init__(self, settings, name):
         SettingsBaseClass.__init__(self, settings, name)
+        # TODO: dict
 
         self.default = 'light grey'
         self.skipped = 'dark grey'
         self.previous = 'pink'
         self.nextup = 'light yellow'
-        self.current = 'light green'
+        self.live = 'light green'
 
 class KeySettings(SettingsBaseClass):
     """Class to store all the keyboard mappings throughout the app."""
