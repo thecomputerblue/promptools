@@ -94,7 +94,7 @@ class SetlistFrame(tk.Frame):
 
             sel = self.get_sel()
             method(self, sel, *args, **kwargs)
-            self.do_sel(sel) if sel else None
+            self.do_sel(sel) if sel is not None else None
 
         return inner
 
