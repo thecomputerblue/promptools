@@ -36,21 +36,22 @@ class SongCollection:
         # name collection
         self.app = app
         self.name = name
-        self.songs = []
+        self.pool = []
+        self.markers = {}
 
         self.callbacks = {}
 
     def clear_collection_songs(self):
         """Delete all songs in the collection."""
 
-        self.songs.clear()
+        self.pool.clear()
         self.do_callbacks()
 
     @property
     def names(self):
         """Return names of all songs in the collection."""
 
-        return [song.name for song in self.songs] if self.songs else None
+        return [song.name for song in self.pool] if self.pool else None
 
     def add_callback(self, fn, *args, **kwargs):
         self.callbacks[fn] = (args, kwargs)
@@ -70,14 +71,13 @@ class SetlistCollection(SongCollection):
         self.setlists = [Setlist(self)]
         self.live = self.setlists[0]
         self.deck = self.app.deck
-        self.markers = {
+        self.markers.update({
         'played': [],
         'skipped': [],
         'live': None,
         'previous': None,
         'nextup': None
-        }
-
+        })
 
         self.deck.add_callback('live', self.update_marks)
 
@@ -117,7 +117,7 @@ class SetlistCollection(SongCollection):
             logging.info('same named song already in setlist!')
             return
 
-        self.songs.append(song)
+        self.pool.append(song)
         self.live.songs.append(song)
         self.update_marks()
         self.do_callbacks()
@@ -132,6 +132,7 @@ class SetlistCollection(SongCollection):
     def toggle_mark(self, param, song):
         """Toggle a song within a marker list."""
         l = self.markers[param]
+        print(l)
         l.remove(song) if song in l else l.append(song)
 
     def on_skip(self, song):
@@ -170,7 +171,7 @@ class SetlistCollection(SongCollection):
                 return
 
         logging.info('song no longer in any setlist versions, removing from pool')
-        self.songs.remove(song)
+        self.pool.remove(song)
 
 class Setlist:
     """Class for a setlist."""
@@ -181,7 +182,7 @@ class Setlist:
         self.parent = parent
         self.title = kwargs.get('title')
 
-        self.pool = parent.songs
+        self.pool = parent.pool
 
         # songs contains songs as they are ordered in this setlist
         self.songs = []
@@ -219,7 +220,7 @@ class PoolCollection(SongCollection):
     def __init__(self, name=None):
         SongCollection.__init__(name)
 
-        self.pointers = PoolPointers(self)
+        self.markers = {}
 
         # library pointers. TODO: maybe rename to collection_id
         self.pool_id = None
@@ -251,15 +252,6 @@ class SetlistMetadata:
         # extract this from sechedule
         # self.meals = {}
 
-class PoolPointers:
-    """Class for pointers used to determine visualization
-    in a song list and play behavior."""
-
-    def __init__(self, pool):
-        self.pool = pool
-        self.songs = setlist.songs
-
-        # TODO: define pointers.
 
 class GigData:
     """Class for holding the workspace data. Pool, setlists, notepad, config."""

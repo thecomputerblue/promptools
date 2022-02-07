@@ -22,7 +22,7 @@ class EditPoolFrame(tk.Frame):
         self.manager = PoolManager(self)
 
         # expose songs more shallowly
-        self.songs = self.data.songs
+        self.songs = self.data.pool
 
         # subframes
 

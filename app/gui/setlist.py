@@ -35,7 +35,7 @@ class SetlistFrame(tk.Frame):
 
         # manages the song list & its representation in the listbox
         self.data = self.app.data.setlists
-        self.pool = self.data.songs
+        self.pool = self.data.pool
         self.markers = self.data.markers
 
         # live setlist & songs
@@ -149,6 +149,12 @@ class SetlistFrame(tk.Frame):
         sel = l.nearest(event.y)
         self.do_sel(sel)
         self.menu.do_popup(event, sel)
+
+    @preserve_sel
+    def mark_nextup(self, sel, *args, **kwargs):
+        """Mark the selected song as next up."""
+        self.markers['nextup'] = self.live.songs[sel]
+        self.listbox_update()
 
     @preserve_sel
     def on_remove(self, sel, *args, **kwargs):
@@ -285,6 +291,7 @@ class SetlistControlRow(tk.Frame):
         on_remove = self.setlist.on_remove
         toggle = self.setlist.on_toggle
         locked = self.setlist.locked
+        nextup = self.setlist.mark_nextup
 
 
         # move selection up
@@ -310,7 +317,7 @@ class SetlistControlRow(tk.Frame):
         self.remove.pack(side="left")
 
         # cue selection in play order TODO: find an appropriate unicode symbol for this
-        self.nextup = tk.Button(self, text="NEXT", command=lambda: toggle('nextup'))
+        self.nextup = tk.Button(self, text="NEXT", command=nextup)
         self.nextup.pack(side="left")
 
         # lock
