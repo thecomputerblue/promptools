@@ -263,6 +263,7 @@ class GigData:
         # hold all workspace setlists
         self.setlists = SetlistCollection(self.app)
         self.pool = SongCollection(self.app, name='pool')
+        self.gig_id = None
 
 
 """

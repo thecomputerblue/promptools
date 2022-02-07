@@ -205,6 +205,8 @@ class MenuBar(tk.Frame):
         # gig menu. gig includes a list of setlists, and metadata about gig (venue, date, etc).
         # does not affect the pool
         gig_menu = tk.Menu(menu_bar)
+        gig_menu.add_command(label="DUMP (TEMP)", command=self.on_dump_gig)
+        gig_menu.add_command(label="LOAD (TEMP)", command=self.on_load_gig)
         gig_menu.add_command(label="Gig Name Here", state="disabled")
         gig_menu.add_separator()
         gig_menu.add_command(label="Gig Info")
@@ -326,6 +328,14 @@ class MenuBar(tk.Frame):
         self.app.library = LibraryWindow(self.app) if not exists else self.app.library
         self.app.library.lift() if exists else None
 
+    def on_dump_gig(self):
+        """TEMP function, dumps workspace/gig to db."""
+        self.app.tools.dbmanager.dump_gig(self.app.data.gig)
+
+    def on_load_gig(self):
+        """TEMP function, reloads workspace/gig from db, overwriting whatever is loaded."""
+        self.app.tools.dbmanager.load_gig(gig_id=self.app.settings.workspace.workspace_gig_id.get())
+
     def dump_setlist(self):
         """Temporary test function, dumps setlist collection to db."""
         self.app.tools.dbmanager.dump_setlist(self.app.data.setlists.live)
@@ -391,7 +401,7 @@ class MenuBar(tk.Frame):
         """Add current monitor contets to setlist."""
         
         self.app.data.setlists.add_live()
-        
+
     def on_load_cued_to_live(self, event):
 
         app = self.app

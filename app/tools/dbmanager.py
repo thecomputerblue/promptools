@@ -9,13 +9,11 @@ def open_db(file_name: str):
     """Conext manager for sqlite3 connections."""
     connection = sqlite3.connect(file_name)
     try:
-        cursor =connection.cursor()
+        cursor = connection.cursor()
         yield cursor
     finally:
         connection.commit()
         connection.close()
-
-
 
 def lowest_unused(l: list) -> int:
     """Return lowest int that doesn't appear in a list."""
@@ -159,14 +157,14 @@ class DatabaseManager:
                 )"""
             )
 
-    def choose_id(self, cursor, key, table):
+    def choose_id(self, cur, key, table):
         """Choose the an unused id for a given db key.
         Currently finds lowest available. If table is empty, starts at 0."""
 
         logging.info(f"choose_id in DatabaseManager")
 
         query = f"SELECT {key} FROM {table}"
-        fetched = cursor.execute(query).fetchall()
+        fetched = cur.execute(query).fetchall()
 
         return lowest_unused([tup[0] for tup in fetched]) if fetched else 0
 
@@ -175,18 +173,33 @@ class DatabaseManager:
 
         logging.info('dump_gig in DatabaseManager')
 
+        if not gig:
+            return
+
         # TODO:
         # get lowest available gig_id, assign to settings.workspace.workspace_gig_id
+        gig_id = self.choose_gig_id(gig)
+        # remember gig_id TODO: this should only assign when saving workspace
+        self.app.settings.workspace.workspace_gig_id.set(gig_id)
+
         # dump pool songs to db, tracking their song_ids
+        self.dump_songs(self.app.data.pool.pool)
         # dump pool song_ids list to pool meta with associated workspace_gig_id
-        # dump all songs in the setlists
-        # dump all gig setlists, tracking their setlist_ids in the order they are in memory
-            # before you dump each setlist, dump its songs, tracking their ids
-            # dump the setlist with song_ids to setlist_songs
-        # dump  the ordered setlist ids to gig_setlists table
+        pool_ids = [song.song_id for song in self.app.data.pool.pool]
+        self.dump_pool_ids(gig_id=gig_id, pool_ids=pool_ids)
+        # dump setlists
+        self.dump_setlists(self.app.data.setlists, gig_id)
+
+    def dump_pool_ids(self, gig_id, pool_ids):
+        """Dump pool_ids to the db."""
+        with open_db(self.db) as cur:
+            for i, p in enumerate(pool_ids):
+                query = "INSERT INTO pool_data (gig_id, pos, song_id) VALUES (?, ?, ?)"
+                cur.execute(query, (gig_id, i, p))
 
     def get_gig(self, gig_id):
         """Retrieve workspace ('gig') from db."""
+        pass
 
     def dump_song(self, song):
         """Dump a song to the db."""
@@ -251,10 +264,36 @@ class DatabaseManager:
             ),
         )
 
-    def dump_setlist(self, setlist):
-        """Dump a setlist and all its songs into the database."""
+    def dump_setlists(self, collection, gig_id):
+        """Dump ALL the open setlists."""
+        slists = collection.setlists
+        pool = collection.pool
 
-        self.dump_setlist_songs(setlist)
+        self.dump_songs(pool)
+
+        with open_db(self.db) as cur:
+            # dump setlists and songs
+            for i, s in enumerate(slists):
+                s.setlist_id = self.choose_setlist_id(s, cur)
+                song_ids = self.get_song_ids(s)
+                self.dump_song_ids_to_setlist_songs(song_ids, s.setlist_id, cur)
+                self.dump_setlist_metadata(s, cur)
+            
+            # dump gig references to setlists
+            setlist_ids = [s.setlist_id for s in slists]
+        
+        self.dump_gig_setlist_ids(setlist_ids, gig_id)
+
+    def dump_gig_setlist_ids(self, setlist_ids, gig_id):
+        with open_db(self.db) as cur:
+            for i, s in enumerate(setlist_ids):
+                query = "INSERT INTO gig_setlists (gig_id, pos, setlist_id) VALUES (?, ?, ?)"
+                cur.execute(query, (gig_id, i, s))
+
+    def dump_setlist(self, setlist):
+        """Dump a SINGLE setlist to the db."""
+
+        self.dump_songs(setlist.songs)
 
         with open_db(self.db) as cur:
             # choose appropriate setlist_id
@@ -274,10 +313,10 @@ class DatabaseManager:
 
         return song_ids
 
-    def dump_setlist_songs(self, setlist):
+    def dump_songs(self, songs):
         """Dump all songs from setlist."""
 
-        for song in setlist.songs:
+        for song in songs:
             self.dump_song(song)
 
     def dump_song_ids_to_setlist_songs(self, song_ids, setlist_id, cur):
@@ -307,6 +346,17 @@ class DatabaseManager:
                 return setlist.setlist_id
 
         return self.choose_id(cur, "setlist_id", "setlist_meta")
+
+    def choose_gig_id(self, gig):
+        """Return an appropriate gig_id for storing to database."""      
+        with open_db(self.db) as cur:
+            if gig.gig_id is not None:
+                new = gig.gig_id
+            else:
+                new = self.choose_id(cur, "gig_id", "gigs")
+
+        return new
+        # TODO: overwrite setting (see choose_setlist_id)  
 
     def song_id_strategies(self, song, cur):
         """Return an appropriate song_id for storing to database
