@@ -113,20 +113,20 @@ class EditPoolFrame(tk.Frame):
     def filter_songs(self):
         """Filter song list based on search."""
 
-        d = self.data
         m = self.manager
+        songs = self.data.pool
         search = self.suite.header.search 
 
         value = search.get().strip().lower()
 
         # get data from file_list
         if value == "":
-            m.filtered = d.songs
+            m.filtered = songs
         else:
             m.filtered = [] # clear the filtered list
 
             # TODO: needs to ignore punctuation when filtering
-            for song in d.songs:
+            for song in songs:
                 m.filtered.append(song) if value in song.name.lower() else None
 
     def on_listbox_select(self, event):
@@ -168,7 +168,7 @@ class PoolManager:
         """Add entry to the pool."""
 
         logging.info(f'added song to pool {song.name}')
-        self.data.songs.append(copy.deepcopy(song))
+        self.data.pool.append(copy.deepcopy(song))
         self.suite.listbox_update()
 
     def delete_song(self, target):
