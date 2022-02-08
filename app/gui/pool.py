@@ -56,29 +56,21 @@ class EditPoolFrame(tk.Frame):
 
         logging.info('clicked_trash in EditPoolFrame')
 
-        d = self.data
+        pool = self.data.pool
         m = self.manager
 
         for sel in self.listbox.curselection():
 
             # Get the target song object for comparison.
-            ind = int(sel)
-            target = m.filtered[ind] # !!!This is returning a name, not the song object.
+            i = int(sel)
+            target = m.filtered[i] # !!!This is returning a name, not the song object.
 
             # find and delete target song
-            for i in range(len(d.songs)):
-                song = d.songs[i]
+            for song in pool:
                 if song is target:
                     logging.info(f'deleting {song.name} from pool')
-                    del d.songs[i]
-                    break
-
-            # # replaces previous block
-            # for song in d.songs:
-            #     if song is target:
-            #         logging.info(f'deleting {song.name} from pool')
-            #         del song
-            #         break                    
+                    pool.remove(song)
+                    break 
 
         self.listbox_update()
 
@@ -176,13 +168,12 @@ class PoolManager:
 
         logging.info('delete_song in PoolManager')
 
-        d = self.data
+        pool = self.data.pool
 
-        # Untested!
-        for i in range(d.songs):
-            if target.name == d.songs[i].name \
-            and target.created == d.songs[i].created:
-                del d.songs[i]
+        for song in pool:
+            if target.name == song.name \
+            and target.created == song.created:
+                del pool.song
                 break
 
 class PoolHeader(tk.Frame):

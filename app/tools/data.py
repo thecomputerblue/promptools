@@ -37,7 +37,7 @@ class SongCollection:
         self.app = app
         self.name = name
         self.pool = []
-        self.markers = {}
+        self.markers = self.default_markers()
 
         self.callbacks = {}
 
@@ -46,6 +46,10 @@ class SongCollection:
 
         self.pool.clear()
         self.do_callbacks()
+
+    def default_markers(self):
+        """Return default markers"""
+        return {}
 
     @property
     def names(self):
@@ -60,6 +64,16 @@ class SongCollection:
         for fn, v in self.callbacks.items():
             fn(*v[0], **v[1]) if v else fn()
 
+    def clear_all(self):
+        """Clear everything, then refresh via callbacks."""
+        self.clear_data()
+        self.do_callbacks()
+
+    def clear_data(self):
+        """Clear song list. In child classes you'll want to redefine this."""
+        self.pool.clear()
+        self.markers = self.default_markers()
+
 
 class SetlistCollection(SongCollection):
     """Holds a song pool, and a list of Setlist versions that reference the song pool."""
@@ -71,15 +85,18 @@ class SetlistCollection(SongCollection):
         self.setlists = [Setlist(self)]
         self.live = self.setlists[0]
         self.deck = self.app.deck
-        self.markers.update({
+
+        self.deck.add_callback('live', self.update_marks)
+
+    def default_markers(self):
+        """Return default marker dict."""
+        return {
         'played': [],
         'skipped': [],
         'live': None,
         'previous': None,
         'nextup': None
-        })
-
-        self.deck.add_callback('live', self.update_marks)
+        }
 
     def update_marks(self):
         """Update song markers based on deck."""
@@ -173,6 +190,13 @@ class SetlistCollection(SongCollection):
         logging.info('song no longer in any setlist versions, removing from pool')
         self.pool.remove(song)
 
+    def clear_data(self):
+        """Clear all songs in all setlists."""
+        self.setlists.clear()
+        self.setlists.append(Setlist(self))
+        self.pool.clear()
+        self.do_callbacks()
+
 class Setlist:
     """Class for a setlist."""
 
@@ -213,19 +237,6 @@ class Setlist:
         # TODO: if deleted song is currently in song info, clear the song info
         # achieve with listeners within song? more comprehensive callback manager?
 
-
-class PoolCollection(SongCollection):
-    """Song collection with properties specific to pool."""
-
-    def __init__(self, name=None):
-        SongCollection.__init__(name)
-
-        self.markers = {}
-
-        # library pointers. TODO: maybe rename to collection_id
-        self.pool_id = None
-        self.library_id = None
-
 class SetlistMetadata:
     """Class for storing setlist metadata."""
     # TODO: use dict instead, class probably not needed
@@ -260,10 +271,34 @@ class GigData:
         self.app = parent.app
         self.suite = parent
 
-        # hold all workspace setlists
+        self.new_gig()
+
+    def new_gig(self):
+        """Initialize the gig with fresh collections."""
         self.setlists = SetlistCollection(self.app)
         self.pool = SongCollection(self.app, name='pool')
-        self.gig_id = None
+        self._gig_id = None
+
+    def clear_gig(self):
+        """Clears gig data, but keeps the objects. This should trigger
+        any callbacks."""
+
+        self.setlists.clear_all()
+        self.pool.clear_all()
+
+    @property
+    def gig_id(self):
+        return self._gig_id
+
+    @gig_id.setter
+    def gig_id(self, new):
+        self._gig_id = new
+        if new != 0:
+            self.app.settings.workspace.last_gig_id.set(new)
+
+    def load_gig(self, gig_data):
+        """Load gig into program from dictionary"""
+        logging.info(f'load_gig in GigData recieved the following:\n{gig_data}')
 
 
 """

@@ -577,20 +577,15 @@ class WorkspaceSettings(SettingsBaseClass):
         SettingsBaseClass.__init__(self, settings, name)
 
         self.defaults = {
-        # autosave_gig_id keeps workspace autosaves distinct from the last
-        # loaded gig. all assets are duplicated for autosaves save so internal
-        # changes don't mess up the gig assets.
-        'workspace_gig_id': None,
-        # commit_gig_id is where workspace overwrites when you "Save Gig".
-        # all assets are duplicated for this save, and then any orphaned
-        # assets are garbage collected.
-        'commit_gig_id': None
+        # store the last non-zero gig_id (0 is reserved for workspace) so on subsequent
+        # runs you can save the workspace back to the same gig.
+        'last_gig_id': None
         }
 
         inits = merge(self.defaults, self.custom)
 
-        self.workspace_gig_id = self.setting(tk.IntVar, 'workspace_gig_id', inits)
-        self.commit_gig_id = self.setting(tk.IntVar, 'commit_gig_id', inits)
+        # TODO: callback so this updates when gig_id changes
+        self.last_gig_id = self.setting(tk.IntVar, 'last_gig_id', inits)
 
 class LibrarySettings(SettingsBaseClass):
     """Class for library settings, especially read/write behaviors."""

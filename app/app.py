@@ -141,7 +141,7 @@ class MainApplication(tk.Frame):
 
             # logging.info('saved and quit')
             self.settings.dump_settings()
-            self.dbmanager.dump_gig()
+            # self.tools.dbmanager.dump_gig()
             self.root.destroy()
 
         elif choice == False:
