@@ -275,6 +275,7 @@ class GigData:
 
     def new_gig(self):
         """Initialize the gig with fresh collections."""
+        self.name = None
         self.setlists = SetlistCollection(self.app)
         self.pool = SongCollection(self.app, name='pool')
         self._gig_id = None
@@ -298,7 +299,8 @@ class GigData:
 
     def load_gig(self, gig_data):
         """Load gig into program from dictionary"""
-        logging.info(f'load_gig in GigData recieved the following:\n{gig_data}')
+        # logging.info(f'load_gig in GigData recieved the following:\n{gig_data}')
+        pass
 
 
 """
