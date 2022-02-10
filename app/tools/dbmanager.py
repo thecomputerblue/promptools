@@ -13,19 +13,26 @@ def open_db(file_name: str):
     finally:
         connection.commit()
         connection.close()
+    # TODO: if an exception occurs, maybe rollback instead of committing...
+
 
 def lowest_unused(l: list) -> int:
     """Return lowest int that doesn't appear in a list."""
 
     l.sort()
     last = len(l) - 1
-    logging.info(f'lowest unused recieved: {l}')
+    logging.info(f"lowest unused recieved: {l}")
 
     for i, cur in enumerate(l):
         if i == last:
             return l[-1] + 1
         elif new := cur + 1 != l[i + 1]:
             return new
+
+
+def sql_q_marks(n):
+    """Return '(?, ?, ... ?)' with n '?' marks. Used for SQLite VALUES."""
+    return "(" + ", ".join(["?"] * n) + ")"
 
 
 class DatabaseManager:
@@ -172,7 +179,9 @@ class DatabaseManager:
             cur.execute("SELECT * FROM gigs WHERE gig_id==0")
             workspace = cur.fetchone()
             if workspace is None:
-                cur.execute("INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (0, "workspace"))
+                cur.execute(
+                    "INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (0, "workspace")
+                )
                 logging.info("gen_db_defaults generated workspace gig_id placeholder")
 
     def choose_id(self, cur, key, table):
@@ -180,47 +189,52 @@ class DatabaseManager:
         Currently finds lowest available. If table is empty, starts at 0."""
 
         logging.info(f"choose_id in DatabaseManager")
-
         query = f"SELECT {key} FROM {table}"
         fetched = cur.execute(query).fetchall()
-
         return lowest_unused([tup[0] for tup in fetched]) if fetched else 0
 
     def dump_gig(self, gig, workspace=False):
-        """Dump the workspace ('gig') to db."""
-
-        logging.info('dump_gig in DatabaseManager')
-
-        if not gig:
-            return
+        """Dump the workspace back to db,
+        either as a gig or to workspace slot."""
 
         self.assign_gig_id(gig)
         store_id = 0 if workspace else gig.gig_id
 
-        self.dump_songs(self.app.data.pool.pool)
-        pool_ids = [song.song_id for song in self.app.data.pool.pool]
-        self.dump_pool_ids(gig_id=store_id, pool_ids=pool_ids)
-        self.dump_setlists(self.app.data.setlists, store_id)
-        self.dump_gig_meta(store_id, gig.name) 
+        self.dump_pool(store_id)
+        self.dump_gig_setlists(store_id)
+        self.dump_gig_meta(store_id)
 
-    def dump_gig_meta(self, store_id, name):
+    def dump_gig_meta(self, store_id):
         """Dump the gig metadata."""
-        logging.info(f"dumping gig metadata: {name}")
+
+        # TODO: replace with dict dump
+        logging.info(f"dumping gig metadata")
+        name = self.app.data.gig.name
         with open_db(self.db) as cur:
             cur.execute("DELETE FROM gigs WHERE gig_id=?", (store_id,))
-            cur.execute("INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (store_id, name))
+            cur.execute(
+                "INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (store_id, name)
+            )
 
-    def dump_dict_to_row(self, table, d): 
+    def dump_dict_to_row(self, cur, table, d):
         """Dump a dict back into a table row."""
-        # TODO: could potentially end up with mismatched order with this method
+
+        # TODO: could potentially end up with mismatched k,v order with this method
         # TODO: too clever, there is defintely a better way to do this
-        with open_db(self.db) as cur:
-            keys, vals = ", ".join(d.keys()), tuple(d.values())
-            q = f"INSERT OR REPLACE INTO {table} ({keys}) VALUES ({('?, '*len(d))[:-2]})"
-            cur.execute(q, vals)
+        k, v = ", ".join(d.keys()), tuple(d.values())
+        q = f"INSERT OR REPLACE INTO {table} ({k}) VALUES {sql_q_marks(len(d))}"
+        cur.execute(q, v)
+
+    def dump_pool(self, gig_id):
+        """Dump pool songs, then their ids into pool_data."""
+
+        self.dump_songs(self.app.data.pool.pool)
+        pool_ids = [song.song_id for song in self.app.data.pool.pool]
+        self.dump_pool_ids(gig_id=gig_id, pool_ids=pool_ids)
 
     def dump_pool_ids(self, gig_id, pool_ids):
         """Dump pool_ids to the db."""
+
         with open_db(self.db) as cur:
             for i, p in enumerate(pool_ids):
                 query = "INSERT INTO pool_data (gig_id, pos, song_id) VALUES (?, ?, ?)"
@@ -229,17 +243,19 @@ class DatabaseManager:
     def load_gig(self, gig_id):
         """Construct gig dictionary from db,
         pass to data module for unpacking."""
-        gig_data = {}
-        gig_data['gig_metadata'] = self.load_gig_metadata(gig_id)
 
-        gig_data['setlists'] = self.load_gig_setlists(gig_id)
+        self.app.data.gig.load_gig(self.make_gig_dict(gig_id))
 
-        # pass to data module for unpacking
-        self.app.data.gig.load_gig(gig_data)
+    def make_gig_dict(self, gig_id):
+        """Make a dict with gig_id."""
+        return {
+            "gig_metadata": self.load_gig_metadata(gig_id),
+            "setlists": self.load_gig_setlists(gig_id),
+        }
 
     def load_gig_metadata(self, gig_id: int) -> dict:
         """Return dict of gig metadata from db."""
-        return self.row_to_dict('gigs', 'gig_id', gig_id)
+        return self.row_to_dict("gigs", "gig_id", gig_id)
 
     def row_to_dict(self, table: str, row: str, value: str or int) -> dict:
         """Return dict of a single row of a table
@@ -247,16 +263,13 @@ class DatabaseManager:
         with open_db(self.db) as cur:
             query = f"SELECT * from {table} WHERE {row}=?"
             cur.execute(query, (value,))
-            keys = [k[0] for k in cur.description]
-            values = cur.fetchall()[0]
-            output = dict(zip(keys, values))
-        return output
+            k, v = [c[0] for c in cur.description], cur.fetchall()[0]
+            return dict(zip(k, v))
 
     def get_gig_setlist_ids(self, gig_id):
         with open_db(self.db) as cur:
             cur.execute("SELECT setlist_id FROM gig_setlists WHERE gig_id=?", (gig_id,))
-            gig_setlist_ids = cur.fetchall()[0]
-        return gig_setlist_ids
+            return cur.fetchall()[0]
 
     def load_gig_setlists(self, gig_id) -> list:
         """Return list of setlists for a gig_id."""
@@ -267,17 +280,18 @@ class DatabaseManager:
 
     def load_setlist(self, setlist_id):
         setlist = {}
-
-        # get setlist metadata for further processing
-        with open_db(self.db) as cur:
-            cur.execute("SELECT song_id FROM setlist_songs WHERE setlist_id=? ORDER BY pos", (setlist_id,))
-            song_ids = cur.fetchall()[0]
-            logging.info(f'load_setlist in DatabaseManager retrieved song_ids: {song_ids}')
-
-        # get songs
-        setlist['songs'] = self.load_many_songs(song_ids)
-
+        setlist["songs"] = self.load_many_songs(self.get_sl_song_ids(setlist_id))
+        # TODO: retrieve + apply metadata
         return setlist
+
+    def get_sl_song_ids(self, setlist_id):
+        """Return list of song_ids for a setlist_id."""
+        with open_db(self.db) as cur:
+            cur.execute(
+                "SELECT song_id FROM setlist_songs WHERE setlist_id=? ORDER BY pos",
+                (setlist_id,),
+            )
+            return cur.fetchall()[0]
 
     def load_many_songs(self, song_ids):
         """Return an ordered list of song dicts from provided song_ids."""
@@ -285,7 +299,6 @@ class DatabaseManager:
         for song_id in song_ids:
             songs.append(self.load_song(song_id))
         return songs
-
 
     def dump_song(self, song):
         """Dump a song to the db."""
@@ -295,8 +308,7 @@ class DatabaseManager:
         with open_db(self.db) as cur:
             self.assign_song_ids(song, cur)
             self.dump_song_script(song, cur)
-            # self.dump_song_meta(song, cur)
-        self.dump_song_meta_new(song)
+            self.dump_song_meta(song, cur)
 
     def assign_song_ids(self, song, cur):
         """Assigns id tags to the song if they don't exist."""
@@ -315,112 +327,79 @@ class DatabaseManager:
 
         pos, tag, word = tup
         data = (song_id, pos, tag, word)
-        query = "INSERT INTO song_data (song_id, pos, flag, content) VALUES (?, ?, ?, ?)"
+        query = (
+            "INSERT INTO song_data (song_id, pos, flag, content) VALUES (?, ?, ?, ?)"
+        )
         cur.execute(query, data)
 
-    def temp_quick_dict(self, song):
+    def temp_song_dict(self, song):
         """TEMP FUNCTION TO MAKE A SONG METADATA DICT"""
         return {
-        'song_id': song.song_id,
-        'library_id': song.library_id,
-        'title': song.name,
-        'created': song.created,
-        'modified': song.modified,
-        'comments': song.info,
-        'confidence': song.confidence,
-        'default_key': None
+            "song_id": song.song_id,
+            "library_id": song.library_id,
+            "title": song.name,
+            "created": song.created,
+            "modified": song.modified,
+            "comments": song.info,
+            "confidence": song.confidence,
+            "default_key": None,
         }
 
-    def dump_song_meta_new(self, d):
+    def dump_song_meta(self, d, cur):
         """Replaces dump_song_meta"""
 
         # TODO: once song is updated to store metadata in a dict,
         # you can pass that in and delete this line, which generates
         # a dict from the song obj.
-        song_meta = self.temp_quick_dict(d)
+        song_meta = self.temp_song_dict(d)
+        self.dump_dict_to_row(cur, "song_meta", song_meta)
 
-        self.dump_dict_to_row('song_meta', song_meta)
-
-    def dump_song_meta(self, song, cur):
-        """Dump the song metadata to the db."""
-
-        query = """
-                INSERT OR REPLACE INTO song_meta (
-                song_id, 
-                library_id,
-                title,
-                created, 
-                modified,
-                comments,
-                confidence,
-                default_key
-                )
-
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """
-        cur.execute(
-            query,
-            (
-                song.song_id,
-                song.library_id,
-                song.name,
-                song.created,
-                song.modified,
-                song.info,
-                song.confidence,
-                None,
-            ),
-        )
-
-    def dump_setlists(self, collection, gig_id):
+    def dump_gig_setlists(self, gig_id):
         """Dump ALL the open setlists."""
-        slists = collection.setlists
-        pool = collection.pool
+        collection = self.app.data.setlists
+        setlists = collection.setlists
+        songs = collection.pool
 
-        self.dump_songs(pool)
+        self.dump_songs(songs)
+        self.dump_setlists(setlists)
+        self.dump_gig_setlist_ids([s.setlist_id for s in setlists], gig_id)
 
-        with open_db(self.db) as cur:
-            # dump setlists and songs
-            for i, s in enumerate(slists):
-                s.setlist_id = self.choose_setlist_id(s, cur)
-                song_ids = self.get_song_ids(s)
-                self.dump_song_ids_to_setlist_songs(song_ids, s.setlist_id, cur)
-                self.dump_setlist_metadata(s, cur)
-            
-            # dump gig references to setlists
-            setlist_ids = [s.setlist_id for s in slists]
-        
-        self.dump_gig_setlist_ids(setlist_ids, gig_id)
+    def dump_setlists(self, setlists):
+        for setlist in setlists:
+            self.dump_setlist(setlist)
 
     def dump_gig_setlist_ids(self, setlist_ids, gig_id):
-        logging.info('dump_gig_setlist_ids')
+        """Track which setlists are associated with the gig."""
+        logging.info("dump_gig_setlist_ids")
         with open_db(self.db) as cur:
             for i, s in enumerate(setlist_ids):
                 query = "INSERT INTO gig_setlists (gig_id, pos, setlist_id) VALUES (?, ?, ?)"
-                logging.info(f'inserted into gig_setlists gig_id:{gig_id}, pos:{i}, setlist_id: {s}')
+                logging.info(
+                    f"inserted into gig_setlists gig_id:{gig_id}, pos:{i}, setlist_id: {s}"
+                )
                 cur.execute(query, (gig_id, i, s))
 
-    def dump_setlist(self, setlist):
-        """Dump a SINGLE setlist to the db."""
+    def dump_setlist(self, setlist, dump_songs=False):
+        """Dump a single setlist. Pass dump_songs=True if you want
+        to dump setlists songs. This is False by default because
+        dump_gig_setlists dumps the entire setlist pool at once, and
+        re-dumping would be redundant."""
 
-        self.dump_songs(setlist.songs)
+        self.dump_songs(setlist.songs) if dump_songs else None
 
         with open_db(self.db) as cur:
-            # choose appropriate setlist_id
-            setlist.setlist_id = self.choose_setlist_id(setlist, cur)
-            song_ids = self.get_song_ids(setlist)
-            self.dump_song_ids_to_setlist_songs(song_ids, setlist.setlist_id, cur)
+            self.assign_setlist_id(setlist, cur)
+            self.dump_song_ids_to_setlist_songs(
+                self.get_song_ids(setlist), setlist.setlist_id, cur
+            )
             self.dump_setlist_metadata(setlist, cur)
-            # TODO: store previous, current, next_up, skip, strike, etc.
 
     def get_song_ids(self, setlist):
         """Get all song ids from setlist."""
 
         song_ids = []
-
         for song in setlist.songs:
             song_ids.append(song.song_id)
-
         return song_ids
 
     def dump_songs(self, songs):
@@ -434,7 +413,9 @@ class DatabaseManager:
         to be restored with correct references in the correct order."""
 
         for i, song_id in enumerate(song_ids):
-            query = "INSERT INTO setlist_songs (setlist_id, pos, song_id) VALUES (?, ?, ?)"
+            query = (
+                "INSERT INTO setlist_songs (setlist_id, pos, song_id) VALUES (?, ?, ?)"
+            )
             cur.execute(query, (setlist_id, i, song_id))
 
     def dump_setlist_metadata(self, setlist, cur):
@@ -444,22 +425,23 @@ class DatabaseManager:
         query = "INSERT INTO setlist_meta (setlist_id, name) VALUES (?, ?)"
         cur.execute(query, (setlist.setlist_id, setlist.title))
 
-    def choose_setlist_id(self, setlist, cur):
-        """Return an appropriate setlist_id for storing to database
+    def assign_setlist_id(self, setlist, cur):
+        """Assign an appropriate setlist_id for storing to database
         based on overwrite settings, whether setlist exists in db already,
         etc."""
 
         if self.settings.overwrite_setlists.get():
             if setlist.setlist_id is not None:
-                return setlist.setlist_id
-        return self.choose_id(cur, "setlist_id", "setlist_meta")
+                return
+        setlist.setlist_id = self.choose_id(cur, "setlist_id", "setlist_meta")
 
     def assign_gig_id(self, gig):
-        """Return an appropriate gig_id for storing to database."""      
+        """Return an appropriate gig_id for storing to database."""
+
         with open_db(self.db) as cur:
             if gig.gig_id is None:
                 gig.gig_id = self.choose_id(cur, "gig_id", "gigs")
-        # TODO: overwrite setting (see choose_setlist_id)  
+        # TODO: overwrite setting (see assign_setlist_id)
 
     def song_id_strategies(self, song, cur):
         """Return an appropriate song_id for storing to database
@@ -475,13 +457,12 @@ class DatabaseManager:
         """Return an appropriate library_id for storing to database
         based on extant song_id."""
 
-        logging.info(f'library_id_stategies \n song_id: {song.song_id}')
+        logging.info(f"library_id_stategies \n song_id: {song.song_id}")
 
         if song.library_id is not None:
             logging.info("song already had a library_id, so it was returned")
             return song.library_id
-
-        if song.song_id is not None:
+        elif song.song_id is not None:
             logging.info("song had no library_id, so song_id was assigned")
             return song.song_id
 
@@ -499,9 +480,7 @@ class DatabaseManager:
 
         with open_db(self.db) as cur:
             cur.execute(options.get(option))
-            data = cur.fetchall()
-
-        return data
+            return cur.fetchall()
 
     def make_song_dict_from_db(self, song_id):
         """Construct and return a dictionary for the song from db"""
@@ -515,12 +494,14 @@ class DatabaseManager:
     def get_song_metadata(self, song_id):
         """Pull everything from the metadata table for the given song_id
         and return a dictionary."""
-        return self.row_to_dict('song_meta', 'song_id', song_id)
+        return self.row_to_dict("song_meta", "song_id", song_id)
 
     def get_song_script(self, song_id):
         """Return song script as list of tuples."""
         with open_db(self.db) as cur:
             # TODO: sort!!!
-            cur.execute("SELECT pos, flag, content FROM song_data WHERE song_id=?", (song_id,))
+            cur.execute(
+                "SELECT pos, flag, content FROM song_data WHERE song_id=?", (song_id,)
+            )
             script = cur.fetchall()
         return script

@@ -33,14 +33,7 @@ class SetlistFrame(tk.Frame):
         self.setlist = self
         self.settings = self.app.settings.setlist
 
-        # manages the song list & its representation in the listbox
-        self.data = self.app.data.setlists
-        self.pool = self.data.pool
-        self.markers = self.data.markers
-
         # live setlist & songs
-        self.live = self.app.data.setlists.live
-        self.songs = self.live.songs
         self.deck = self.app.deck
 
         # widgets
@@ -79,6 +72,27 @@ class SetlistFrame(tk.Frame):
         # make strategies for updating listbox
         self.make_listbox_strategies()
 
+    # TODO: better method than a bunch of properties?
+    @property
+    def data(self):
+        return self.app.data.setlists
+
+    @property
+    def pool(self):
+        return self.data.pool
+    
+    @property
+    def markers(self):
+        return self.data.markers
+
+    @property
+    def live(self):
+        return self.data.live
+
+    @property
+    def songs(self):
+        return self.live.songs
+    
     def do_sel(self, sel):
         """Clear and apply new target listbox selection."""
 
@@ -159,8 +173,9 @@ class SetlistFrame(tk.Frame):
     @preserve_sel
     def on_remove(self, sel, *args, **kwargs):
         """Remove selected song."""
-
-        self.live.remove_song(i=sel)
+        if sel is None:
+            return
+        self.live.remove_song_at_index(i=sel)
         self.listbox_update()
 
     @pass_sel

@@ -83,10 +83,20 @@ class SetlistCollection(SongCollection):
         # TODO: on init, attempt to load previous from db.
 
         self.setlists = [Setlist(self)]
-        self.live = self.setlists[0]
         self.deck = self.app.deck
 
         self.deck.add_callback('live', self.update_marks)
+
+    def refresh(method):
+        """Decorator that updates markers and does all callbacks."""
+        def inner(self, *args, **kwargs):
+            method(self, *args, **kwargs)
+            self.update_marks()
+            self.do_callbacks()
+        return inner
+
+    def clear_markers(self):
+        self.markers = self.default_markers()
 
     def default_markers(self):
         """Return default marker dict."""
@@ -123,59 +133,43 @@ class SetlistCollection(SongCollection):
         """Add a new setlist to the setlists."""
         self.setlists.append(Setlist(self, name))
 
+    @refresh
     def add_song(self, song):
         """Add a song to the setlist."""
 
-        if not song:
+        if not song or self.song_already_in_setlist(song):
             return
+        self.pool.append(song)
+        self.live.songs.append(song) # TODO: live add method that auto-appends to pool?
 
+    def song_already_in_setlist(self, song):
+        """Check if a song is already in the setlist."""
+
+        # TODO: currently comparing names, reconsider in future.
         names = self.live.names
         if names is not None and song.name in names:
             logging.info('same named song already in setlist!')
-            return
-
-        self.pool.append(song)
-        self.live.songs.append(song)
-        self.update_marks()
-        self.do_callbacks()
+            return True
 
     def add_live(self):
         """Add the live song to the setlist."""
 
         self.add_song(self.deck.live)
 
-    # TODO: combine following functions as they all follow the same form!
-
     def toggle_mark(self, param, song):
         """Toggle a song within a marker list."""
         l = self.markers[param]
-        print(l)
         l.remove(song) if song in l else l.append(song)
 
-    def on_skip(self, song):
-        """Toggle song skip."""
-        skipped = self.markers['skipped']
-        skipped.remove(song) if song in skipped else skipped.append(song)
-
-    def on_playmark(self, song):
-        """Toggle played marker."""
-        played = self.markers['played']
-        played.remove(song) if song in played else played.append(song)
-
+    @refresh
     def move_song(self, setlist, song_i, dest):
         """Move song within a setlist."""
 
         logging.info('move_song in SetlistCollection')
-        if not setlist.songs:
-            return
-
-        # constrain dest to length of list
-        if dest > len(setlist.songs) - 1:
-            dest = song_i
-
-        # move the song, refresh the list representation
-        setlist.songs.insert(dest, setlist.songs.pop(song_i))
-        self.update_marks()
+        # if not setlist.songs:
+        #     return
+        i = min(dest, len(setlist.songs)-1)
+        setlist.songs.insert(i, setlist.songs.pop(song_i))
 
     def remove_song_if_orphaned(self, song):
         """If a song no longer exists in any of the setlists,
@@ -191,29 +185,62 @@ class SetlistCollection(SongCollection):
         self.pool.remove(song)
 
     def clear_data(self):
-        """Clear all songs in all setlists."""
+        """Clear all songs in all setlists, markers, etc."""
+        logging.info('clear_data in SetlistCollection')
+        self.clear_setlists()
+        self.clear_songs()
+        self.clear_markers()
+
+    def clear_setlists(self):
+        """Clears setlists."""
         self.setlists.clear()
-        self.setlists.append(Setlist(self))
+        # self.setlists.append(Setlist(self))        
+
+    def clear_songs(self):
         self.pool.clear()
-        self.do_callbacks()
+
+    @property
+    def live(self):
+        """Return the live setlist, or generate an empty one if none exist."""
+        if not self.setlists:
+            self.setlists = [Setlist(self)]
+        return self.setlists[0]
 
 class Setlist:
     """Class for a setlist."""
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, d={}, *args, **kwargs):
         # pool contains all available songs
 
+        logging.info('__init__ in Setlist')
+        logging.info(f'recieved dict: {d}')
         self.parent = parent
-        self.title = kwargs.get('title')
-
-        self.pool = parent.pool
+        self.title = d.get('title')
 
         # songs contains songs as they are ordered in this setlist
-        self.songs = []
+        self.songs = self.make_many_song_objs(d.get('songs')) if 'songs' in d else []
+        self.pool.append([s for s in self.songs if s not in self.pool])
 
         # db pointers
-        self.setlist_id = None 
-        self.library_id = None 
+        self.setlist_id = d.get('setlist_id') 
+        self.library_id = d.get('library_id')
+
+        logging.info(f'setlist initialized with following data:\nsongs:{self.songs}, setlist_id:{self.setlist_id}, library_id:{self.library_id}')
+
+    def make_many_song_objs(self, songs_dict):
+        """Return a list of song objects."""
+        logging.info('make_many_song_objs in Setlist')
+        # TODO: outsource this to song constructor...
+        # songs = []
+        # for s in songs_dict:
+        #     songs.append(Song(s))
+        # return songs
+
+
+    @property
+    def pool(self):
+        return self.parent.pool
+    
 
     @property
     def names(self):
@@ -227,9 +254,9 @@ class Setlist:
         # TODO: inefficient
         return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else []
 
-    def remove_song(self, i):
-        """Remove song from the setlist, 
-        and pool if it has no other references."""
+    def remove_song_at_index(self, i:int) -> None:
+        """Remove song from the setlist by setlist index, 
+        and also pool if it has no other references."""
         logging.info(f'remove_song in Setlist recieved index: {i}')
         song = self.songs[i]
         self.songs.remove(song)
@@ -299,8 +326,20 @@ class GigData:
 
     def load_gig(self, gig_data):
         """Load gig into program from dictionary"""
-        # logging.info(f'load_gig in GigData recieved the following:\n{gig_data}')
-        pass
+        self.clear_gig()
+        self.load_from_gig_data_dict(gig_data)
+
+    def load_from_gig_data_dict(self, gig_data):
+        """Dump gig_data into the gig object."""
+        logging.info('load_from_gig_data_dict in GigData')
+        self.load_setlists(gig_data.get('setlists'))
+
+    def load_setlists(self, setlists):
+        logging.info('load_setlists in GigData')
+        for s in setlists:
+            self.setlists.setlists.append(Setlist(self.setlists, s))
+
+
 
 
 """
