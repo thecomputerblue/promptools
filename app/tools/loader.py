@@ -47,7 +47,7 @@ class LoadTool():
         # TODO: change to decorator fn
 
         # reset view if cue and live mismatch
-        if reset == None:
+        if reset is None:
             reset = False if self.app.deck.live is self.app.deck.cued else True
 
         edit_state, yview = self.get_state_and_yview(widget)

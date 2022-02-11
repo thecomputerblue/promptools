@@ -108,11 +108,12 @@ class SongDetailView(tk.Frame):
 
     def fill_from_song_dict(self, song_dict):
         """Populate the fields from a song dictionary."""
-        # dump 
+        # TODO 
+        pass
 
     def refresh_song_meta_fields(self):
 
-        if self.song == None:
+        if self.song is None:
             return 
 
         # (widget, 0 index format, data)

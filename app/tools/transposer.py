@@ -177,8 +177,8 @@ class Transposer:
         (isinstance(target, int),       lambda: (target + song.key.default_id - song.key.initial_id) % 12),
         (str_represents_int(target),    lambda: (int(target) + song.key.default_id - song.key.initial_id) % 12),
         (not self.match_chord(match),   lambda: (song.key.default_id - song.key.initial_id) % 12),
-        (song.key.initial != None,      lambda: (ids.NOTE_IDS.get(note) - song.key.initial_id) % 12),
-        (song.key.initial == None,      lambda: (ids.NOTE_IDS.get(note) - song.key.default_id) % 12),
+        (song.key.initial is not None,      lambda: (ids.NOTE_IDS.get(note) - song.key.initial_id) % 12),
+        (song.key.initial is None,      lambda: (ids.NOTE_IDS.get(note) - song.key.default_id) % 12),
         ]
 
         for s in strategies:

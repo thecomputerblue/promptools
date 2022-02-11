@@ -234,7 +234,7 @@ class Setlist:
         # songs = []
         # for s in songs_dict:
         #     songs.append(Song(s))
-        # return songs
+        # return self.app.tools.factorysongs
 
 
     @property

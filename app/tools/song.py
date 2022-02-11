@@ -200,10 +200,10 @@ class SongFactory:
     def strip_meta_from_string(self, song, string):
         """Strip metadata from string and apply to song."""
 
-        if song.meta.info == None: 
+        if song.meta.info is None: 
             string, song.meta.info = self.strip_end_notes_new(song, string)
 
-        if song.meta.confidence == None:
+        if song.meta.confidence is None:
             string, song.meta.confidence = self.strip_confidence_asterisks_new(string)
 
         return song, string
@@ -432,7 +432,7 @@ class Song:
     def strip_info(self, info):
         """Strip doesn't remove leading / trailing newlines for some reason..."""
 
-        if info == None:
+        if info is None:
             return ''
 
         while info.startswith('\n') and len(info)>1:
@@ -582,7 +582,7 @@ class Key():
     def key_to_id(self, key):
         """Convert key to note_id"""
 
-        if key == None:
+        if key is None:
             return None
 
         note, minor = self.split_key(key)
@@ -593,7 +593,7 @@ class Key():
         """Get correct accidental index for a target key."""
 
         # default to sharp
-        if key == None:
+        if key is None:
             return 0
 
         note, minor = self.split_key(key)
