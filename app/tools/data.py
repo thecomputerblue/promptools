@@ -128,10 +128,6 @@ class SetlistCollection(SongCollection):
                 self.markers['nextup'] = self.live.songs[i+1] if i < count-1 else None
                 break
 
-    def new_setlist(self, name=None):
-        """Add a new setlist to the setlists."""
-        self.setlists.append(Setlist(self, name))
-
     @refresh
     def add_song(self, song):
         """Add a song to the setlist."""
@@ -163,14 +159,12 @@ class SetlistCollection(SongCollection):
     @refresh
     def move_song(self, setlist, song_i, dest):
         """Move song within a setlist."""
-
         i = min(dest, len(setlist.songs)-1)
         setlist.songs.insert(i, setlist.songs.pop(song_i))
 
     def remove_song_if_orphaned(self, song):
         """If a song no longer exists in any of the setlists,
         remove it from the pool."""
-
         for setlist in self.setlists:
             if song in setlist.songs:
                 return
@@ -284,8 +278,8 @@ class GigData:
         self.load_setlists(gig_data.get('setlists'))
 
     def load_setlists(self, setlists):
-        for s in setlists:
-            self.setlists.setlists.append(Setlist(self.setlists, s))
+        for setlist in setlists:
+            self.setlists.setlists.append(Setlist(parent=self.setlists, d=setlist))
 
 
 """

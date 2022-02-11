@@ -270,7 +270,8 @@ class DatabaseManager:
     def get_gig_setlist_ids(self, gig_id):
         with open_db(self.db) as cur:
             cur.execute("SELECT setlist_id FROM gig_setlists WHERE gig_id=?", (gig_id,))
-            return cur.fetchall()[0] if cur.fetchall() else None
+            sel = cur.fetchall()
+            return sel[0] if sel is not None else None
 
     def load_gig_setlists(self, gig_id) -> list:
         """Return list of setlists for a gig_id."""
@@ -293,16 +294,18 @@ class DatabaseManager:
 
     def get_sl_song_ids(self, setlist_id):
         """Return list of song_ids for a setlist_id."""
+        logging.info(f'get_sl_song_ids recieved setlist_id: {setlist_id}')
         with open_db(self.db) as cur:
             cur.execute(
                 "SELECT song_id FROM setlist_songs WHERE setlist_id=? ORDER BY pos",
                 (setlist_id,),
             )
-            return cur.fetchall()[0]
+            return list(zip(*cur.fetchall()))[0]
 
     def load_many_songs(self, song_ids):
         """Return an ordered list of song dicts from provided song_ids."""
         songs = []
+        logging.info(f'load_many_songs recieved song_ids: {song_ids}')
         for song_id in song_ids:
             songs.append(self.load_song(song_id))
         return songs
