@@ -251,6 +251,7 @@ class SetlistFrame(tk.Frame):
         if not self.live.songs:
             return
 
+        logging.info(f'listbox_update names: {self.live.names}')
         for i, name in enumerate(self.live.names):
             name = strike(name) if self.songs[i] in self.markers.get('played') else name
             name = number(i+1, name)

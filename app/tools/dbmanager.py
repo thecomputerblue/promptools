@@ -248,6 +248,7 @@ class DatabaseManager:
 
     def make_gig_dict(self, gig_id):
         """Make a dict with gig_id."""
+
         return {
             "gig_metadata": self.load_gig_metadata(gig_id),
             "setlists": self.load_gig_setlists(gig_id),
@@ -269,19 +270,25 @@ class DatabaseManager:
     def get_gig_setlist_ids(self, gig_id):
         with open_db(self.db) as cur:
             cur.execute("SELECT setlist_id FROM gig_setlists WHERE gig_id=?", (gig_id,))
-            return cur.fetchall()[0]
+            return cur.fetchall()[0] if cur.fetchall() else None
 
     def load_gig_setlists(self, gig_id) -> list:
         """Return list of setlists for a gig_id."""
+
+        sids = self.get_gig_setlist_ids(gig_id)
+        if sids is None:
+            return []
+
         setlists = []
-        for sid in self.get_gig_setlist_ids(gig_id):
+        for sid in sids:
             setlists.append(self.load_setlist(sid))
         return setlists
 
     def load_setlist(self, setlist_id):
         setlist = {}
-        setlist["songs"] = self.load_many_songs(self.get_sl_song_ids(setlist_id))
         # TODO: retrieve + apply metadata
+        setlist["songs"] = self.load_many_songs(self.get_sl_song_ids(setlist_id))
+
         return setlist
 
     def get_sl_song_ids(self, setlist_id):
@@ -402,9 +409,9 @@ class DatabaseManager:
             song_ids.append(song.song_id)
         return song_ids
 
-    def dump_songs(self, songs):
+    def dump_songs(self, songs: list):
         """Dump all songs from setlist."""
-
+        print(f'SONGS---->{songs}')
         for song in songs:
             self.dump_song(song)
 

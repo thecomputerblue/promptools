@@ -66,6 +66,13 @@ class SongFactory:
             lambda **kwargs: "Untitled")),
         )
 
+    def make_many_songs(self, songs: list) -> list:
+        """Convert list of song dicts into list of song objects."""
+        objs = []
+        for d in songs:
+            objs.append(self.new_song(dictionary=d))
+        return objs
+
     def new_song(self, meta=None, **kwargs):
         """Create a new song object from valid text source
         (text/rtf file, string, tkinter textbox, or database).

@@ -8,23 +8,21 @@ class AppData():
 
     def __init__(self, app):
         self.app = app
-
-        # local refs to modules
         self.dbmanager = app.tools.dbmanager
         self.deck = app.deck
-        # connect the dbmanager 
-        self.db = app.settings.paths.db.get()
-
-        # init workspace collections
         self.gig = GigData(self)
-        self.setlists = self.gig.setlists
-        self.pool = self.gig.pool
 
-        self.collections = (self.setlists, self.pool)
+    @property
+    def setlists(self):
+        return self.gig.setlists
 
-    def get_last_workspace_from_db(self):
-        """Restore workspace from last session on load."""
-        logging.info('get_last_workspace_from_db in AppData')
+    @property
+    def pool(self):
+        return self.gig.pool
+
+    @property
+    def db(self):
+        return self.app.settings.paths.db.get()
 
 
 class SongCollection:
@@ -61,6 +59,7 @@ class SongCollection:
         self.callbacks[fn] = (args, kwargs)
 
     def do_callbacks(self):
+        """Do any callbacks assigned to the Song Collection."""
         for fn, v in self.callbacks.items():
             fn(*v[0], **v[1]) if v else fn()
 
@@ -165,9 +164,6 @@ class SetlistCollection(SongCollection):
     def move_song(self, setlist, song_i, dest):
         """Move song within a setlist."""
 
-        logging.info('move_song in SetlistCollection')
-        # if not setlist.songs:
-        #     return
         i = min(dest, len(setlist.songs)-1)
         setlist.songs.insert(i, setlist.songs.pop(song_i))
 
@@ -175,13 +171,9 @@ class SetlistCollection(SongCollection):
         """If a song no longer exists in any of the setlists,
         remove it from the pool."""
 
-        logging.info(f'remove_song_if_orphaned in SetlistCollection')
         for setlist in self.setlists:
             if song in setlist.songs:
-                logging.info('song in setlist.songs, keeping in pool')
                 return
-
-        logging.info('song no longer in any setlist versions, removing from pool')
         self.pool.remove(song)
 
     def clear_data(self):
@@ -194,7 +186,6 @@ class SetlistCollection(SongCollection):
     def clear_setlists(self):
         """Clears setlists."""
         self.setlists.clear()
-        # self.setlists.append(Setlist(self))        
 
     def clear_songs(self):
         self.pool.clear()
@@ -202,93 +193,51 @@ class SetlistCollection(SongCollection):
     @property
     def live(self):
         """Return the live setlist, or generate an empty one if none exist."""
-        if not self.setlists:
-            self.setlists = [Setlist(self)]
+        self.setlists.append(Setlist(self)) if not self.setlists else None
+        logging.info(f'fetched live setlist {[song.name for song in self.setlists[0].songs]}')
+        logging.info(f'ALL SETLISTS: {[s for s in self.setlists]}')
         return self.setlists[0]
 
 class Setlist:
     """Class for a setlist."""
 
     def __init__(self, parent, d={}, *args, **kwargs):
-        # pool contains all available songs
-
-        logging.info('__init__ in Setlist')
-        logging.info(f'recieved dict: {d}')
+        self.app = parent.app
         self.parent = parent
         self.title = d.get('title')
 
         # songs contains songs as they are ordered in this setlist
-        self.songs = self.make_many_song_objs(d.get('songs')) if 'songs' in d else []
-        self.pool.append([s for s in self.songs if s not in self.pool])
+        self.songs = self.make_many_songs(d.get('songs')) if 'songs' in d else []
+        if self.songs:
+            print([s.name for s in self.songs])
+        # TODO: make this work, should back dump into pool
+        # self.pool.append([s for s in self.songs if s not in self.pool and s is not []])
 
         # db pointers
         self.setlist_id = d.get('setlist_id') 
         self.library_id = d.get('library_id')
 
-        logging.info(f'setlist initialized with following data:\nsongs:{self.songs}, setlist_id:{self.setlist_id}, library_id:{self.library_id}')
-
-    def make_many_song_objs(self, songs_dict):
-        """Return a list of song objects."""
-        logging.info('make_many_song_objs in Setlist')
-        # TODO: outsource this to song constructor...
-        # songs = []
-        # for s in songs_dict:
-        #     songs.append(Song(s))
-        # return self.app.tools.factorysongs
-
+    def make_many_songs(self, songs: list) -> list:
+        """Turns a list of song dicts into a list of song objs."""
+        return self.app.tools.factory.make_many_songs(songs)
 
     @property
     def pool(self):
         return self.parent.pool
     
-
     @property
     def names(self):
         """Return names of all songs in the collection."""
         return [song.name for song in self.songs] if self.songs else []
 
-    @property
-    def numbered(self, style=lambda i: " (" + str(i+1) + ") "):
-        """Return songs with numbers."""
-
-        # TODO: inefficient
-        return [style(i) + song.name for i, song in enumerate(self.songs)] if self.songs else []
-
     def remove_song_at_index(self, i:int) -> None:
         """Remove song from the setlist by setlist index, 
         and also pool if it has no other references."""
-        logging.info(f'remove_song in Setlist recieved index: {i}')
+        # TODO: if deleted song is currently in song info, clear the song info
+        # achieve with listeners within song? more comprehensive callback manager?
         song = self.songs[i]
         self.songs.remove(song)
         self.parent.remove_song_if_orphaned(song)
-        # TODO: if deleted song is currently in song info, clear the song info
-        # achieve with listeners within song? more comprehensive callback manager?
-
-class SetlistMetadata:
-    """Class for storing setlist metadata."""
-    # TODO: use dict instead, class probably not needed
-
-    def __init__(self, setlist):
-        self.setlist = setlist
-        self.songs = setlist.songs 
-
-        self.title = tk.StringVar()
-        self.city = tk.StringVar()
-        self.venue = tk.StringVar()
-        self.date = tk.StringVar()
-
-        # put the  schedule in here, fetch from it as needed.
-        self.schedule = {}
-
-        # guest performers {name: {guest_metadata}}
-        self.guests = {}
-
-        # other acts (openers generally) {name: time}
-        self.other_acts = {}
-
-        # most important dict! {meal: time}
-        # extract this from sechedule
-        # self.meals = {}
 
 
 class GigData:
@@ -335,11 +284,8 @@ class GigData:
         self.load_setlists(gig_data.get('setlists'))
 
     def load_setlists(self, setlists):
-        logging.info('load_setlists in GigData')
         for s in setlists:
             self.setlists.setlists.append(Setlist(self.setlists, s))
-
-
 
 
 """
