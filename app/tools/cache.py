@@ -1,4 +1,3 @@
-import tkinter as tk 
 import weakref
 import logging
 import gc 

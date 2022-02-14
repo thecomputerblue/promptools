@@ -1,5 +1,3 @@
-import tkinter as tk 
-
 from tools.song import Song, SongFactory
 from tools.transposer import Transposer
 from tools.loader import LoadTool

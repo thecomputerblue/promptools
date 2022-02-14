@@ -1,6 +1,9 @@
 # manages app settings, including storing / recalling settings
 # between sessions.
 
+# TODO: when eventually porting to kivy/pyqt you'll need to migrate
+# all the tkinter references in here.
+
 import tkinter as tk
 from tkinter import font
 import logging

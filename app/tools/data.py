@@ -1,7 +1,5 @@
-import tkinter as tk
 import sqlite3
 import logging
-
 
 class AppData():
     """Class for app data used in saving and recalling workspace, settings."""

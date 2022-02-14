@@ -1,4 +1,3 @@
-# import tkinter as tk
 import sqlite3
 import logging
 from contextlib import contextmanager

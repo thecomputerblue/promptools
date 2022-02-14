@@ -1,4 +1,3 @@
-import tkinter as tk
 import logging
 from tools.song import Song
 from tkinter import font
