@@ -462,7 +462,7 @@ class SetlistSettings(SettingsBaseClass):
         SettingsBaseClass.__init__(self, settings, name)
 
         self.defaults = {
-        'edit': False,
+        'locked': True,
         'played_yview': 0.6,
         'played_seconds': 60,
         'city': "",
@@ -475,7 +475,7 @@ class SetlistSettings(SettingsBaseClass):
         inits = merge(self.defaults, self.custom)
 
         # editable
-        self.edit = self.setting(tk.BooleanVar, 'edit', inits)
+        self.locked = self.setting(tk.BooleanVar, 'locked', inits)
 
         # mark as played if you unload a song past this point
         self.played_yview = self.setting(tk.DoubleVar, 'played_yview', inits)

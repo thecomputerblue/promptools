@@ -28,9 +28,7 @@ class SetlistFrame(tk.Frame):
         # context
         self.parent = parent
         self.app = parent.app
-        self.suite = parent.suite
-        # TODO: confusing
-        self.setlist = self
+        self.suite = self
         self.settings = self.app.settings.setlist
 
         # live setlist & songs
@@ -47,23 +45,12 @@ class SetlistFrame(tk.Frame):
         self.listbox.pack(side="top", fill="both", expand=True)
         self.listbox.bind("<<ListboxSelect>>", self.on_listbox_select)
 
-        # lock preventing editing the setlist
-        self.locked = tk.BooleanVar()  # TODO: move to settings
-
         self.controls = SetlistControlRow(self)
         self.controls.pack(anchor="s", side="left", fill="both", expand=True)
-
-        # add the lock trace and set to locked TODO: move this stuff into control row maybe
-        self.locked.trace("w", lambda *args: self.toggle_controls())
-        self.locked.set(True)
 
         # popup menu
         self.menu = RightClickMenu(self)
         self.listbox.bind("<Button-2>", self.right_click)
-
-        # create a reference to this frame in the collection
-        # so it can be refresshed when there is db activity.
-        # TODO: best method? weakref?
 
         # deck callback
         self.deck.add_callback("live", self.listbox_update)
@@ -95,7 +82,6 @@ class SetlistFrame(tk.Frame):
     
     def do_sel(self, sel):
         """Clear and apply new target listbox selection."""
-
         l = self.listbox
         l.selection_clear(0, "end")
         l.selection_set(sel) if sel < l.size() else l.selection_set("end")
@@ -117,11 +103,9 @@ class SetlistFrame(tk.Frame):
         if there is a selection."""
 
         def inner(self, *args, **kwargs):
-
             sel = self.get_sel()
             if sel is None:
                 return
-
             method(self, sel, *args, **kwargs)
 
         return inner
@@ -131,30 +115,6 @@ class SetlistFrame(tk.Frame):
 
         sel = self.listbox.curselection()
         return sel[0] if sel else None
-
-    def toggle_controls(self, event=None):
-        """Update state of setlist controls based on toggle."""
-
-        togglable = self.controls.togglable
-        locked = self.locked.get()
-        state = "disabled" if locked else "normal"
-
-        for button in togglable:
-            button.config(state=state)
-
-    def toggle_lock(self):
-        """Update lock label and tkvar."""
-
-        lock = self.controls.lock
-
-        if self.locked.get():
-            # unlock unicode \U0001F513
-            lock.config(text="\U0001F513")
-            self.locked.set(False)
-        else:
-            # lock unicode \U0001F512
-            lock.config(text="\U0001F512")
-            self.locked.set(True)
 
     def right_click(self, event):
         """When right clicking in listbox, update selection and bring up context options."""
@@ -281,7 +241,7 @@ class SetlistHeader(tk.Frame):
         # context
         self.parent = parent
         self.app = parent.app
-        self.setlist = self.parent.setlist
+        self.suite = self.parent
 
         self.label = tk.Label(self, text="Setlist | ")
         self.label.pack(side="left", anchor="w", expand=True)
@@ -299,16 +259,14 @@ class SetlistControlRow(tk.Frame):
         # context
         self.parent = parent
         self.app = parent.app
+        self.settings = self.app.settings.setlist
         self.suite = parent
-        self.setlist = self.parent.setlist
 
         # TODO: move these functions in?
-        move = self.setlist.move
-        on_remove = self.setlist.on_remove
-        toggle = self.setlist.on_toggle
-        locked = self.setlist.locked
-        nextup = self.setlist.mark_nextup
-
+        move = self.suite.move
+        on_remove = self.suite.on_remove
+        toggle = self.suite.on_toggle
+        nextup = self.suite.mark_nextup
 
         # move selection up
         self.move_up = tk.Button(self, text="\u25B2", command=lambda: move(-1), width=1)
@@ -336,14 +294,6 @@ class SetlistControlRow(tk.Frame):
         self.nextup = tk.Button(self, text="NEXT", command=nextup)
         self.nextup.pack(side="left")
 
-        # lock
-        self.lock = tk.Label(
-            self,
-            text="\U0001F512",
-        )
-        self.lock.bind("<Button-1>", lambda e: self.suite.toggle_lock())
-        self.lock.pack(side="right", anchor="e", expand=True)
-
         # keep all buttons in a list for lock toggle fn
         self.togglable = (
             self.move_up,
@@ -353,6 +303,35 @@ class SetlistControlRow(tk.Frame):
             self.remove,
         )
 
+        # lock
+        # TODO: something funky in here... i think toggle_lock is getting the old
+        # value instead of the newly assigned value in its conditional
+        self.locked = self.settings.locked
+        
+        self.lock = tk.Label(self, text="\U0001F512" if self.locked.get() else "\U0001F513")
+        self.lock.bind("<Button-1>", lambda e: self.toggle_lock())
+        self.lock.pack(side="right", anchor="e", expand=True)
+        
+        # TODO: hacky fix
+        self.toggle_controls()
+
+    def toggle_lock(self):
+        """Update lock label and tkvar."""
+        if self.locked.get():
+            # unlock unicode \U0001F513
+            self.lock.config(text="\U0001F513")
+            self.locked.set(False)
+        else:
+            # lock unicode \U0001F512
+            self.lock.config(text="\U0001F512")
+            self.locked.set(True)
+        self.toggle_controls()
+
+    def toggle_controls(self, event=None):
+        """Update state of setlist controls based on toggle."""
+        state = "disabled" if self.locked.get() else "normal"
+        for button in self.togglable:
+            button.config(state=state)
 
 class RightClickMenu(tk.Frame):
     """Menu for when you right click within monitor frame."""
@@ -362,6 +341,7 @@ class RightClickMenu(tk.Frame):
 
         self.parent = parent
         self.app = parent.app
+        self.suite = parent.suite
 
         # selection
         self.sel = SelectionProperties(self.app)
@@ -398,8 +378,7 @@ class RightClickMenu(tk.Frame):
         """Construct menu when song is selected based on selection properties."""
 
         selection = self.sel
-        suite = self.app.setlist
-        locked = suite.locked.get()
+        locked = self.suite.controls.locked.get()
 
         # context sensitive menu for selection
         strategies = {

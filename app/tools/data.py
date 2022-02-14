@@ -128,7 +128,7 @@ class SetlistCollection(SongCollection):
 
     @refresh
     def add_song(self, song):
-        """Add a song to the setlist."""
+        """Add a song to the live setlist."""
 
         if not song or self.song_already_in_setlist(song):
             return
@@ -186,7 +186,7 @@ class SetlistCollection(SongCollection):
     def live(self):
         """Return the live setlist, or generate an empty one if none exist."""
         self.setlists.append(Setlist(self)) if not self.setlists else None
-        logging.info(f'fetched live setlist {[song.name for song in self.setlists[0].songs]}')
+        # logging.info(f'fetched live setlist {[song.name for song in self.setlists[0].songs]}')
         logging.info(f'ALL SETLISTS: {[s for s in self.setlists]}')
         return self.setlists[0]
 
@@ -199,19 +199,22 @@ class Setlist:
         self.title = d.get('title')
 
         # songs contains songs as they are ordered in this setlist
-        self.songs = self.make_many_songs(d.get('songs')) if 'songs' in d else []
-        if self.songs:
-            print([s.name for s in self.songs])
-        # TODO: make this work, should back dump into pool
-        # self.pool.append([s for s in self.songs if s not in self.pool and s is not []])
+        self.songs = []
+        self.get_songs(d.get('songs'))
 
         # db pointers
         self.setlist_id = d.get('setlist_id') 
         self.library_id = d.get('library_id')
 
-    def make_many_songs(self, songs: list) -> list:
+    def get_songs(self, songs: list) -> list:
         """Turns a list of song dicts into a list of song objs."""
-        return self.app.tools.factory.make_many_songs(songs)
+        songs = self.app.tools.factory.make_many_songs(songs) if songs else []
+        for song in songs:
+            self.add_song(song)
+
+    def add_song(self, song) -> None:
+        self.songs.append(song)
+        self.pool.append(song)
 
     @property
     def pool(self):
