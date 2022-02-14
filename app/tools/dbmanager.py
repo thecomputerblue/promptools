@@ -263,7 +263,9 @@ class DatabaseManager:
         with open_db(self.db) as cur:
             query = f"SELECT * from {table} WHERE {row}=?"
             cur.execute(query, (value,))
-            k, v = [c[0] for c in cur.description], cur.fetchall()[0]
+            k = [c[0] for c in cur.description] if cur.description else []
+            d = cur.fetchall()
+            v = d[0] if d else []
             return dict(zip(k, v))
 
     def get_gig_setlist_ids(self, gig_id):
