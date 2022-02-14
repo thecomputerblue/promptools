@@ -171,16 +171,24 @@ class SetlistCollection(SongCollection):
     def clear_data(self):
         """Clear all songs in all setlists, markers, etc."""
         logging.info('clear_data in SetlistCollection')
+        self.clear_markers()
         self.clear_setlists()
         self.clear_songs()
-        self.clear_markers()
 
     def clear_setlists(self):
         """Clears setlists."""
-        self.setlists.clear()
+        # TODO: for whatever reason, .clear is not eliminating the original
+        # setlist obj. figure this out....
+        # self.setlists.clear()
+        self.setlists = []
 
     def clear_songs(self):
         self.pool.clear()
+
+    def add_setlist(self, setlist):
+        """Add setlist, trigger callbacks."""
+        self.setlists.append(setlist)
+        # self.do_callbacks()
 
     @property
     def live(self):
@@ -254,7 +262,6 @@ class GigData:
     def clear_gig(self):
         """Clears gig data, but keeps the objects. This should trigger
         any callbacks."""
-
         self.setlists.clear_all()
         self.pool.clear_all()
 
@@ -279,8 +286,10 @@ class GigData:
         self.load_setlists(gig_data.get('setlists'))
 
     def load_setlists(self, setlists):
+        self.setlists.setlists = []
         for setlist in setlists:
-            self.setlists.setlists.append(Setlist(parent=self.setlists, d=setlist))
+            self.setlists.add_setlist(Setlist(parent=self.setlists, d=setlist))
+        self.setlists.do_callbacks()
 
 
 """
