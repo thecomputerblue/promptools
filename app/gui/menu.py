@@ -179,6 +179,10 @@ class MenuBar(tk.Frame):
         view_menu.add_checkbutton(label="Show Talent Colors")
         view_menu.add_checkbutton(label="Wrap Talent Text")
         view_menu.add_separator()
+        view_menu.add_checkbutton(label="Lists & Helper Pane (Left)")
+        view_menu.add_checkbutton(label="Details & Notes Pane (Right)")
+        view_menu.add_checkbutton(label="Browser & Preview Pane (Below)")
+        view_menu.add_separator()
         view_menu.add_command(label="Settings")
 
         # format menu contents
@@ -199,8 +203,7 @@ class MenuBar(tk.Frame):
 
         # library menu
         library_menu = tk.Menu(menu_bar)
-        library_menu.add_command(label='Browse', command=self.open_library)
-        library_menu.add_command(label='Manage')
+        library_menu.add_command(label='Song Manager', command=lambda *args: self.open_library(tab='songs'))
 
         # gig menu. gig includes a list of setlists, and metadata about gig (venue, date, etc).
         # does not affect the pool
@@ -302,10 +305,9 @@ class MenuBar(tk.Frame):
         tool_menu = tk.Menu(menu_bar)
         tool_menu.add_cascade(label="Transposer", menu=transposer_menu, command=self.on_transposer_open)
         tool_menu.add_separator()
-        tool_menu.add_command(label="Scratch Pad")
-        tool_menu.add_command(label="Batch Processor") # launch batch file processor
-        tool_menu.add_command(label="Session History")
-        tool_menu.add_command(label="Debug Log")
+        tool_menu.add_command(label="Batch Processor", state="disabled") # launch batch file processor
+        tool_menu.add_command(label="History", state="disabled")
+        tool_menu.add_command(label="Debug Log", state="disabled")
 
         # build all the cascades last
         # menu_bar.add_cascade(label="Promptools", menu=promptools_menu)
@@ -320,9 +322,9 @@ class MenuBar(tk.Frame):
         menu_bar.add_cascade(label="Bookmarks", menu=bookmark_menu)
         menu_bar.add_cascade(label="Tools", menu=tool_menu)
 
-    def open_library(self):
+    def open_library(self, tab:str):
         """Open Library window."""
-        
+        # TODO: implement open specific tabs
         logging.info('opened LibraryWindow from menu_bar')
         exists = self.settings.windows.library.get()
         self.app.library = LibraryWindow(self.app) if not exists else self.app.library
@@ -354,7 +356,6 @@ class MenuBar(tk.Frame):
 
     def on_preferences(self):
         if not self.app.settings.windows.preferences.get():
-            self.app.settings.windows.preferences.set(True)
             PreferencesWindow(self)
 
     # functions for talent view cascade

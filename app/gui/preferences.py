@@ -14,6 +14,9 @@ class PreferencesWindow(tk.Toplevel):
         self.settings = self.app.settings
         app = parent.app
 
+        # flag that this is open
+        self.app.settings.windows.preferences.set(True)
+
         self.title("Preferences")
 
         # default window size
@@ -35,7 +38,6 @@ class PreferencesWindow(tk.Toplevel):
         self.notebook = PreferencesNotebook(self)
 
 
-
     def quit_window(self):
         """When you close window, update the flag."""
         self.settings.windows.preferences.set(False)
@@ -45,9 +47,7 @@ class PreferencesNotebook(ttk.Notebook):
     """ttk notebook for managing several preference tabs."""
 
     def __init__(self, parent):
-        ttk.Notebook.__init__(self, parent,
-            expand=True,
-            borderwidth=0)
+        ttk.Notebook.__init__(self, parent)
 
         self.app = parent.app
         
