@@ -80,26 +80,50 @@ class SearchBar(tk.Frame):
         self.header.pack(side="top", fill="x")
         self.entry.pack(side="top", fill="x")
 
-        self.entry.bind("<Down>", self.focus_set_files_listbox_from_entry)
+        self.entry.bind("<Down>", self.focus_set_active_tab_from_search)
 
-    def focus_set_files_listbox_from_entry(self, event):
+    def focus_set_active_tab_from_search(self, event=None):
+        """Change focus from search entry to active tab."""
+        t = self.get_active_tab()
+        if t == 0:
+            self.focus_set_library_from_search()
+        elif t == 1:
+            self.focus_set_files_from_search()
+        else:
+            logging.warning("focus_set_active_tab_from_search didn't know what to do with tab id")
+
+    def focus_set_files_from_search(self, event=None):
         """When you press the down arrown in search field,
         move focus to the search field."""
 
-        l = self.tabs.files.listbox
-
+        # TODO: if list item was previously selected, focus to that. Basically
+        # change (0) to whatever the widget variable is for focused item.
+        l = self.suite.files.listbox
         # Move focus to listbox.
         l.focus_set()
         # Immediately focus the first list item.
-        # TODO: if list item was previously selected, focus to that. Basically
-        # change (0) to whatever the widget variable is for focused item.
         if not l.curselection():
             l.select_set(0)
-            self.filename = l.get(0)
-            #TODO: what is this line doing
-            self.app.cued.selected.set(self.truncate_label(self.filename))
-            # Refresh song with new info. TODO: repeated code!!!
-            self.parent.cue_from_file()
+
+    def focus_set_library_from_search(self, event=None):
+        l = self.suite.library.tree
+        # TODO: does not focus if nothing was previously selected.
+        # can't figure out the magic word!!!
+        # TODO: need to look at callback that loads selection.
+        sel = l.focus() if l.focus() is not "" else 0
+        l.selection_set(sel)
+        l.focus_set()
+
+
+    def get_active_listbox(self):
+        """Return the listbox of the currently open tab."""
+        return self.get_active_tab().listbox
+
+    def get_active_tab(self):
+        """Return the index of the currently open tab."""
+        nb = self.suite.tabs
+        i = nb.index(nb.select())
+        return i
 
 
 class BrowserNotebook(ttk.Notebook):
@@ -199,7 +223,6 @@ class LibraryTab(tk.Frame):
         t = self.tree
 
         l = [(t.item(k)["text"], k) for k in t.get_children()]
-        print(l)
         l.sort(key=lambda t: t[1], reverse=reverse)
 
         for index, (val, k) in enumerate(l):
@@ -296,29 +319,19 @@ class FilesTab(tk.Frame):
 
     def files_listbox_on_select(self, event):
         """When you select a file from the file listbox, push selection to preview."""
-
-        # do nothing if you click out of list
-        current = event.widget.curselection()
-        if current:
+        if event.widget.curselection():
             # TODO: untangle
             self.filename = event.widget.get(event.widget.curselection())
             self.app.tools.loader.cue_from_file()
 
     def listbox_update(self, data):
-
-        l = self.listbox
-
-        # clear old
-        l.delete(0, "end")
+        self.listbox.delete(0, "end")
         data = sorted(data, key=str.lower)
-
-        # insert sorted
         for item in data:
-            l.insert("end", item)
+            self.listbox.insert("end", item)
 
     def gen_file_list(self, target):
         """Generate file list from the target directory."""
-
         if target:
             self.directory = target
             # filter out directories and anything not beginning with an accepted file extension
@@ -330,21 +343,16 @@ class FilesTab(tk.Frame):
             logging.warning(f"gen_file_list in browser recieved no target: target = '{target}'")
 
     def search_trace(self, query):
-        # get text from entry and strip capitalization, punctuation
-
-        # scrub query
+        # TODO: listbox update to decorator
         query = scrub_text(query)
-
-        # get data from file_list
-        if not query:
-            data = self.files
-        else:
-            data = []
-            # TODO: needs to ignore punctuation when filtering
-            for item in self.files:
-                data.append(item) if query in scrub_text(item) else None
-
+        data = self.files if not query else self.get_search_result(query)
         self.listbox_update(data)
+
+    def get_search_result(self, query):
+        data = []
+        for item in self.files:
+            data.append(item) if query in scrub_text(item) else None
+        return data
 
     def import_to_song(self, filename):
         """Import a text file and convert it into a song object."""
