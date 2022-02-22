@@ -108,14 +108,10 @@ class SearchBar(tk.Frame):
         if not l.get_children():
             return
         t = l.focus()
-        sel = t if t is not "" else 0
+        sel = t if t != "" else 0
         l.selection_set(sel)
         l.focus_set()
         l.focus(sel)
-
-    def get_active_listbox(self):
-        """Return the listbox of the currently open tab."""
-        return self.get_active_tab().listbox
 
     def get_active_tab(self):
         """Return the index of the currently open tab."""
@@ -168,32 +164,25 @@ class LibraryTab(tk.Frame):
 
         self.refresh_library(query=query)
 
-    def refresh_library(self, data=None, query=None):
+    def refresh_library(self, data=None, query=None) -> None:
         """Generate the library song list."""
 
         # clear tree
         self.clear_tree()
 
-        # get song metadata
-        if data is None:
-            dbmanager = self.app.tools.dbmanager
-            data = dbmanager.get_all_song_meta_from_db(option='library')
-
-        # filter by search
+        # process data
+        data = self.fetch_library() if data is None else data
         data = self.filter_library(data, query) if query else data
+        data = self.sort_library(data)
+        self.populate_treeview(data)
 
-        # sort by song name
-        # TODO: retrieve name index dynamically
-        name_index = 2
-        data.sort(key=lambda t:t[name_index])
+    def clear_tree(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-        # insert to tree
-        for i, meta in enumerate(data):
-            song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
-            needed = (song_id, lib_id, name)
-            self.tree.insert(parent='', index="end", iid=i, values=needed)
-
-        # self.treeview_sort()
+    def fetch_library(self):
+        dbmanager = self.app.tools.dbmanager
+        return dbmanager.get_all_song_meta_from_db(option='library')
 
     def filter_library(self, data, query):
         """Return data filtered by query."""
@@ -208,11 +197,23 @@ class LibraryTab(tk.Frame):
 
         return filtered
 
-    def clear_tree(self):
-        """Clear the tree."""
+    def sort_library(self, data):
+        # sort by song name
+        # TODO: retrieve name index dynamically
+        name_index = 2
+        data.sort(key=lambda t:t[name_index])
+        return data
 
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+
+    def populate_treeview(self, data) -> None:
+        """Insert data into treeview"""
+        if not data:
+            return
+
+        for i, meta in enumerate(data):
+            song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
+            needed = (song_id, lib_id, name)
+            self.tree.insert(parent='', index="end", iid=i, values=needed)
 
     def treeview_sort(self):
         """Sort the treeview alphabetically."""
@@ -265,13 +266,18 @@ class ScrolledTreeview(tk.Frame):
 
     def on_tree_select(self, event):
         """Make a song obj from library selection and push to cued."""
-        # TODO: mess
         sel = self.tree.focus()
+
+        if not sel:
+            return
+
+        self.app.deck.cued = self.gen_song_from_sel(sel)
+
+    def gen_song_from_sel(self, sel):
         song_id = self.tree.set(sel, column="song_id")
         song_data = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
-        song_obj = self.app.tools.factory.new_song(dictionary=song_data)
-        self.app.deck.cued = song_obj
-
+        return self.app.tools.factory.new_song(dictionary=song_data)
+        
 
 class FilesTab(tk.Frame):
     """Frame for the file browser."""
@@ -330,15 +336,15 @@ class FilesTab(tk.Frame):
 
     def gen_file_list(self, target):
         """Generate file list from the target directory."""
-        if target:
-            self.directory = target
-            # filter out directories and anything not beginning with an accepted file extension
-            valid_ext = ('.rtf', '.txt') # TODO: move to settings
-            self.files = [f for f in listdir(target) if isfile(join(target, f)) and f.endswith(valid_ext)]
-            # self.files = list(filter(f for f in listdir(target))
-            self.listbox_update(self.files)
-        else:
-            logging.warning(f"gen_file_list in browser recieved no target: target = '{target}'")
+        if not target:
+            return
+
+        self.directory = target
+        # filter out directories and anything not beginning with an accepted file extension
+        valid_ext = ('.rtf', '.txt') # TODO: move to settings
+        self.files = [f for f in listdir(target) if isfile(join(target, f)) and f.endswith(valid_ext)]
+        # self.files = list(filter(f for f in listdir(target))
+        self.listbox_update(self.files)
 
     def search_trace(self, query):
         # TODO: listbox update to decorator
