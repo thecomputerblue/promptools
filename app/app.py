@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import logging
 
-# allows drag-n-drop from finder, but kinda sketchy. not using for now.
+# allows drag-n-drop, was a bit sketchy last time i used it. not using for now.
 # import tkinterDnD as tkd
 
 # app settings
