@@ -96,24 +96,22 @@ class SearchBar(tk.Frame):
         """When you press the down arrown in search field,
         move focus to the search field."""
 
-        # TODO: if list item was previously selected, focus to that. Basically
-        # change (0) to whatever the widget variable is for focused item.
         l = self.suite.files.listbox
-        # Move focus to listbox.
+        if not l.size():
+            return
         l.focus_set()
-        # Immediately focus the first list item.
         if not l.curselection():
             l.select_set(0)
 
     def focus_set_library_from_search(self, event=None):
         l = self.suite.library.tree
-        # TODO: does not focus if nothing was previously selected.
-        # can't figure out the magic word!!!
-        # TODO: need to look at callback that loads selection.
-        sel = l.focus() if l.focus() is not "" else 0
+        if not l.get_children():
+            return
+        t = l.focus()
+        sel = t if t is not "" else 0
         l.selection_set(sel)
         l.focus_set()
-
+        l.focus(sel)
 
     def get_active_listbox(self):
         """Return the listbox of the currently open tab."""
@@ -267,7 +265,7 @@ class ScrolledTreeview(tk.Frame):
 
     def on_tree_select(self, event):
         """Make a song obj from library selection and push to cued."""
-
+        # TODO: mess
         sel = self.tree.focus()
         song_id = self.tree.set(sel, column="song_id")
         song_data = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
@@ -373,8 +371,3 @@ class QuickSearchHeader(tk.Frame):
         entry = kwargs.get('entry')
         self.clear = tk.Button(self, text="Clear", command=lambda: entry.delete(0, 'end'))
         self.clear.pack(side="right", fill="y", anchor="e")
-
-
-
-
-
