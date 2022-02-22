@@ -14,7 +14,6 @@ def open_db(file_name: str):
         connection.close()
     # TODO: if an exception occurs, maybe rollback instead of committing...
 
-
 def lowest_unused(l: list) -> int:
     """Return lowest int that doesn't appear in a list."""
 
@@ -22,12 +21,11 @@ def lowest_unused(l: list) -> int:
     last = len(l) - 1
     logging.info(f"lowest unused recieved: {l}")
 
-    for i, cur in enumerate(l):
+    for i, curr in enumerate(l):
         if i == last:
             return l[-1] + 1
-        elif new := cur + 1 != l[i + 1]:
+        elif new := curr + 1 != l[i + 1]:
             return new
-
 
 def sql_q_marks(n):
     """Return '(?, ?, ... ?)' with n '?' marks. Used for SQLite VALUES."""
@@ -40,11 +38,13 @@ class DatabaseManager:
     def __init__(self, app):
         self.app = app
         self.settings = self.app.settings.library
-
-        self.db = "./data/appdata.db"
         self.init_db(self.db)
         self.gen_db_defaults(self.db)
 
+    @property
+    def db(self):
+        return self.app.settings.paths.db.get()
+    
     def init_db(self, db):
         """If the db path doesn't exist, create a db with the correct tables."""
 
