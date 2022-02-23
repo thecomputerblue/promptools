@@ -17,15 +17,7 @@ class EditPoolFrame(tk.Frame):
         self.app = parent.app
         self.suite = self
 
-        # pool data & its manager
-        self.data = self.app.data.pool
-        self.manager = PoolManager(self)
-
-        # expose songs more shallowly
-        self.songs = self.data.pool
-
         # subframes
-
         self.header = PoolHeader(self)
         self.header.pack(side="top", anchor="w", expand=False)
 
@@ -51,130 +43,226 @@ class EditPoolFrame(tk.Frame):
         # callback for refreshing on db activity
         self.data.callback = self
 
-    def clicked_trash(self):
-        """Trash any selected songs."""
+        # deck callback
+        self.deck.add_callback("live", self.listbox_update)
+        self.data.add_callback(self.listbox_update)
 
-        logging.info('clicked_trash in EditPoolFrame')
+        # make strategies for updating listbox
+        # TODO: implement colors
+        # self.make_listbox_strategies()
 
-        pool = self.data.pool
-        m = self.manager
+    # TODO: better method than a bunch of properties?
+    @property
+    def data(self):
+        return self.app.data.pool
 
-        for sel in self.listbox.curselection():
+    @property
+    def deck(self):
+        return self.app.deck
 
-            # Get the target song object for comparison.
-            i = int(sel)
-            target = m.filtered[i] # !!!This is returning a name, not the song object.
+    @property
+    def pool(self):
+        return self.data.pool
+    
+    @property
+    def markers(self):
+        return self.data.markers
 
-            # find and delete target song
-            for song in pool:
-                if song is target:
-                    logging.info(f'deleting {song.name} from pool')
-                    pool.remove(song)
-                    break 
+    @property
+    def live(self):
+        return self.data.live
 
+    @property
+    def songs(self):
+        return self.live.songs
+    
+    def do_sel(self, sel):
+        """Clear and apply new target listbox selection."""
+        l = self.listbox
+        l.selection_clear(0, "end")
+        l.selection_set(sel) if sel < l.size() else l.selection_set("end")
+        l.activate(sel)
+
+    def preserve_sel(method):
+        """Capture then restore listbox selection after executing inner method"""
+
+        def inner(self, *args, **kwargs):
+
+            sel = self.get_sel()
+            method(self, sel, *args, **kwargs)
+            self.do_sel(sel) if sel is not None else None
+
+        return inner
+
+    def pass_sel(method):
+        """Capture listbox selection and do decorated function only
+        if there is a selection."""
+
+        def inner(self, *args, **kwargs):
+            sel = self.get_sel()
+            if sel is None:
+                return
+            method(self, sel, *args, **kwargs)
+
+        return inner
+
+    def get_sel(self):
+        """Get selection index."""
+
+        sel = self.listbox.curselection()
+        return sel[0] if sel else None
+
+    def right_click(self, event):
+        """When right clicking in listbox, update selection and bring up context options."""
+
+        l = self.listbox
+        sel = l.nearest(event.y)
+        self.do_sel(sel)
+        self.menu.do_popup(event, sel)
+
+    @preserve_sel
+    def mark_nextup(self, sel, *args, **kwargs):
+        """Mark the selected song as next up."""
+        self.markers['nextup'] = self.live.songs[sel]
         self.listbox_update()
 
-    def listbox_update(self):
-        
-        l = self.listbox
-        m = self.manager
-        d = self.data
+    @preserve_sel
+    def on_remove(self, sel, *args, **kwargs):
+        """Remove selected song."""
+        if sel is None:
+            return
+        self.live.remove_song_at_index(i=sel)
+        self.listbox_update()
 
-        sel = l.curselection() if l.curselection() else None
+    @pass_sel
+    def move(self, sel, target: str or int):
+        """Move song within list."""
 
-        # apply search filter
-        self.filter_songs()        
+        dest = self.target_to_i(start_i=sel, target=target)
+        self.data.move_song(self.live, sel, dest)
+        self.listbox_update()
+        self.do_sel(dest)
 
-        # Delete previous data.
-        l.delete(0, "end")
+    def target_to_i(self, start_i, target):
+        """Convert a listbox target to an index."""
 
-        # sort filtered in place, create list representation
-        m.filtered = sorted(m.filtered, key=lambda song: song.name)
-        list_repr = [song.name for song in m.filtered] # key=str.lower
-        # logging.info(f'pool list:\n{list_repr})
+        if target == "top":
+            return 0
+        elif target == "end":
+            return -1
+        new = start_i + target
+        return new if new >=0 else 0
 
-        # Insert sorted data
-        for song in list_repr:
-            l.insert("end", song)
+    @pass_sel
+    def on_toggle(self, sel, mark):
+        """Toggle a songs presence within a marker list."""
+        self.data.toggle_mark(mark, self.songs[sel])
+        self.listbox_update()
 
-        if sel != None:
-            l.selection_set(sel)
-            l.activate(sel)
-            l.selection_anchor(sel)
+    @pass_sel
+    def on_listbox_select(self, sel, event):
+        """What to do when clicking an item in the setlist."""
+        self.push_song_to_preview(sel) if sel is not None else None
 
-    def filter_songs(self):
-        """Filter song list based on search."""
-
-        m = self.manager
-        songs = self.data.pool
-        search = self.suite.header.search 
-
-        value = search.get().strip().lower()
-
-        # get data from file_list
-        if value == "":
-            m.filtered = songs
-        else:
-            m.filtered = [] # clear the filtered list
-
-            # TODO: needs to ignore punctuation when filtering
-            for song in songs:
-                m.filtered.append(song) if value in song.name.lower() else None
-
-    def on_listbox_select(self, event):
-        """Preview pool song on selection."""
-
-        current = event.widget.curselection()
-        self.push_selection_to_preview(current) if current else None
-
-    def push_selection_to_preview(self, current):
+    def push_song_to_preview(self, i):
         """Push info to infobox, and song obj to preview frame."""
-        
-        app = self.app
-        m = self.manager
-        i = current[0]
 
-        song = m.filtered[i] if m.filtered else None
-        app.deck.cued = song
-        # make the pools update method the refresh callback in song detail,
-        # so when you change the song name it is immediately reflected
-        # in the playlist
-        # TODO: feels hacky
-        app.meta.song_detail.refresh_callback = self.listbox_update
+        # TODO: this method will not work if you implement search
+        # TODO: think of a way to automate this refresh callback
+        self.deck.cued = self.songs[i] if self.songs else None
+        self.app.meta.song_detail.refresh_callback = self.listbox_update
 
-class PoolManager:
-    """Class for managing the edit pool."""
+    def make_listbox_strategies(self):
+        """Define strategies for formatting listbox items."""
 
-    def __init__(self, parent):
+        # TODO: clunky...
+        # TODO: update with pool parameters...
+        colors = self.settings.colors
+        l = self.listbox
 
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-        self.data = parent.data
+        self.listbox_strategies = {
+            lambda song: self.song_is_skipped(song): lambda i: l.itemconfig(i, bg=colors.skipped),
+            lambda song: self.song_is_nextup(song): lambda i: l.itemconfig(i, bg=colors.nextup),
+            lambda song: self.song_is_previous(song): lambda i: l.itemconfig(i, bg=colors.previous),
+            lambda song: self.song_is_live(song): lambda i: l.itemconfig(i, bg=colors.live),
+        }
 
-        # Filtered list of songs so filtered listbox can call the right object.
-        self.filtered = []
+    # TODO: hmmm
+    def song_is_skipped(self, song):
+        return song in self.markers.get('skipped') if self.markers.get('skipped') else False
 
-    def add_song(self, song):
-        """Add entry to the pool."""
+    def song_is_nextup(self, song):
+        return song is self.markers.get('nextup')
 
-        logging.info(f'added song to pool {song.name}')
-        self.data.pool.append(copy.deepcopy(song))
-        self.suite.listbox_update()
+    def song_is_live(self, song):
+        return song is self.markers.get('live')
 
-    def delete_song(self, target):
-        """Delete song from pool."""
+    def song_is_previous(self, song):
+        return song is self.markers.get('previous')
 
-        logging.info('delete_song in PoolManager')
+    @preserve_sel
+    def listbox_update(self, sel=None):
+        """Update listbox contents and formatting."""
 
-        pool = self.data.pool
+        self.listbox.delete(0, "end")
+        if not self.live.songs:
+            return
 
-        for song in pool:
-            if target.name == song.name \
-            and target.created == song.created:
-                del pool.song
+        logging.info(f'listbox_update names: {self.live.names}')
+        for i, name in enumerate(self.live.names):
+            name = strike(name) if self.songs[i] in self.markers.get('played') else name
+            # name = number(i+1, name)
+            self.listbox.insert("end", name)
+            # TODO: implement color_item for pool
+            # self.color_item(i)
+
+    def color_item(self, i:int) -> None:
+        """Apply appropriate color to a listbox item."""
+
+        logging.info('color_item in SetlistFrame')
+        for k, v in self.listbox_strategies.items():
+            if k(self.songs[i]):
+                v(i)
+                logging.info('color applied!')
                 break
+
+    def add_to_listbox(self, item: str):
+        self.listbox.insert("end", item)
+
+
+# class PoolManager:
+#     """Class for managing the edit pool."""
+
+#     def __init__(self, parent):
+
+#         # context
+#         self.parent = parent
+#         self.app = parent.app
+#         self.suite = parent.suite
+#         self.data = parent.data
+
+#         # Filtered list of songs so filtered listbox can call the right object.
+#         self.filtered = []
+
+#     def add_song(self, song):
+#         """Add entry to the pool."""
+
+#         logging.info(f'added song to pool {song.name}')
+#         self.data.pool.append(copy.deepcopy(song))
+#         self.suite.listbox_update()
+
+#     def delete_song(self, target):
+#         """Delete song from pool."""
+
+#         logging.info('delete_song in PoolManager')
+
+#         pool = self.data.pool
+
+#         for song in pool:
+#             if target.name == song.name \
+#             and target.created == song.created:
+#                 del pool.song
+#                 break
 
 class PoolHeader(tk.Frame):
     """Class for the Pool header & searchbar."""
@@ -219,7 +307,7 @@ class PoolControlRow(tk.Frame):
         self.rename = tk.Button(self, text="Rename", command=None)
         self.rename.pack(side="left")
 
-        self.trash = tk.Button(self, text="\u2715", command=self.suite.clicked_trash)
+        self.trash = tk.Button(self, text="\u2715", command=self.suite.on_remove)
         self.trash.pack(side="left")
 
         self.undo = tk.Button(self, text="Undo", command=None)

@@ -160,17 +160,11 @@ class LibraryTab(tk.Frame):
         self.refresh_library()
 
     def search_trace(self, query):
-        """Filter library tree by search contents."""
-
         self.refresh_library(query=query)
 
     def refresh_library(self, data=None, query=None) -> None:
         """Generate the library song list."""
-
-        # clear tree
         self.clear_tree()
-
-        # process data
         data = self.fetch_library() if data is None else data
         data = self.filter_library(data, query) if query else data
         data = self.sort_library(data)
@@ -215,17 +209,17 @@ class LibraryTab(tk.Frame):
             needed = (song_id, lib_id, name)
             self.tree.insert(parent='', index="end", iid=i, values=needed)
 
-    def treeview_sort(self):
-        """Sort the treeview alphabetically."""
-        logging.info('treeview_sort in ScrolledTreeview')
-        reverse = False
-        t = self.tree
+    # def treeview_sort(self):
+    #     """Sort the treeview alphabetically."""
+    #     logging.info('treeview_sort in ScrolledTreeview')
+    #     reverse = False
+    #     t = self.tree
 
-        l = [(t.item(k)["text"], k) for k in t.get_children()]
-        l.sort(key=lambda t: t[1], reverse=reverse)
+    #     l = [(t.item(k)["text"], k) for k in t.get_children()]
+    #     l.sort(key=lambda t: t[1], reverse=reverse)
 
-        for index, (val, k) in enumerate(l):
-            t.move(k, '', index)
+    #     for index, (val, k) in enumerate(l):
+    #         t.move(k, '', index)
 
         # t.heading(col, command=lambda: treeview_sort_column())
 
@@ -277,7 +271,7 @@ class ScrolledTreeview(tk.Frame):
         song_id = self.tree.set(sel, column="song_id")
         song_data = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
         return self.app.tools.factory.new_song(dictionary=song_data)
-        
+
 
 class FilesTab(tk.Frame):
     """Frame for the file browser."""

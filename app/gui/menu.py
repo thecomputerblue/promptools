@@ -391,20 +391,17 @@ class MenuBar(tk.Frame):
 
     def on_add_song_to_pool(self):
         """Add current monitor contents to pool."""
-        monitor = self.app.monitor
-
-        if not monitor.song:
+        if not self.app.monitor.song:
             return 
-
-        monitor.add_to_list(target=self.app.pool)
+        self.app.data.pool.add_live()
 
     def on_add_song_to_setlist(self):
         """Add current monitor contets to setlist."""
-        
+        if not self.app.monitor.song:
+            return
         self.app.data.setlists.add_live()
 
     def on_load_cued_to_live(self, event):
-
         app = self.app
 
         # TODO: warn that you can't load a new song

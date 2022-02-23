@@ -118,7 +118,7 @@ class MainApplication(tk.Frame):
         # make some shorthand names.
         # TODO: best practice?
         self.setlist = self.collections.setlist
-        self.pool = self.collections.pool.manager
+        self.pool = self.collections.pool
 
         # Set window attributes & icon
         self.tk.eval("tk::PlaceWindow . center")
