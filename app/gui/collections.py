@@ -2,7 +2,7 @@ import tkinter as tk
 import logging
 
 from gui.setlist import SetlistFrame
-from gui.pool import EditPoolFrame
+from gui.pool import PoolAndSetlistsFrame, PoolAndSetlistsNotebook
 
 class CollectionsSuite(tk.PanedWindow):
     """Paned frame for the song collections on the left side of the app.
@@ -23,7 +23,13 @@ class CollectionsSuite(tk.PanedWindow):
         self.suite = self
 
         # make frames
-        self.pool = EditPoolFrame(self)
+
+        # OLD
+        # self.pool = PoolAndSetlistsFrame(self)
+        # self.add(self.pool)
+
+        # NEW
+        self.pool = PoolAndSetlistsNotebook(self)
         self.add(self.pool)
 
         self.setlist = SetlistFrame(self)

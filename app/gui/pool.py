@@ -1,11 +1,49 @@
 import tkinter as tk 
+from tkinter import ttk
 import time
 import copy
 import logging
 
+class PoolAndSetlistsNotebook(ttk.Notebook):
+    """Two pages for song pool and setlists respectively."""
 
-class EditPoolFrame(tk.Frame):
-    """Class for the Edit Pool frame in the left pane of the main window."""
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Notebook.__init__(self, parent,
+            padding=0
+            )
+
+        # context
+        self.parent = parent
+        self.app = parent.app
+        self.suite = self
+
+        self.pool = PoolAndSetlistsFrame(self)
+        self.pool.pack(fill="both", expand=True)
+        self.add(self.pool, text="Song Pool")
+
+        self.setlists = SetlistPage(self)
+        self.setlists.pack(fill="both", expand=True)
+        self.add(self.setlists, text="Setlists")
+
+class SetlistPage(tk.Frame):
+    """Page for gig setlists."""
+
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(
+            self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
+        )        
+
+        # context
+        self.parent = parent
+        self.app = parent.app
+        self.suite = self
+
+        self.dummy = tk.Label(self, text='implement setlists')
+        self.dummy.pack()
+
+
+class PoolAndSetlistsFrame(tk.Frame):
+    """Pane for showing the gig song pool and setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(

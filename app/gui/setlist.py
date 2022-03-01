@@ -18,7 +18,7 @@ def number(n: int, name: str) -> str:
     return '(' + str(n) + ') ' + name
 
 class SetlistFrame(tk.Frame):
-    """Class for the setlist manager"""
+    """Frame for showing the active setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
