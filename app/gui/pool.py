@@ -195,14 +195,14 @@ class PoolAndSetlistsFrame(tk.Frame):
     @pass_sel
     def on_listbox_select(self, sel, event):
         """What to do when clicking an item in the setlist."""
-        self.push_song_to_preview(sel) if sel is not None else None
+        self.push_song_to_preview(self.gig.pool.songs, sel) if sel is not None else None
 
-    def push_song_to_preview(self, i):
+    def push_song_to_preview(self, songs, i):
         """Push info to infobox, and song obj to preview frame."""
 
         # TODO: this method will not work if you implement search
         # TODO: think of a way to automate this refresh callback
-        self.deck.cued = self.songs[i] if self.songs else None
+        self.deck.cued = songs[i] if songs else None
         self.app.meta.song_detail.refresh_callback = self.listbox_update
 
     def make_listbox_strategies(self):

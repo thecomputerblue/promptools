@@ -76,7 +76,7 @@ class Setlist:
         # achieve with listeners within song? more comprehensive callback manager?
         song = self.songs[i]
         self.songs.remove(song)
-        self.parent.remove_song_if_orphaned(song)
+        # self.parent.remove_song_if_orphaned(song)
 
 
 class PoolData: 
@@ -103,6 +103,9 @@ class PoolData:
         songs = self.app.tools.factory.make_many_songs(songs) if songs else []
         for song in songs:
             self.add(song)
+
+    def remove(self,song):
+        self.songs.remove(song)
 
 
 class GigData:
@@ -270,9 +273,9 @@ class GigData:
         i = min(dest, len(setlist.songs) - 1)
         setlist.songs.insert(i, setlist.songs.pop(song_i))
 
-    def remove_song_if_orphaned(self, song):
-        """If a song no longer exists in any of the setlists,
-        remove it from the pool."""
+    @refresh
+    def remove_orphans(self, song):
+        """Clear all songs from pool without setlist references."""
         for setlist in self.setlists:
             if song in setlist.songs:
                 return

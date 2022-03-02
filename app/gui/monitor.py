@@ -204,8 +204,8 @@ class TalentMonitor(tk.Frame):
         if not self.song:
             return
 
-        live = self.app.data.setlists.live_setlist.songs
-        markers = self.app.data.setlists.markers
+        live = self.app.data.gig.live_setlist.songs
+        markers = self.app.data.gig.markers
 
         # tests for marking as played. if any return True, mark as played
         if self.song in live:
