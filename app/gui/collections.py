@@ -23,12 +23,6 @@ class CollectionsSuite(tk.PanedWindow):
         self.suite = self
 
         # make frames
-
-        # OLD
-        # self.pool = PoolAndSetlistsFrame(self)
-        # self.add(self.pool)
-
-        # NEW
         self.pool = PoolAndSetlistsNotebook(self)
         self.add(self.pool)
 

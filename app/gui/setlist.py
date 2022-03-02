@@ -1,10 +1,6 @@
 import tkinter as tk
 import time
-
-# import copy
 import logging
-
-# from tools.tooltip import CreateToolTip
 
 # helpers
 def strike(text):
@@ -30,6 +26,8 @@ class SetlistFrame(tk.Frame):
         self.app = parent.app
         self.suite = self
         self.settings = self.app.settings.setlist
+        self.tools = self.app.tools.gui
+        self.gig = self.app.data.gig
 
         # live setlist & songs
         self.deck = self.app.deck
@@ -54,74 +52,64 @@ class SetlistFrame(tk.Frame):
 
         # deck callback
         self.deck.add_callback("live", self.listbox_update)
-        self.data.add_callback(self.listbox_update)
+        self.gig.add_callback(self.listbox_update)
 
         # make strategies for updating listbox
         self.make_listbox_strategies()
 
     # TODO: better method than a bunch of properties?
+
     @property
     def data(self):
-        return self.app.data.setlists
+        return self.gig.setlists
 
     @property
     def pool(self):
-        return self.data.pool
+        return self.gig.pool
     
     @property
     def markers(self):
-        return self.data.markers
+        return self.gig.markers
 
     @property
     def live(self):
-        return self.data.live
+        return self.gig.live_setlist
 
     @property
     def songs(self):
         return self.live.songs
     
-    def do_sel(self, sel):
-        """Clear and apply new target listbox selection."""
-        l = self.listbox
-        l.selection_clear(0, "end")
-        l.selection_set(sel) if sel < l.size() else l.selection_set("end")
-        l.activate(sel)
-
     def preserve_sel(method):
         """Capture then restore listbox selection after executing inner method"""
+        # TODO: move to guitools
 
         def inner(self, *args, **kwargs):
 
-            sel = self.get_sel()
+            sel = self.tools.get_sel(self.listbox)
             method(self, sel, *args, **kwargs)
-            self.do_sel(sel) if sel is not None else None
+            self.tools.do_sel(self.listbox, sel) if sel is not None else None
 
         return inner
 
     def pass_sel(method):
         """Capture listbox selection and do decorated function only
         if there is a selection."""
+        # TODO: move to guitools
 
         def inner(self, *args, **kwargs):
-            sel = self.get_sel()
+            sel = self.tools.get_sel(self.listbox)
             if sel is None:
                 return
             method(self, sel, *args, **kwargs)
 
         return inner
 
-    def get_sel(self):
-        """Get selection index."""
-
-        sel = self.listbox.curselection()
-        return sel[0] if sel else None
-
     def right_click(self, event):
         """When right clicking in listbox, update selection and bring up context options."""
 
         l = self.listbox
         sel = l.nearest(event.y)
-        self.do_sel(sel)
+        self.tools.do_sel(self.listbox, sel)
         self.menu.do_popup(event, sel)
 
     @preserve_sel
@@ -145,7 +133,7 @@ class SetlistFrame(tk.Frame):
         dest = self.target_to_i(start_i=sel, target=target)
         self.data.move_song(self.live, sel, dest)
         self.listbox_update()
-        self.do_sel(dest)
+        self.tools.do_sel(self.listbox, dest)
 
     def target_to_i(self, start_i, target):
         """Convert a listbox target to an index."""
@@ -228,10 +216,6 @@ class SetlistFrame(tk.Frame):
                 logging.info('color applied!')
                 break
 
-    def add_to_listbox(self, item: str):
-        self.listbox.insert("end", item)
-
-
 class SetlistHeader(tk.Frame):
     """Frame for the setlist header elements."""
 
@@ -243,7 +227,7 @@ class SetlistHeader(tk.Frame):
         self.app = parent.app
         self.suite = self.parent
 
-        self.label = tk.Label(self, text="Setlist | ")
+        self.label = tk.Label(self, text="Active Setlist | ")
         self.label.pack(side="left", anchor="w", expand=True)
 
         self.current = tk.Label(self, text="(setlist title will go here)")
@@ -261,6 +245,7 @@ class SetlistControlRow(tk.Frame):
         self.app = parent.app
         self.settings = self.app.settings.setlist
         self.suite = parent
+        self.tools = parent.tools
 
         # TODO: move these functions in?
         move = self.suite.move
@@ -309,25 +294,13 @@ class SetlistControlRow(tk.Frame):
         self.locked = self.settings.locked
         
         self.lock = tk.Label(self, text="\U0001F512" if self.locked.get() else "\U0001F513")
-        self.lock.bind("<Button-1>", lambda e: self.toggle_lock())
+        self.lock.bind("<Button-1>", lambda e: self.tools.toggle_lock(var=self.locked, label=self.lock, follow_fn=self.toggle_controls))
         self.lock.pack(side="right", anchor="e", expand=True)
         
         # TODO: hacky fix
         self.toggle_controls()
 
-    def toggle_lock(self):
-        """Update lock label and tkvar."""
-        if self.locked.get():
-            # unlock unicode \U0001F513
-            self.lock.config(text="\U0001F513")
-            self.locked.set(False)
-        else:
-            # lock unicode \U0001F512
-            self.lock.config(text="\U0001F512")
-            self.locked.set(True)
-        self.toggle_controls()
-
-    def toggle_controls(self, event=None):
+    def toggle_controls(self, *args,):
         """Update state of setlist controls based on toggle."""
         state = "disabled" if self.locked.get() else "normal"
         for button in self.togglable:

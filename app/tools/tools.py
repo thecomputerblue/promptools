@@ -4,6 +4,7 @@ from tools.loader import LoadTool
 from tools.scroll import ScrollTool
 from tools.screens import Screens
 from tools.dbmanager import DatabaseManager
+from tools.guitools import GuiTools
 
 class AppTools():
     """Class for holding tools for the app.
@@ -20,3 +21,4 @@ class AppTools():
         # tool for loading songs between frames
         self.loader = LoadTool(app)
         self.dbmanager = DatabaseManager(app)
+        self.gui = GuiTools(app)

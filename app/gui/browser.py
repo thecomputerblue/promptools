@@ -73,13 +73,10 @@ class SearchBar(tk.Frame):
 
         # search query var
         self.query = tk.StringVar()
-
         self.entry = tk.Entry(self, textvariable=self.query)
         self.header = QuickSearchHeader(self, entry=self.entry)
-
         self.header.pack(side="top", fill="x")
         self.entry.pack(side="top", fill="x")
-
         self.entry.bind("<Down>", self.focus_set_active_tab_from_search)
 
     def focus_set_active_tab_from_search(self, event=None):

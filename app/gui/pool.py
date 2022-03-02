@@ -16,6 +16,8 @@ class PoolAndSetlistsNotebook(ttk.Notebook):
         self.parent = parent
         self.app = parent.app
         self.suite = self
+        self.tools = self.app.tools.gui
+        self.gig = self.app.data.gig
 
         self.pool = PoolAndSetlistsFrame(self)
         self.pool.pack(fill="both", expand=True)
@@ -54,6 +56,9 @@ class PoolAndSetlistsFrame(tk.Frame):
         self.parent = parent
         self.app = parent.app
         self.suite = self
+        self.tools = parent.tools
+        self.gig = parent.gig
+        self.deck = self.app.deck
 
         # subframes
         self.header = PoolHeader(self)
@@ -78,41 +83,31 @@ class PoolAndSetlistsFrame(tk.Frame):
         # expose some things for ease
         self.search = self.header.search
 
-        # callback for refreshing on db activity
-        self.data.callback = self
-
         # deck callback
         self.deck.add_callback("live", self.listbox_update)
-        self.data.add_callback(self.listbox_update)
+        self.gig.add_callback(self.listbox_update)
 
         # make strategies for updating listbox
         # TODO: implement colors
         # self.make_listbox_strategies()
 
-    # TODO: better method than a bunch of properties?
-    @property
-    def data(self):
-        return self.app.data.pool
-
-    @property
-    def deck(self):
-        return self.app.deck
+    # TODO: better approach than a bunch of properties?
 
     @property
     def pool(self):
-        return self.data.pool
+        return self.gig.pool
     
     @property
     def markers(self):
-        return self.data.markers
+        return self.gig.markers
 
     @property
     def live(self):
-        return self.data.live
+        return self.gig.live_setlist
 
     @property
     def songs(self):
-        return self.live.songs
+        return self.gig.pool.songs
     
     def do_sel(self, sel):
         """Clear and apply new target listbox selection."""
@@ -243,11 +238,11 @@ class PoolAndSetlistsFrame(tk.Frame):
         """Update listbox contents and formatting."""
 
         self.listbox.delete(0, "end")
-        if not self.live.songs:
+        if not self.pool.songs:
             return
 
         logging.info(f'listbox_update names: {self.live.names}')
-        for i, name in enumerate(self.live.names):
+        for i, name in enumerate(self.pool.names):
             name = strike(name) if self.songs[i] in self.markers.get('played') else name
             # name = number(i+1, name)
             self.listbox.insert("end", name)
@@ -268,40 +263,6 @@ class PoolAndSetlistsFrame(tk.Frame):
         self.listbox.insert("end", item)
 
 
-# class PoolManager:
-#     """Class for managing the edit pool."""
-
-#     def __init__(self, parent):
-
-#         # context
-#         self.parent = parent
-#         self.app = parent.app
-#         self.suite = parent.suite
-#         self.data = parent.data
-
-#         # Filtered list of songs so filtered listbox can call the right object.
-#         self.filtered = []
-
-#     def add_song(self, song):
-#         """Add entry to the pool."""
-
-#         logging.info(f'added song to pool {song.name}')
-#         self.data.pool.append(copy.deepcopy(song))
-#         self.suite.listbox_update()
-
-#     def delete_song(self, target):
-#         """Delete song from pool."""
-
-#         logging.info('delete_song in PoolManager')
-
-#         pool = self.data.pool
-
-#         for song in pool:
-#             if target.name == song.name \
-#             and target.created == song.created:
-#                 del pool.song
-#                 break
-
 class PoolHeader(tk.Frame):
     """Class for the Pool header & searchbar."""
 
@@ -311,7 +272,7 @@ class PoolHeader(tk.Frame):
         self.suite = parent.suite
 
         # label
-        self.label = tk.Label(self, text="Pool | Search:")
+        self.label = tk.Label(self, text="Search")
         self.label.pack(side="left", anchor="w", )
 
         # filter pool by search
@@ -336,6 +297,7 @@ class PoolControlRow(tk.Frame):
         self.parent = parent
         self.app = parent.app
         self.suite = parent
+        self.tools = parent.tools
   
         # cross out played song
         self.scratch = tk.Button(self, text="Scratch", command=None)
@@ -352,11 +314,12 @@ class PoolControlRow(tk.Frame):
         self.undo.pack(side="left")
 
         # lock
-        self.lock = tk.Label(self, text=u"\U0001F512",)
-        self.lock.bind("<Button-1>", lambda e: self.suite.toggle_lock())
+        self.locked = tk.BooleanVar()
+        self.lock = tk.Label(self)
+        self.lock.bind("<Button-1>", lambda e: self.tools.toggle_lock(var=self.locked, label=self.lock))
+        # toggle to init TODO: hacky?
+        self.tools.toggle_lock(var=self.locked, label=self.lock) 
         self.lock.pack(side="right")
 
         # keep all buttons in a list for lock toggle fn
         self.allbuttons = [self.scratch, self.rename, self.trash]
-
-
