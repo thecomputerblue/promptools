@@ -274,12 +274,15 @@ class GigData:
         setlist.songs.insert(i, setlist.songs.pop(song_i))
 
     @refresh
-    def remove_orphans(self, song):
+    def remove_orphans(self, pool, setlists):
         """Clear all songs from pool without setlist references."""
-        for setlist in self.setlists:
-            if song in setlist.songs:
-                return
-        self.pool.remove(song)
+        for song in pool:
+            orphan = True
+            for setlist in self.setlists:
+                if song in setlist:
+                    orphan = False
+                    break
+            pool.remove(song) if orphan else None
 
     @property
     def live_setlist(self):
