@@ -131,7 +131,7 @@ class SetlistFrame(tk.Frame):
         """Move song within list."""
 
         dest = self.target_to_i(start_i=sel, target=target)
-        self.data.move_song(self.live, sel, dest)
+        self.gig.live_setlist.move(sel, dest)
         self.listbox_update()
         self.tools.do_sel(self.listbox, dest)
 

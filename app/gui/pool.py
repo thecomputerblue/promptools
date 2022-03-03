@@ -3,6 +3,17 @@ from tkinter import ttk
 import time
 import copy
 import logging
+import string
+
+# helpers
+def scrub_text(text):
+    """Remove text formatting for search comparison."""
+    text = text.strip().lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    return text
+
+def alphabetize_songs(songs):
+    return sorted(songs, key=lambda song: song.name)
 
 class PoolAndSetlistsNotebook(ttk.Notebook):
     """Two pages for song pool and setlists respectively."""
@@ -82,6 +93,7 @@ class PoolAndSetlistsFrame(tk.Frame):
 
         # expose some things for ease
         self.search = self.header.search
+        self.query = self.header.query
 
         # deck callback
         self.deck.add_callback("live", self.listbox_update)
@@ -107,7 +119,24 @@ class PoolAndSetlistsFrame(tk.Frame):
 
     @property
     def songs(self):
-        return self.gig.pool.songs
+        """Filter gig songs by pool search and return as an alphabetized list."""
+        songs = alphabetize_songs(self.filter_songs_by_query(self.pool.songs))
+        return songs
+
+    @property
+    def names(self):
+        return [song.name for song in self.songs]
+    
+    def filter_songs_by_query(self, songs):
+        """Filter song list by search contents."""
+        query = scrub_text(self.query.get())
+        if not songs or not query:
+            return songs
+        out = []
+        for song in songs:
+            if query in scrub_text(song.name):
+                out.append(song)
+        return out
     
     def do_sel(self, sel):
         """Clear and apply new target listbox selection."""
@@ -164,7 +193,7 @@ class PoolAndSetlistsFrame(tk.Frame):
         """Remove selected song."""
         if sel is None:
             return
-        self.live.remove_song_at_index(i=sel)
+        self.try_delete(i=sel)
         self.listbox_update()
 
     @pass_sel
@@ -194,8 +223,14 @@ class PoolAndSetlistsFrame(tk.Frame):
 
     @pass_sel
     def on_listbox_select(self, sel, event):
-        """What to do when clicking an item in the setlist."""
-        self.push_song_to_preview(self.gig.pool.songs, sel) if sel is not None else None
+        self.push_song_to_preview(self.songs, sel) if sel is not None else None
+
+    def try_delete(self, i):
+        """Delete song at index if its not in a setlist."""
+        # TODO: if it is in a setlist, raise a dialog box.
+        song = self.songs[i]
+        if self.gig.check_orphan(song, self.gig.setlists):
+            self.pool.remove(song)
 
     def push_song_to_preview(self, songs, i):
         """Push info to infobox, and song obj to preview frame."""
@@ -235,16 +270,16 @@ class PoolAndSetlistsFrame(tk.Frame):
 
     @preserve_sel
     def listbox_update(self, sel=None):
-        """Update listbox contents and formatting."""
 
         self.listbox.delete(0, "end")
-        if not self.pool.songs:
+
+        songs = self.songs
+        if not songs:
             return
 
-        logging.info(f'listbox_update names: {self.live.names}')
-        for i, name in enumerate(self.pool.names):
-            name = strike(name) if self.songs[i] in self.markers.get('played') else name
-            # name = number(i+1, name)
+        logging.info(f'listbox_update names: {self.names}')
+        for i, name in enumerate(self.names):
+            name = strike(name) if songs[i] in self.markers.get('played') else name
             self.listbox.insert("end", name)
             # TODO: implement color_item for pool
             # self.color_item(i)

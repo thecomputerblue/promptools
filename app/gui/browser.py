@@ -3,7 +3,7 @@
 import string
 import tkinter as tk
 from tkinter import ttk
-import pickle
+# import pickle
 import logging
 
 from os import listdir

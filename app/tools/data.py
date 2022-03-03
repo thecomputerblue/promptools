@@ -26,6 +26,9 @@ class AppData:
 class Setlist:
     """Hold setlist song references & metadata."""
 
+    # def refresh(method):
+    #     return self.parent.refresh(method)
+
     def __init__(self, parent, d={}, *args, **kwargs):
         self.app = parent.app
         self.parent = parent
@@ -57,8 +60,15 @@ class Setlist:
 
     @refresh
     def add(self, song) -> None:
-        self.songs.append(song)
-        self.parent.pool.add(song)
+        if song not in self.songs:
+            self.songs.append(song)
+        if song not in self.parent.pool.songs:
+            self.parent.pool.add(song)
+
+    @refresh
+    def move(self, song_i, dest):
+        i = min(dest, len(self.songs) - 1)
+        self.songs.insert(i, self.songs.pop(song_i))
 
     @property
     def pool(self):
@@ -70,13 +80,10 @@ class Setlist:
         return [song.name for song in self.songs] if self.songs else []
 
     def remove_song_at_index(self, i: int) -> None:
-        """Remove song from the setlist by setlist index,
-        and also pool if it has no other references."""
-        # TODO: if deleted song is currently in song info, clear the song info
-        # achieve with listeners within song? more comprehensive callback manager?
+        """Remove song from the setlist by setlist index."""
+        # TODO: clear song metadata from right pane
         song = self.songs[i]
         self.songs.remove(song)
-        # self.parent.remove_song_if_orphaned(song)
 
 
 class PoolData: 
@@ -87,6 +94,15 @@ class PoolData:
         self.parent = parent
         self.songs = []
 
+    def refresh(method):
+        """Decorator that updates markers and does all callbacks."""
+
+        def inner(self, *args, **kwargs):
+            method(self, *args, **kwargs)
+            self.parent.update_marks()
+            self.parent.do_callbacks()
+
+        return inner
     @property
     def names(self):
         return [song.name for song in self.songs] if self.songs else None
@@ -104,6 +120,7 @@ class PoolData:
         for song in songs:
             self.add(song)
 
+    @refresh
     def remove(self,song):
         self.songs.remove(song)
 
@@ -113,35 +130,30 @@ class GigData:
 
     def refresh(method):
         """Decorator that updates markers and does all callbacks."""
-
         def inner(self, *args, **kwargs):
             method(self, *args, **kwargs)
             self.update_marks()
             self.do_callbacks()
-
         return inner
-
 
     def __init__(self, parent):
         self.app = parent.app
         self.suite = parent
         self.deck.add_callback("live", self.update_marks)
+        self.callbacks = {}
 
         # TODO: reload old gig
         self.new_gig()
 
     def new_gig(self):
         """Initialize the gig with fresh collections."""
+
         self.name = None
         self.setlists = [Setlist(self)]
         self.pool = PoolData(self)
         self.markers = self.default_markers()
-        self._gig_id = None
-        # index of live setlist in setlists. calling self.live_setlist lets you access
-        # the setlist methods...
         self._live_setlist = 0
-
-        self.callbacks = {}
+        self._gig_id = None
 
     @refresh
     def clear_gig(self):
@@ -268,21 +280,19 @@ class GigData:
         l.remove(song) if song in l else l.append(song)
 
     @refresh
-    def move_song(self, setlist, song_i, dest):
-        """Move song within a setlist."""
-        i = min(dest, len(setlist.songs) - 1)
-        setlist.songs.insert(i, setlist.songs.pop(song_i))
-
-    @refresh
     def remove_orphans(self, pool, setlists):
         """Clear all songs from pool without setlist references."""
         for song in pool:
-            orphan = True
-            for setlist in self.setlists:
-                if song in setlist:
-                    orphan = False
-                    break
-            pool.remove(song) if orphan else None
+            pool.remove(song) if self.check_orphan(song, setlists) else None
+
+    def check_orphan(self, song, setlists):
+        """Return True if song is not in any setlist."""
+        # TODO: utility function, maybe move to tools
+        orphaned = True
+        for setlist in setlists:
+            if song in setlist.songs:
+                orphaned = False
+        return orphaned
 
     @property
     def live_setlist(self):
