@@ -115,7 +115,7 @@ class SetlistFrame(tk.Frame):
     @preserve_sel
     def mark_nextup(self, sel, *args, **kwargs):
         """Mark the selected song as next up."""
-        self.markers['nextup'] = self.live.songs[sel]
+        self.markers['nextup'] = self.live.songs[sel] if sel else self.markers['nextup']
         self.listbox_update()
 
     @preserve_sel
