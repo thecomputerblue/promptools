@@ -141,6 +141,7 @@ class GigData:
         self.suite = parent
         self.deck.add_callback("live", self.update_marks)
         self.callbacks = {}
+        self.helper = self.app.tools.helper
 
         # TODO: reload old gig
         self.new_gig()
@@ -250,6 +251,7 @@ class GigData:
 
         if song in self.live_setlist.songs:
             logging.info('song already in live setlist')
+            self.helper.popup("song already in live setlist")
             return
 
         if song not in self.pool.songs:
@@ -261,6 +263,7 @@ class GigData:
     def add_song_to_pool(self, song):
         """Add song to pool."""
         if not song or song in self.pool.songs:
+            self.helper.popup("song already in pool!")
             return
 
         self.pool.add(song)
@@ -269,9 +272,8 @@ class GigData:
         """Check if a song is already in the setlist."""
 
         # TODO: currently comparing names, reconsider in future.
-        names = self.live_setlist.names
-        if names is not None and song.name in names:
-            logging.info("same named song already in setlist!")
+        if self.live_setlist.names is not None and song.name in names:
+            self.helper.popup("song already in setlist!")
             return True
 
     def toggle_mark(self, param, song):

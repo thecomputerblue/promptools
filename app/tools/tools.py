@@ -5,6 +5,7 @@ from tools.scroll import ScrollTool
 from tools.screens import Screens
 from tools.dbmanager import DatabaseManager
 from tools.guitools import GuiTools
+from tools.helper import Helper 
 
 class AppTools():
     """Class for holding tools for the app.
@@ -22,3 +23,4 @@ class AppTools():
         self.loader = LoadTool(app)
         self.dbmanager = DatabaseManager(app)
         self.gui = GuiTools(app)
+        self.helper = Helper(app)
