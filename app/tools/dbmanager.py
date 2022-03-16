@@ -227,8 +227,8 @@ class DatabaseManager:
     def dump_pool(self, gig_id):
         """Dump pool songs, then their ids into pool_data."""
 
-        self.dump_songs(self.app.data.pool.pool)
-        pool_ids = [song.song_id for song in self.app.data.pool.pool]
+        self.dump_songs(self.app.data.pool.songs)
+        pool_ids = [song.song_id for song in self.app.data.pool.songs]
         self.dump_pool_ids(gig_id=gig_id, pool_ids=pool_ids)
 
     def dump_pool_ids(self, gig_id, pool_ids):
@@ -381,11 +381,7 @@ class DatabaseManager:
 
     def dump_gig_setlists(self, gig_id):
         """Dump ALL the open setlists."""
-        collection = self.app.data.setlists
-        setlists = collection.setlists
-        songs = collection.pool
-
-        self.dump_songs(songs)
+        setlists = self.app.data.setlists
         self.dump_setlists(setlists)
         self.dump_gig_setlist_ids([s.setlist_id for s in setlists], gig_id)
 
@@ -422,6 +418,7 @@ class DatabaseManager:
     def get_song_ids(self, setlist):
         """Get all song ids from setlist."""
 
+        # TODO: generate song id if it doesn't exist?
         song_ids = []
         for song in setlist.songs:
             song_ids.append(song.song_id)

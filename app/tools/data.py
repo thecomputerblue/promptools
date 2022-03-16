@@ -115,7 +115,7 @@ class PoolData:
 
     def load(self, songs):
         # TODO: optional merge-load
-        self.pool.clear()
+        self.clear()
         songs = self.app.tools.factory.make_many_songs(songs) if songs else []
         for song in songs:
             self.add(song)
@@ -194,7 +194,7 @@ class GigData:
         # TODO: load-merge option
         self.setlists = []
         for setlist in setlists:
-            self.setlists.append(Setlist(parent=self.setlists, d=setlist))
+            self.setlists.append(Setlist(parent=self, d=setlist))
 
     @property
     def deck(self):
