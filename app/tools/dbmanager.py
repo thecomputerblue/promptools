@@ -242,28 +242,53 @@ class DatabaseManager:
     def load_gig(self, gig_id):
         """Construct gig dictionary from db,
         pass to data module for unpacking."""
-
-        self.app.data.gig.load_gig(self.make_gig_dict(gig_id))
+        gig = self.make_gig_dict(gig_id)
+        self.app.data.gig.load_gig(gig)
 
     def make_gig_dict(self, gig_id):
         """Make a dict with gig_id."""
 
-        return {
-            "gig_metadata": self.load_gig_metadata(gig_id),
-            "setlists": self.load_gig_setlists(gig_id),
-            "pool": self.load_gig_pool(gig_id)
-        }
+        # TODO: this has to be redone based on the reconfig of pool/setlists
+        gig = {}
+        # load metadata
+        gig['metadata'] = self.load_gig_metadata(gig_id)
+        gig['pool'] = self.load_gig_pool(gig_id)
+        gig['setlists'] = self.load_gig_setlists(gig_id=gig_id, pool=gig.get('pool'))
+        # load setlists, looking up and associating song_ids with objs as you go
+        # on dump, pool values get stripped into list
+        return gig
 
     def load_gig_pool(self, gig_id):
         pool_song_ids = self.get_pool_song_ids(gig_id)
-        return self.load_many_songs(pool_song_ids)
+        return self.load_many_songs_to_d(pool_song_ids)
+
+    def load_many_songs_to_d(self, song_ids):
+        """Load many songs to d where song_id is key, song obj is value"""
+        logging.info(f'load_many_songs_to_d recieved song_ids: {song_ids}')
+        if not song_ids:
+            return {}
+        pool = {}
+        for song_id in song_ids:
+            pool[song_id] = self.load_song(song_id)
+        return pool 
+
+    def load_many_songs_from_pool(self, song_ids, pool):
+        """Return an ordered list of song dicts from provided song_ids."""
+        logging.info(f'load_many_songs_from_pool recieved song_ids: {song_ids}')
+        if not song_ids:
+            return []
+        songs = []
+        for song_id in song_ids:
+            song = pool.get(song_id)
+            songs.append(song) if song else None
+        return songs
 
     def get_pool_song_ids(self, gig_id):
-        # TODO: nearly identical function to get_gig_setlist_ids
+        """Get song_ids for a gig_ids pool."""
         with open_db(self.db) as cur:
             cur.execute("SELECT song_id FROM pool_data WHERE gig_id=?", (gig_id,))
-            sel = cur.fetchall()
-            return sel[0] if sel else None
+            sel = list(zip(*cur.fetchall()))[0]
+            return sel if sel else None
 
     def load_gig_metadata(self, gig_id: int) -> dict:
         """Return dict of gig metadata from db."""
@@ -286,22 +311,21 @@ class DatabaseManager:
             sel = cur.fetchall()
             return sel[0] if sel is not None else None
 
-    def load_gig_setlists(self, gig_id) -> list:
+    def load_gig_setlists(self, gig_id, pool) -> list:
         """Return list of setlists for a gig_id."""
-
+        setlists = []
         sids = self.get_gig_setlist_ids(gig_id)
         if sids is None:
-            return []
+            return setlists
 
-        setlists = []
         for sid in sids:
-            setlists.append(self.load_setlist(sid))
+            setlists.append(self.load_setlist(setlist_id=sid, pool=pool))
         return setlists
 
-    def load_setlist(self, setlist_id):
+    def load_setlist(self, setlist_id, pool):
         setlist = {}
         # TODO: retrieve + apply metadata
-        setlist["songs"] = self.load_many_songs(self.get_sl_song_ids(setlist_id))
+        setlist["songs"] = self.load_many_songs_from_pool(song_ids=self.get_sl_song_ids(setlist_id), pool=pool)
 
         return setlist
 
@@ -314,16 +338,6 @@ class DatabaseManager:
                 (setlist_id,),
             )
             return list(zip(*cur.fetchall()))[0]
-
-    def load_many_songs(self, song_ids):
-        """Return an ordered list of song dicts from provided song_ids."""
-        if not song_ids:
-            return []
-        songs = []
-        logging.info(f'load_many_songs recieved song_ids: {song_ids}')
-        for song_id in song_ids:
-            songs.append(self.load_song(song_id))
-        return songs
 
     def dump_song(self, song):
         """Dump a song to the db."""

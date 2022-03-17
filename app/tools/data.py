@@ -113,9 +113,11 @@ class PoolData:
     def clear(self):
         self.songs.clear()
 
-    def load(self, songs):
+    def load(self, songs: dict):
         # TODO: optional merge-load
         self.clear()
+
+        songs = [songs[i] for i in songs]
         songs = self.app.tools.factory.make_many_songs(songs) if songs else []
         for song in songs:
             self.add(song)
@@ -176,14 +178,14 @@ class GigData:
         if new != 0:
             self.app.settings.workspace.last_gig_id.set(new)
 
-    def load_gig(self, gig_data):
+    def load_gig(self, gig_data: dict):
         """Load gig into program from dictionary"""
         # TODO: optional merge-load
         self.clear_gig()
         self.load_from_gig_data_dict(gig_data)
 
     @refresh
-    def load_from_gig_data_dict(self, gig_data):
+    def load_from_gig_data_dict(self, gig_data: dict):
         """Dump gig_data into the gig object."""
         logging.info("load_from_gig_data_dict in GigData")
         self.load_setlists(gig_data.get("setlists"))
