@@ -325,13 +325,16 @@ class DatabaseManager:
     def load_setlist(self, setlist_id, pool):
         setlist = {}
         # TODO: retrieve + apply metadata
-        setlist["songs"] = self.load_many_songs_from_pool(song_ids=self.get_sl_song_ids(setlist_id), pool=pool)
+        # TODO: redundant song load here, done again at gig load
+        song_ids = self.get_setlist_song_ids(setlist_id)
+        setlist["song_ids"] = song_ids
+        setlist["songs"] = self.load_many_songs_from_pool(song_ids=song_ids, pool=pool)
 
         return setlist
 
-    def get_sl_song_ids(self, setlist_id):
+    def get_setlist_song_ids(self, setlist_id):
         """Return list of song_ids for a setlist_id."""
-        logging.info(f'get_sl_song_ids recieved setlist_id: {setlist_id}')
+        logging.info(f'get_setlist_song_ids recieved setlist_id: {setlist_id}')
         with open_db(self.db) as cur:
             cur.execute(
                 "SELECT song_id FROM setlist_songs WHERE setlist_id=? ORDER BY pos",

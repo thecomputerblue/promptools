@@ -50,7 +50,7 @@ class SetlistFrame(tk.Frame):
         self.menu = RightClickMenu(self)
         self.listbox.bind("<Button-2>", self.right_click)
 
-        # deck callback
+        # callbacks so it refreshes whenever something changes
         self.deck.add_callback("live", self.listbox_update)
         self.gig.add_callback(self.listbox_update)
 

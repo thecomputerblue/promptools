@@ -26,9 +26,6 @@ class AppData:
 class Setlist:
     """Hold setlist song references & metadata."""
 
-    # def refresh(method):
-    #     return self.parent.refresh(method)
-
     def __init__(self, parent, d={}, *args, **kwargs):
         self.app = parent.app
         self.parent = parent
@@ -51,6 +48,75 @@ class Setlist:
             self.parent.do_callbacks()
 
         return inner
+
+    def import_songs(self, songs: list) -> list:
+        """Turns a list of song dicts into a list of song objs."""
+        songs = self.app.tools.factory.make_many_songs(songs) if songs else []
+        for song in songs:
+            self.add(song)
+
+    @refresh
+    def add(self, song) -> None:
+        if song not in self.songs:
+            self.songs.append(song)
+        if song not in self.parent.pool.songs:
+            self.parent.pool.add(song)
+
+    @refresh
+    def move(self, song_i, dest):
+        i = min(dest, len(self.songs) - 1)
+        self.songs.insert(i, self.songs.pop(song_i))
+
+    @property
+    def pool(self):
+        return self.gig.pool
+
+    @property
+    def names(self):
+        """Return names of all songs in the collection."""
+        return [song.name for song in self.songs] if self.songs else []
+
+    def remove_song_at_index(self, i: int) -> None:
+        """Remove song from the setlist by setlist index."""
+        # TODO: clear song metadata from right pane
+        song = self.songs[i]
+        self.songs.remove(song)
+
+class SetlistNew:
+    """To Replace Setlist"""
+
+    def __init__(self, parent, gig_data=None, d={}, *args, **kwargs):
+        self.app = parent.app
+        self.parent = parent
+        self.title = d.get("title")
+
+        # songs contains songs as they are ordered in this setlist
+        self.songs = []
+
+        # if passing gig data, look to the pool for song associations instead
+        # of creating new ones. otherwise, generate new song objects.
+        self.link_songs(gig_data, d) if gig_data else self.import_songs(d.get("songs"))
+
+        # db pointers
+        self.setlist_id = d.get("setlist_id")
+        self.library_id = d.get("library_id")
+
+    def refresh(method):
+        """Decorator that updates markers and does all callbacks."""
+
+        def inner(self, *args, **kwargs):
+            method(self, *args, **kwargs)
+            self.parent.update_marks()
+            self.parent.do_callbacks()
+
+        return inner
+
+    def link_songs(self, gig_data, d):
+        """Associate setlist songs with premade song objs from gig data."""
+        song_ids = d.get('song_ids')
+        pool = gig_data.get('pool')
+        for song_id in song_ids:
+            self.songs.append(pool.get(song_id))
 
     def import_songs(self, songs: list) -> list:
         """Turns a list of song dicts into a list of song objs."""
@@ -116,9 +182,7 @@ class PoolData:
     def load(self, songs: dict):
         # TODO: optional merge-load
         self.clear()
-
         songs = [songs[i] for i in songs]
-        songs = self.app.tools.factory.make_many_songs(songs) if songs else []
         for song in songs:
             self.add(song)
 
@@ -188,15 +252,40 @@ class GigData:
     def load_from_gig_data_dict(self, gig_data: dict):
         """Dump gig_data into the gig object."""
         logging.info("load_from_gig_data_dict in GigData")
-        self.load_setlists(gig_data.get("setlists"))
+
+        # process song / setlist data into objects
+        self.objectify_songs(gig_data)
+        self.objectify_setlists(gig_data)
+
+        # load all setlists, but NOT the objs... should just point to pool objs
+        self.load_pool(gig_data)
+        self.load_setlists(gig_data)
+
+    def load_pool(self, gig_data):
         self.pool.load(gig_data.get("pool"))
 
-    @refresh
-    def load_setlists(self, setlists):
-        # TODO: load-merge option
-        self.setlists = []
+    def objectify_songs(self, gig_data: dict) -> None:
+        pool = gig_data.get('pool')
+        for k, v in pool.items():
+            pool[k] =  self.make_song(v)
+
+    def make_song(self, d):
+        return self.app.tools.factory.new_song(dictionary=d)
+
+    def objectify_setlists(self, gig_data: dict) -> None:
+        setlists = gig_data.get('setlists')
+        objs = []
         for setlist in setlists:
-            self.setlists.append(Setlist(parent=self, d=setlist))
+            objs.append(SetlistNew(parent=self, gig_data=gig_data, d=setlist))
+        gig_data['setlists'] = objs
+
+    @refresh
+    def load_setlists(self, gig_data):
+        # TODO: load-merge option
+        logging.info('load_setlists in data')
+        setlists = gig_data.get('setlists')
+        for setlist in setlists:
+            self.setlists.append(setlist)
 
     @property
     def deck(self):
