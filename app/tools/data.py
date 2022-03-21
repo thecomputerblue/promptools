@@ -249,17 +249,22 @@ class GigData:
         self.load_from_gig_data_dict(gig_data)
 
     @refresh
-    def load_from_gig_data_dict(self, gig_data: dict):
+    def load_from_gig_data_dict(self, gig_data: dict) -> None:
         """Dump gig_data into the gig object."""
         logging.info("load_from_gig_data_dict in GigData")
+        self.objectify_gig(gig_data)
+        self.load_pool(gig_data)
+        # TODO: load-merge option
+        self.setlists.clear()
+        self.load_setlists(gig_data)
 
-        # process song / setlist data into objects
+    def objectify_gig(self, gig_data: dict) -> None:
+        """Convert gig_data components to promptools objects. The idea is to 
+        preserve cross-references during this conversion, so ie. duplicate
+        song objects are not created."""
+
         self.objectify_songs(gig_data)
         self.objectify_setlists(gig_data)
-
-        # load all setlists, but NOT the objs... should just point to pool objs
-        self.load_pool(gig_data)
-        self.load_setlists(gig_data)
 
     def load_pool(self, gig_data):
         self.pool.load(gig_data.get("pool"))
@@ -286,6 +291,7 @@ class GigData:
         setlists = gig_data.get('setlists')
         for setlist in setlists:
             self.setlists.append(setlist)
+        print('SETLISTS AFTER APPEND ---->', self.setlists)
 
     @property
     def deck(self):
