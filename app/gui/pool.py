@@ -100,6 +100,9 @@ class PoolAndSetlistsFrame(tk.Frame):
         self.deck.add_callback("live", self.listbox_update)
         self.gig.add_callback(self.listbox_update)
 
+        # refresh once to show anything that was loaded at init.
+        self.listbox_update()
+
         # make strategies for updating listbox
         # TODO: implement colors
         # self.make_listbox_strategies()

@@ -57,6 +57,9 @@ class SetlistFrame(tk.Frame):
         # make strategies for updating listbox
         self.make_listbox_strategies()
 
+        # refresh once to show anything that was already loaded at init
+        self.listbox_update()
+
     # TODO: better method than a bunch of properties?
 
     @property

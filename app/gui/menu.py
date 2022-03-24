@@ -338,14 +338,14 @@ class MenuBar(tk.Frame):
     def on_load_gig(self):
         """TEMP function, reloads workspace/gig from db, overwriting whatever is loaded."""
         # TODO: prompt gig id
-        self.app.tools.dbmanager.load_gig(gig_id=0)
+        self.app.data.gig.load(gig_id=0)
 
     def on_dump_workspace(self):
         """Dump gig to the workspace slot."""
-        self.app.tools.dbmanager.dump_gig(self.app.data.gig, workspace=True)
+        self.app.data.gig.dump(self.app.data.gig, workspace=True)
 
     def on_load_workspace(self):
-        self.app.tools.dbmanager.load_gig(gig_id=0)
+        self.app.data.gig.load(gig_id=0)
 
     def dump_setlist(self):
         """Temporary test function, dumps setlist collection to db."""

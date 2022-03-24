@@ -56,6 +56,8 @@ class Setlist:
         """Associate setlist songs with premade song objs from gig data."""
         song_ids = d.get('song_ids')
         pool = gig_data.get('pool')
+        if not song_ids:
+            return
         for song_id in song_ids:
             self.songs.append(pool.get(song_id))
 
@@ -133,7 +135,7 @@ class PoolData:
 
 
 class GigData:
-    """Class for holding the workspace data. Pool, setlists, notepad, config."""
+    """Class for holding the workspace/gig data. Pool, setlists, notepad, config."""
 
     def refresh(method):
         """Decorator that updates markers and does all callbacks."""
@@ -150,10 +152,11 @@ class GigData:
         self.callbacks = {}
         self.helper = self.app.tools.helper
 
-        # TODO: reload old gig
-        self.new_gig()
+        self.init_gig()
+        if self.app.settings.workspace.reload_at_init.get():
+            self.reload_workspace() 
 
-    def new_gig(self):
+    def init_gig(self):
         """Initialize the gig with fresh collections."""
 
         self.name = None
@@ -163,15 +166,18 @@ class GigData:
         self._live_setlist = 0
         self._gig_id = None
 
+    def reload_workspace(self):
+        """Reload the workspace from DB."""
+        self.load(gig_id=0)
+
     @refresh
-    def clear_gig(self):
+    def clear(self):
         """Clears gig data, but keeps the objects. This should trigger
         any callbacks."""
 
-        # TODO: clear gig metadata
+        self.setlists.clear()
         self.pool.clear()
         self.markers = self.default_markers()
-        self.setlists = [Setlist(self)]
 
     @property
     def gig_id(self):
@@ -183,23 +189,30 @@ class GigData:
         if new != 0:
             self.app.settings.workspace.last_gig_id.set(new)
 
-    def load_gig(self, gig_data: dict):
+    def load(self, *args, **kwargs):
         """Load gig into program from dictionary"""
         # TODO: optional merge-load
-        self.clear_gig()
-        self.load_from_gig_data_dict(gig_data)
+        self.clear()
+
+        if 'gig_data' in kwargs:
+            self.load_from_gig_data(kwargs.get('gig_data'))
+        elif 'gig_id' in kwargs:
+            self.load_with_gig_id(kwargs.get('gig_id'))
+            logging.info('loaded with gig_id')
+        else:
+            logging.warning('Attempted load_gig without valid kwarg!!')
+
+    def load_with_gig_id(self, gig_id: int):
+        gig_data = self.app.tools.dbmanager.make_gig_dict(gig_id)
+        self.load_from_gig_data(gig_data)
 
     @refresh
-    def load_from_gig_data_dict(self, gig_data: dict) -> None:
-        """Dump gig_data into the gig object."""
+    def load_from_gig_data(self, gig_data: dict) -> None:
+        """Load gig from gig_data dictionary."""
         logging.info("load_from_gig_data_dict in GigData")
         self.objectify_gig(gig_data)
-
-        self.pool.clear()
-        self.setlists.clear()
-
         self.pool.load(gig_data.get("pool"))
-        self.load_setlists(gig_data.get("setlists"))
+        self.setlists = gig_data.get("setlists")
 
     def objectify_gig(self, gig_data: dict) -> None:
         """Convert gig_data components to promptools objects. The idea is to 
@@ -218,12 +231,6 @@ class GigData:
         for setlist in setlists:
             objs.append(Setlist(parent=self, gig_data=gig_data, d=setlist))
         gig_data['setlists'] = objs
-
-    @refresh
-    def load_setlists(self, setlists):
-        # TODO: load-merge option
-        for setlist in setlists:
-            self.setlists.append(setlist)
 
     @property
     def deck(self):
@@ -277,7 +284,6 @@ class GigData:
         if not song:
             return
         if song in self.live_setlist.songs:
-            logging.info('song already in live setlist')
             self.helper.popup("song already in live setlist")
             return
         if song not in self.pool.songs:

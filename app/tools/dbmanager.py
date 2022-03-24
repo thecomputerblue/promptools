@@ -190,7 +190,7 @@ class DatabaseManager:
         logging.info(f"choose_id in DatabaseManager")
         query = f"SELECT {key} FROM {table}"
         fetched = cur.execute(query).fetchall()
-        return lowest_unused([tup[0] for tup in fetched]) if fetched else 0
+        return lowest_unused([tup[0] for tup in fetched]) if fetched else 1
 
     def dump_gig(self, gig, workspace=False):
         """Dump the workspace back to db,
@@ -209,7 +209,7 @@ class DatabaseManager:
 
     def clear_db_gig_id(self, gig_id):
         """Clear everything associated with a gig_id in the db."""
-        logging.info('clear_db_gig_id in dbmanager, gig_id=', gig_id)
+        logging.info(f'clear_db_gig_id in dbmanager, gig_id={gig_id}')
         with open_db(self.db) as cur:
             cur.execute("DELETE FROM gigs WHERE gig_id=?", (gig_id,))
             cur.execute("DELETE FROM gig_setlists WHERE gig_id=?", (gig_id,))
@@ -250,11 +250,11 @@ class DatabaseManager:
                 query = "INSERT INTO pool_data (gig_id, pos, song_id) VALUES (?, ?, ?)"
                 cur.execute(query, (gig_id, i, p))
 
-    def load_gig(self, gig_id):
-        """Construct gig dictionary from db,
-        pass to data module for unpacking."""
-        gig = self.make_gig_dict(gig_id)
-        self.app.data.gig.load_gig(gig)
+    # def load_gig(self, gig_id):
+    #     """Construct gig dictionary from db,
+    #     pass to data module for unpacking."""
+    #     gig = self.make_gig_dict(gig_id)
+    #     self.app.data.gig.load_gig(gig)
 
     def make_gig_dict(self, gig_id):
         """Make a dict with gig_id."""
@@ -298,8 +298,9 @@ class DatabaseManager:
         """Get song_ids for a gig_ids pool."""
         with open_db(self.db) as cur:
             cur.execute("SELECT song_id FROM pool_data WHERE gig_id=?", (gig_id,))
-            sel = list(zip(*cur.fetchall()))[0]
-            return sel if sel else None
+            sel = cur.fetchall()
+            if sel:
+                return list(zip(*sel))[0]
 
     def load_gig_metadata(self, gig_id: int) -> dict:
         """Return dict of gig metadata from db."""
@@ -351,7 +352,11 @@ class DatabaseManager:
                 "SELECT song_id FROM setlist_songs WHERE setlist_id=? ORDER BY pos",
                 (setlist_id,),
             )
-            return list(zip(*cur.fetchall()))[0]
+            sel = cur.fetchall()
+            if sel:
+                return list(zip(*sel))[0]
+            # return list(zip(*cur.fetchall()))[0]
+
 
     def dump_song(self, song):
         """Dump a song to the db."""
@@ -449,7 +454,6 @@ class DatabaseManager:
 
     def dump_songs(self, songs: list):
         """Dump all songs from setlist."""
-        print(f'SONGS---->{songs}')
         for song in songs:
             self.dump_song(song)
 

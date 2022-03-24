@@ -43,17 +43,20 @@ class MainApplication(tk.Frame):
         self.settings = Settings(self)
 
         # tools for creating and moving data within the app, and scrolling
+        # TODO: kinda convoluted struct
         self.tools = AppTools(self)
 
-        # manages callbacks for updating cued / live / previous
-        # TODO: expand to include history
+        # track songs played / cued & manage callbacks
+        # TODO: seperate parts
         self.deck = SongDeck(self)
+
+        # song cache, use weak references so old songs get gc'd
+        self.cache = Cache(self)
 
         # sqlite3 / data mgmt
         self.data = AppData(self)
 
-        # song cache, use weak references so old songs get gc'd
-        self.cache = Cache(self)
+        # ALL GUI ELEMENTS BELOW~~~~~
 
         # 2nd window for talent
         self.talent = TalentWindow(self)
@@ -101,6 +104,11 @@ class MainApplication(tk.Frame):
         self.collections = CollectionsSuite(self)
         self.collections.grid(row=0, column=0, rowspan=3, sticky="nesw")
 
+        # make some shorthand names.
+        # TODO: best practice?
+        self.setlist = self.collections.setlist
+        self.pool = self.collections.pool
+
         # this will be a tooltip box in the bottom left corner of the app
         self.helper = HelperBox(self)
         self.helper.grid(row=3, column=0, sticky="nesw")
@@ -111,13 +119,8 @@ class MainApplication(tk.Frame):
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=5)
 
-        # menus at the top of the app
+        # menubar at the top of the app
         self.menu = MenuBar(self)
-
-        # make some shorthand names.
-        # TODO: best practice?
-        self.setlist = self.collections.setlist
-        self.pool = self.collections.pool
 
         # Set window attributes & icon
         self.tk.eval("tk::PlaceWindow . center")
@@ -131,26 +134,17 @@ class MainApplication(tk.Frame):
         """What to do when you quit."""
 
         # TODO: see if state has changed since last save, only show message if it has.
-        choice = messagebox.askyesnocancel(
-            "Save Workspace",
-            "Save workspace before quitting? Any unsaved changes to the workspace / settings will be lost.",
-        )
+        choice = messagebox.askyesnocancel("Save State","Save state before quitting?")
+        if choice is None:
+            return
+        elif choice == True:
+            self.save_state()
+        self.root.destroy()
 
-        if choice == True:
-
-            # logging.info('saved and quit')
-            self.settings.dump_settings()
-            # self.tools.dbmanager.dump_gig()
-            self.root.destroy()
-
-        elif choice == False:
-
-            # logging.info('quit without saving')
-            self.root.destroy()
-
-        else:
-            logging.info('canceled quit operation')
-
+    def save_state(self):
+        """Save app state by dumping settings and gig data."""
+        self.settings.dump_settings()
+        self.tools.dbmanager.dump_gig(self.app.data.gig, workspace=True)
 
 def main():
     """Application main loop."""

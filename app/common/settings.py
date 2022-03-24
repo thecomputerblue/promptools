@@ -122,13 +122,11 @@ class SettingsBaseClass:
 
     def trace(self, tkvar, name):
         """Add callback for tkvar."""
-
         tkvar.trace("w", lambda *args: self.update(name, tkvar.get()))
 
     def setting(self, tkvarclass, name: str, inits: dict) -> object:
         """Make a new setting and assign a default value and callback,
         returning a tkinter variable."""
-
         setting = tkvarclass()
         setting.set(inits.get(name))
         self.trace(setting, name)
@@ -582,13 +580,15 @@ class WorkspaceSettings(SettingsBaseClass):
         self.defaults = {
         # store the last non-zero gig_id (0 is reserved for workspace) so on subsequent
         # runs you can save the workspace back to the same gig.
-        'last_gig_id': None
+        'last_gig_id': None,
+        'reload_at_init': True,
         }
 
         inits = merge(self.defaults, self.custom)
 
         # TODO: callback so this updates when gig_id changes
         self.last_gig_id = self.setting(tk.IntVar, 'last_gig_id', inits)
+        self.reload_at_init = self.setting(tk.BooleanVar, "reload_at_init", inits)
 
 class LibrarySettings(SettingsBaseClass):
     """Class for library settings, especially read/write behaviors."""
