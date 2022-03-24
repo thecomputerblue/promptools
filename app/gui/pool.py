@@ -70,6 +70,7 @@ class PoolAndSetlistsFrame(tk.Frame):
         self.tools = parent.tools
         self.gig = parent.gig
         self.deck = self.app.deck
+        self.helper = self.app.tools.helper
 
         # subframes
         self.header = PoolHeader(self)
@@ -229,8 +230,16 @@ class PoolAndSetlistsFrame(tk.Frame):
         """Delete song at index if its not in a setlist."""
         # TODO: if it is in a setlist, raise a dialog box.
         song = self.songs[i]
-        if self.gig.check_orphan(song, self.gig.setlists):
+        if self.check_orphan(song, self.gig.setlists):
             self.pool.remove(song)
+
+    def check_orphan(self, song, setlists) -> bool:
+        """Return True if song is orphaned (not in the list of setlists)."""
+        for setlist in setlists:
+            if song in setlist.songs:
+                self.helper.popup("Can't delete a song from the pool that is in a setlist!")
+                return False
+        return True 
 
     def push_song_to_preview(self, songs, i):
         """Push info to infobox, and song obj to preview frame."""

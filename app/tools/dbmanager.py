@@ -75,7 +75,6 @@ class DatabaseManager:
                 )"""
             )
 
-            # TODO: gig metadata
             cur.execute(
                 """CREATE TABLE if not exists gigs (
                 gig_id INTEGER PRIMARY KEY,
@@ -170,18 +169,19 @@ class DatabaseManager:
         could lead to a gig in slot 0, which would be overwritten by
         a workspace save."""
 
-        logging.info(f"generating db defaults: {db}")
+        logging.info(f"gen_db_defaults in dbmanager: {db}")
         with open_db(self.db) as cur:
+            self.gen_workspace(cur)
 
-            # generate gig_id 0 for workspace in gigs
-            # TODO: can probably reduce this to a readable one-liner
-            cur.execute("SELECT * FROM gigs WHERE gig_id==0")
-            workspace = cur.fetchone()
-            if workspace is None:
-                cur.execute(
-                    "INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (0, "workspace")
-                )
-                logging.info("gen_db_defaults generated workspace gig_id placeholder")
+    def gen_workspace(self, cur):
+        """Generate workspace entry in db if none exists."""
+        cur.execute("SELECT * FROM gigs WHERE gig_id==0")
+        workspace = cur.fetchone()
+        if workspace is None:
+            cur.execute(
+                "INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (0, "workspace")
+            )
+            logging.info("gen_db_defaults generated workspace gig_id placeholder")
 
     def choose_id(self, cur, key, table):
         """Choose the an unused id for a given db key.
@@ -199,9 +199,21 @@ class DatabaseManager:
         self.assign_gig_id(gig)
         store_id = 0 if workspace else gig.gig_id
 
+        # clear everything at the store_id
+        self.clear_db_gig_id(gig_id=store_id)
+
+        # dump gig to the store_id
         self.dump_pool(store_id)
         self.dump_gig_setlists(store_id)
         self.dump_gig_meta(store_id)
+
+    def clear_db_gig_id(self, gig_id):
+        """Clear everything associated with a gig_id in the db."""
+        logging.info('clear_db_gig_id in dbmanager, gig_id=', gig_id)
+        with open_db(self.db) as cur:
+            cur.execute("DELETE FROM gigs WHERE gig_id=?", (gig_id,))
+            cur.execute("DELETE FROM gig_setlists WHERE gig_id=?", (gig_id,))
+            cur.execute("DELETE FROM pool_data WHERE gig_id=?", (gig_id,))
 
     def dump_gig_meta(self, store_id):
         """Dump the gig metadata."""
@@ -210,7 +222,6 @@ class DatabaseManager:
         logging.info(f"dumping gig metadata")
         name = self.app.data.gig.name
         with open_db(self.db) as cur:
-            cur.execute("DELETE FROM gigs WHERE gig_id=?", (store_id,))
             cur.execute(
                 "INSERT INTO gigs (gig_id, name) VALUES (?, ?)", (store_id, name)
             )
@@ -292,7 +303,7 @@ class DatabaseManager:
 
     def load_gig_metadata(self, gig_id: int) -> dict:
         """Return dict of gig metadata from db."""
-        return self.row_to_dict("gigs", "gig_id", gig_id)
+        return self.row_to_dict(table="gigs", row="gig_id", value=gig_id)
 
     def row_to_dict(self, table: str, row: str, value: str or int) -> dict:
         """Return dict of a single row of a table
@@ -344,29 +355,24 @@ class DatabaseManager:
 
     def dump_song(self, song):
         """Dump a song to the db."""
-
-        logging.info(f"began adding {song.name} to {self.db}")
-
         with open_db(self.db) as cur:
             self.assign_song_ids(song, cur)
             self.dump_song_script(song, cur)
             self.dump_song_meta(song, cur)
+        logging.info(f"added song {song.name} to {self.db}")
 
     def assign_song_ids(self, song, cur):
         """Assigns id tags to the song if they don't exist."""
-
         song.song_id = self.song_id_strategies(song, cur)
         song.library_id = self.library_id_strategies(song, cur)
 
     def dump_song_script(self, song, cur):
-        """Dump song script to db."""
-
+        """Dump song script tuples to db rows."""
         for tup in song.tk_tuples:
             self.dump_script_tuple(cur, tup, song.song_id)
 
     def dump_script_tuple(self, cur, tup, song_id):
         """Dump the song script (a list of tuples) to the db."""
-
         pos, tag, word = tup
         data = (song_id, pos, tag, word)
         query = (
@@ -391,7 +397,7 @@ class DatabaseManager:
         """Replaces dump_song_meta"""
 
         # TODO: once song is updated to store metadata in a dict,
-        # you can pass that in and delete this line, which generates
+        # you can pass that in and delete next line, which generates
         # a dict from the song obj.
         song_meta = self.temp_song_dict(d)
         self.dump_dict_to_row(cur, "song_meta", song_meta)

@@ -8,14 +8,13 @@ import logging
 # app settings
 from common.settings import Settings
 
-# helper tools TODO: unroll tools.tools maybe?
+# helper tools TODO: unroll tools.tools
 from tools.tools import AppTools
 from tools.data import AppData
 from tools.cache import Cache
 from tools.deck import SongDeck
 
 # gui components
-# TODO: package?
 from gui.collections import CollectionsSuite
 from gui.browser import BrowserSuite
 from gui.talent import TalentWindow

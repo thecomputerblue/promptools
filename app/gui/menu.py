@@ -208,8 +208,9 @@ class MenuBar(tk.Frame):
         # gig menu. gig includes a list of setlists, and metadata about gig (venue, date, etc).
         # does not affect the pool
         gig_menu = tk.Menu(menu_bar)
-        gig_menu.add_command(label="DUMP (TEMP)", command=self.on_dump_gig)
-        gig_menu.add_command(label="LOAD (TEMP)", command=self.on_load_gig)
+        gig_menu.add_command(label="DUMP GIG (TEMP)", command=self.on_dump_gig)
+        gig_menu.add_command(label="DUMP WORKSPACE", command=self.on_dump_workspace)
+        gig_menu.add_command(label="LOAD WORKSPACE", command=self.on_load_workspace)
         gig_menu.add_command(label="Gig Name Here", state="disabled")
         gig_menu.add_separator()
         gig_menu.add_command(label="Gig Info")
@@ -332,10 +333,18 @@ class MenuBar(tk.Frame):
 
     def on_dump_gig(self):
         """TEMP function, dumps workspace/gig to db."""
-        self.app.tools.dbmanager.dump_gig(self.app.data.gig, workspace=True)
+        self.app.tools.dbmanager.dump_gig(self.app.data.gig, workspace=False)
 
     def on_load_gig(self):
         """TEMP function, reloads workspace/gig from db, overwriting whatever is loaded."""
+        # TODO: prompt gig id
+        self.app.tools.dbmanager.load_gig(gig_id=0)
+
+    def on_dump_workspace(self):
+        """Dump gig to the workspace slot."""
+        self.app.tools.dbmanager.dump_gig(self.app.data.gig, workspace=True)
+
+    def on_load_workspace(self):
         self.app.tools.dbmanager.load_gig(gig_id=0)
 
     def dump_setlist(self):

@@ -24,65 +24,6 @@ class AppData:
         return self.app.settings.paths.db.get()
 
 class Setlist:
-    """Hold setlist song references & metadata."""
-
-    def __init__(self, parent, d={}, *args, **kwargs):
-        self.app = parent.app
-        self.parent = parent
-        self.title = d.get("title")
-
-        # songs contains songs as they are ordered in this setlist
-        self.songs = []
-        self.import_songs(d.get("songs"))
-
-        # db pointers
-        self.setlist_id = d.get("setlist_id")
-        self.library_id = d.get("library_id")
-
-    def refresh(method):
-        """Decorator that updates markers and does all callbacks."""
-
-        def inner(self, *args, **kwargs):
-            method(self, *args, **kwargs)
-            self.parent.update_marks()
-            self.parent.do_callbacks()
-
-        return inner
-
-    def import_songs(self, songs: list) -> list:
-        """Turns a list of song dicts into a list of song objs."""
-        songs = self.app.tools.factory.make_many_songs(songs) if songs else []
-        for song in songs:
-            self.add(song)
-
-    @refresh
-    def add(self, song) -> None:
-        if song not in self.songs:
-            self.songs.append(song)
-        if song not in self.parent.pool.songs:
-            self.parent.pool.add(song)
-
-    @refresh
-    def move(self, song_i, dest):
-        i = min(dest, len(self.songs) - 1)
-        self.songs.insert(i, self.songs.pop(song_i))
-
-    @property
-    def pool(self):
-        return self.gig.pool
-
-    @property
-    def names(self):
-        """Return names of all songs in the collection."""
-        return [song.name for song in self.songs] if self.songs else []
-
-    def remove_song_at_index(self, i: int) -> None:
-        """Remove song from the setlist by setlist index."""
-        # TODO: clear song metadata from right pane
-        song = self.songs[i]
-        self.songs.remove(song)
-
-class SetlistNew:
     """To Replace Setlist"""
 
     def __init__(self, parent, gig_data=None, d={}, *args, **kwargs):
@@ -253,45 +194,36 @@ class GigData:
         """Dump gig_data into the gig object."""
         logging.info("load_from_gig_data_dict in GigData")
         self.objectify_gig(gig_data)
-        self.load_pool(gig_data)
-        # TODO: load-merge option
+
+        self.pool.clear()
         self.setlists.clear()
-        self.load_setlists(gig_data)
+
+        self.pool.load(gig_data.get("pool"))
+        self.load_setlists(gig_data.get("setlists"))
 
     def objectify_gig(self, gig_data: dict) -> None:
         """Convert gig_data components to promptools objects. The idea is to 
         preserve cross-references during this conversion, so ie. duplicate
         song objects are not created."""
 
-        self.objectify_songs(gig_data)
-        self.objectify_setlists(gig_data)
+        self.objectify_pool(gig_data.get('pool'))
+        self.objectify_setlists(setlists=gig_data.get('setlists'), gig_data=gig_data)
 
-    def load_pool(self, gig_data):
-        self.pool.load(gig_data.get("pool"))
-
-    def objectify_songs(self, gig_data: dict) -> None:
-        pool = gig_data.get('pool')
+    def objectify_pool(self, pool: dict) -> None:
         for k, v in pool.items():
-            pool[k] =  self.make_song(v)
+            pool[k] =  self.app.tools.factory.new_song(dictionary=v)
 
-    def make_song(self, d):
-        return self.app.tools.factory.new_song(dictionary=d)
-
-    def objectify_setlists(self, gig_data: dict) -> None:
-        setlists = gig_data.get('setlists')
+    def objectify_setlists(self, setlists: dict, gig_data: dict) -> None:
         objs = []
         for setlist in setlists:
-            objs.append(SetlistNew(parent=self, gig_data=gig_data, d=setlist))
+            objs.append(Setlist(parent=self, gig_data=gig_data, d=setlist))
         gig_data['setlists'] = objs
 
     @refresh
-    def load_setlists(self, gig_data):
+    def load_setlists(self, setlists):
         # TODO: load-merge option
-        logging.info('load_setlists in data')
-        setlists = gig_data.get('setlists')
         for setlist in setlists:
             self.setlists.append(setlist)
-        print('SETLISTS AFTER APPEND ---->', self.setlists)
 
     @property
     def deck(self):
@@ -342,18 +274,14 @@ class GigData:
     @refresh
     def add_song_to_setlist(self, song):
         """Add a song to the live setlist."""
-
         if not song:
             return
-
         if song in self.live_setlist.songs:
             logging.info('song already in live setlist')
             self.helper.popup("song already in live setlist")
             return
-
         if song not in self.pool.songs:
             self.pool.append(song)
-
         self.live_setlist.songs.append(song) 
 
     @refresh
@@ -362,36 +290,12 @@ class GigData:
         if not song or song in self.pool.songs:
             self.helper.popup("song already in pool!")
             return
-
         self.pool.add(song)
-
-    def song_already_in_setlist(self, song):
-        """Check if a song is already in the setlist."""
-
-        # TODO: currently comparing names, reconsider in future.
-        if self.live_setlist.names is not None and song.name in names:
-            self.helper.popup("song already in setlist!")
-            return True
 
     def toggle_mark(self, param, song):
         """Toggle a song within a marker list."""
         l = self.markers[param]
         l.remove(song) if song in l else l.append(song)
-
-    @refresh
-    def remove_orphans(self, pool, setlists):
-        """Clear all songs from pool without setlist references."""
-        for song in pool:
-            pool.remove(song) if self.check_orphan(song, setlists) else None
-
-    def check_orphan(self, song, setlists):
-        """Return True if song is not in any setlist."""
-        # TODO: utility function, maybe move to tools
-        orphaned = True
-        for setlist in setlists:
-            if song in setlist.songs:
-                orphaned = False
-        return orphaned
 
     @property
     def live_setlist(self):
