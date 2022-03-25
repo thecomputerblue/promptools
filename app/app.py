@@ -98,7 +98,7 @@ class MainApplication(tk.Frame):
         self.preview.grid(row=2, column=2, columnspan=1, sticky="nesw", padx=8, pady=8)
 
         self.meta = MetaSuite(self)
-        self.meta.grid(row=0, column=3, sticky="nesw", rowspan=4)
+        self.meta.grid(row=0, column=3, sticky="nesw", rowspan=4) 
 
         # setlist / song pool pane on the left
         self.collections = CollectionsSuite(self)

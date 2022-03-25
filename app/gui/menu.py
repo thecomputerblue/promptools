@@ -203,7 +203,8 @@ class MenuBar(tk.Frame):
 
         # library menu
         library_menu = tk.Menu(menu_bar)
-        library_menu.add_command(label='Song Manager', command=lambda *args: self.open_library(tab='songs'))
+        library_menu.add_command(label='Song Browser', command=lambda *args: self.open_library(tab='songs'))
+        library_menu.add_command(label='Delete Orphaned Songs', command=lambda *args: self.delete_orphans())
 
         # gig menu. gig includes a list of setlists, and metadata about gig (venue, date, etc).
         # does not affect the pool
@@ -333,7 +334,7 @@ class MenuBar(tk.Frame):
 
     def on_dump_gig(self):
         """TEMP function, dumps workspace/gig to db."""
-        self.app.tools.dbmanager.dump_gig(self.app.data.gig, workspace=False)
+        self.app.data.gig.dump(workspace=True)
 
     def on_load_gig(self):
         """TEMP function, reloads workspace/gig from db, overwriting whatever is loaded."""
@@ -342,7 +343,7 @@ class MenuBar(tk.Frame):
 
     def on_dump_workspace(self):
         """Dump gig to the workspace slot."""
-        self.app.data.gig.dump(self.app.data.gig, workspace=True)
+        self.app.data.gig.dump(workspace=True)
 
     def on_load_workspace(self):
         self.app.data.gig.load(gig_id=0)
@@ -445,6 +446,12 @@ class MenuBar(tk.Frame):
             # disable
             monitor.config(highlightcolor="light green", highlightbackground="dark grey")
             monitor.text.config(state="disabled")
+
+    def delete_orphans(self):
+        """Delete orphaned songs from library."""
+        # TODO: popup confirmation
+        # TODO: fn into the library manager
+        self.app.tools.dbmanager.delete_orphans()
 
 
 

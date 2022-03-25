@@ -186,11 +186,22 @@ class DatabaseManager:
     def choose_id(self, cur, key, table):
         """Choose the an unused id for a given db key.
         Currently finds lowest available. If table is empty, starts at 0."""
+        # TODO: this is implemented a degree too nested imo
 
         logging.info(f"choose_id in DatabaseManager")
+        used_ids = self.get_all_ids(cur, key, table)
+        return lowest_unused(used_ids) if used_ids else 1
+
+        # TODO: old, delete once this is confirmed working
+        # query = f"SELECT {key} FROM {table}"
+        # fetched = cur.execute(query).fetchall()
+        # return lowest_unused([tup[0] for tup in fetched]) if fetched else 1
+
+    def get_all_ids(self, cur, key, table):
+        """Get all ids from a table."""
         query = f"SELECT {key} FROM {table}"
         fetched = cur.execute(query).fetchall()
-        return lowest_unused([tup[0] for tup in fetched]) if fetched else 1
+        return [tup[0] for tup in fetched] if fetched else None
 
     def dump_gig(self, gig, workspace=False):
         """Dump the workspace back to db,
@@ -250,11 +261,35 @@ class DatabaseManager:
                 query = "INSERT INTO pool_data (gig_id, pos, song_id) VALUES (?, ?, ?)"
                 cur.execute(query, (gig_id, i, p))
 
-    # def load_gig(self, gig_id):
-    #     """Construct gig dictionary from db,
-    #     pass to data module for unpacking."""
-    #     gig = self.make_gig_dict(gig_id)
-    #     self.app.data.gig.load_gig(gig)
+    def delete_orphans(self) -> None:
+        """Delete all orphaned songs from library. An orphaned song is
+        one which is not referenced in any gig or setlist, and is not
+        a main version of a song (lib_id == song_id)."""
+        orphaned_song_ids = self.get_orphaned_song_ids()
+        with open_db(self.db) as cur:
+            for song_id in orphaned_song_ids:
+                cur.execute("DELETE FROM song_data where song_id=?", (song_id,))
+                cur.execute("DELETE FROM song_meta where song_id=?", (song_id,))
+
+    def get_orphaned_song_ids(self) -> list:
+        """Return all orphaned song_ids in a list."""
+        with open_db(self.db) as cur:
+            all_song_ids = self.get_all_ids(cur, "song_id", "song_meta")
+        orphaned_song_ids = []
+        for song_id in all_song_ids:
+            if self.song_is_orphaned(song_id):
+                orphaned_song_ids.append(song_id)
+        return orphaned_song_ids
+
+    def song_is_orphaned(self, song_id):
+        with open_db(self.db) as cur:
+            cur.execute("SELECT * FROM setlist_songs where song_id=?", (song_id,))
+            if cur.fetchone():
+                return False
+            cur.execute("SELECT * FROM pool_data where song_id=?", (song_id,))
+            if cur.fetchone():
+                return False
+        return True
 
     def make_gig_dict(self, gig_id):
         """Make a dict with gig_id."""

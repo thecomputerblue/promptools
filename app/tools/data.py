@@ -170,6 +170,9 @@ class GigData:
         """Reload the workspace from DB."""
         self.load(gig_id=0)
 
+    def dump(self, workspace=False):
+        self.app.tools.dbmanager.dump_gig(gig=self, workspace=False)
+
     @refresh
     def clear(self):
         """Clears gig data, but keeps the objects. This should trigger
