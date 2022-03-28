@@ -24,8 +24,10 @@ def lowest_unused(l: list) -> int:
     for i, curr in enumerate(l):
         if i == last:
             return l[-1] + 1
-        elif new := curr + 1 != l[i + 1]:
-            return new
+        n = curr + 1
+        if n != l[i + 1]:
+            logging.info(f'lowest_unused returned {n}')
+            return n
 
 def sql_q_marks(n):
     """Return '(?, ?, ... ?)' with n '?' marks. Used for SQLite VALUES."""
@@ -190,7 +192,9 @@ class DatabaseManager:
 
         logging.info(f"choose_id in DatabaseManager")
         used_ids = self.get_all_ids(cur, key, table)
-        return lowest_unused(used_ids) if used_ids else 1
+        out = lowest_unused(used_ids) if used_ids else 1
+        logging.info(f'choose_id chose the id {out}')
+        return out
 
         # TODO: old, delete once this is confirmed working
         # query = f"SELECT {key} FROM {table}"
@@ -261,7 +265,7 @@ class DatabaseManager:
                 query = "INSERT INTO pool_data (gig_id, pos, song_id) VALUES (?, ?, ?)"
                 cur.execute(query, (gig_id, i, p))
 
-    def delete_orphans(self) -> None:
+    def delete_orphaned_songs(self) -> None:
         """Delete all orphaned songs from library. An orphaned song is
         one which is not referenced in any gig or setlist, and is not
         a main version of a song (lib_id == song_id)."""
@@ -356,7 +360,8 @@ class DatabaseManager:
         with open_db(self.db) as cur:
             cur.execute("SELECT setlist_id FROM gig_setlists WHERE gig_id=?", (gig_id,))
             sel = cur.fetchall()
-            return sel[0] if sel is not None else None
+            if sel:
+                return sel[0]
 
     def load_gig_setlists(self, gig_id, pool) -> list:
         """Return list of setlists for a gig_id."""

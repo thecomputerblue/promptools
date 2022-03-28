@@ -204,7 +204,7 @@ class MenuBar(tk.Frame):
         # library menu
         library_menu = tk.Menu(menu_bar)
         library_menu.add_command(label='Song Browser', command=lambda *args: self.open_library(tab='songs'))
-        library_menu.add_command(label='Delete Orphaned Songs', command=lambda *args: self.delete_orphans())
+        library_menu.add_command(label='Delete Orphaned Songs', command=lambda *args: self.delete_orphaned_songs())
 
         # gig menu. gig includes a list of setlists, and metadata about gig (venue, date, etc).
         # does not affect the pool
@@ -447,11 +447,11 @@ class MenuBar(tk.Frame):
             monitor.config(highlightcolor="light green", highlightbackground="dark grey")
             monitor.text.config(state="disabled")
 
-    def delete_orphans(self):
+    def delete_orphaned_songs(self):
         """Delete orphaned songs from library."""
         # TODO: popup confirmation
         # TODO: fn into the library manager
-        self.app.tools.dbmanager.delete_orphans()
+        self.app.tools.dbmanager.delete_orphaned_songs()
 
 
 

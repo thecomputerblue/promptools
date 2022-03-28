@@ -24,7 +24,6 @@ class GuiTools:
 
     def get_sel(self, listbox):
         """Get selection index."""
-
         sel = listbox.curselection()
         return sel[0] if sel else None
 
