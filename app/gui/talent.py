@@ -92,6 +92,7 @@ class TalentWindow(tk.Toplevel):
         self.bind("<KeyRelease-Shift_R>", lambda _: self.app.monitor.shift_scroll_off())
         self.bind("<.>", lambda _: self.app.monitor.arrow_scroll(direction="down"))
         self.bind("<,>", lambda _: self.app.monitor.arrow_scroll(direction="up"))
+        self.bind("<KeyPress-Escape>", self.esc_fs_toggle)
 
         # scaler
         self.text_scaler = TextScaler(self) # TODO: move to app tools?
@@ -114,60 +115,66 @@ class TalentWindow(tk.Toplevel):
         self.win_y = self.winfo_height()
 
     def match_sibling_yview(self):
-        """Match monitor yview."""
-
         mon_y = self.app.monitor.text.yview()
         self.text.yview_moveto(mon_y[0])
 
+    def esc_fs_toggle(self, event):
+        self.fullscreen.set(False if self.fullscreen.get() else True)
+
     def receive_edits(self, tk_text_dump):
         """When editing monitor window, send the new text to this to update."""
-        if not self.frozen:
-
-            loader = self.app.tools.loader
-            mon = self.app.monitor.text
-            tal = self.text 
-            
-            loader.clone_tk_text(mon, tal)
+        if self.frozen:
+            return 
+        loader = self.app.tools.loader
+        mon = self.app.monitor.text
+        tal = self.text
+        loader.clone_tk_text(mon, tal)
 
     def scroll(self, direction="down"):
         """Advance scroll based on pixels size."""
-
         amt = self.pixels if direction=="down" else -self.pixels
         self.text.yview_scroll(amt, "pixels")
 
     def toggle_fullscreen(self):
-        """Toggle the border of the talent window, which can be distracting."""
+        self.go_windowed() if self.fullscreen.get() else self.go_fullscreen()
+            
+    def go_fullscreen(self):
+        logging.info('talent went window')
+        self.window.wm_attributes("-fullscreen", False)
+        self.window.wm_attributes('-topmost', False)
+        self.window.geometry(f"{self.window.win_x}x{self.window.win_y}")
+
+    def go_windowed(self):
+        c = self.get_coords()
+        logging.info('talent went fullscreen')
+        self.deiconify()
+        self.window.store_winfo()
+        self.window.wm_attributes('-topmost', True)
+        self.window.wm_attributes("-fullscreen", True)
+        self.window.geometry(f"{c.get('tw')}x{c.get('th')}+{c.get('xoffs')}-{c.get('yoffs')}")
+
+    def get_coords(self):
+        """Return dict of talent and operator coords for go_fullscreen"""
         operator = self.suite.screens.operator
         talent = self.suite.screens.talent
+        coords = {}
         # x=0, y=0, width=2560, height=1080, width_mm=None, height_mm=None, name=None, is_primary=True
 
         # offset coords
-        xoffs = talent.x
-        yoffs = talent.y
+        coords['xoffs'] = talent.x
+        coords['yoffs'] = talent.y
 
         # screen sizes
-        tw = talent.width
-        th = talent.height 
-        ow = operator.width
-        oh = operator.height
+        coords['tw'] = talent.width
+        coords['th'] = talent.height 
+        coords['ow'] = operator.width
+        coords['oh'] = operator.height
 
-        # xw = operator.width
-        # xh = operator.height
+        # coords[xw] = operator.width
+        # coords[xh] = operator.height
 
-        if not self.fullscreen.get():
-            # toggle OFF
-            logging.info('talent went window')
-            self.window.wm_attributes("-fullscreen", False)
-            self.window.wm_attributes('-topmost', False)
-            self.window.geometry(f"{self.window.win_x}x{self.window.win_y}")
-        else:
-            # toggle ON
-            logging.info('talent went fullscreen')
-            self.deiconify()
-            self.window.store_winfo()
-            self.window.wm_attributes('-topmost', True)
-            self.window.wm_attributes("-fullscreen", True)
-            self.window.geometry(f'{tw}x{th}+{xoffs}-{yoffs}')
+        return coords
+
 
 class PromptArrow(tk.Frame):
     """Frame for scroll arrow."""
@@ -178,7 +185,7 @@ class PromptArrow(tk.Frame):
         self.parent = parent
         self.app = parent.app
         self.settings = self.app.settings.arrow
-        # Sibling arrow for two-way positional update.
+        # Sibling arrow for two-way positional update, not currently used...
         self.sibling = None
 
         # Create canvas
@@ -324,12 +331,10 @@ class ArrowScaler:
         self.__func_id = None
 
     def bind_config(self):
-
         self._func_id = self.parent.bind("<Configure>", self.resize)
 
     def resize(self, event):
         """If frame size has changed, determine the scale difference."""
-
         if event.widget == self.parent and (
             self.width != event.width or self.height != event.height
         ):
