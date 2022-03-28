@@ -50,7 +50,7 @@ class MetaSuite(tk.PanedWindow):
         self.song_detail = SongDetailView(self)
 
         # callbacks for detail views so they get selection info instantly
-        self.app.deck.add_callback('cued', self.song_detail.push_deck)
+        self.app.deck.add_callback('focused', self.song_detail.push_focused)
 
         # add panes
         self.add(self.notepad)

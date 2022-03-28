@@ -81,7 +81,7 @@ class SongFactory:
         # apply metadata if it exists
         song = Song(self.app, meta) if meta else Song(self.app)
 
-        return self.import_text(song, **kwargs)
+        return self.import_text(song, **kwargs) if kwargs else song
 
     def update_song(self, old, meta=None, **kwargs):
         """Update an existing song object."""
@@ -93,7 +93,7 @@ class SongFactory:
         # TODO: update 'opened' stamp on push to live.
         old.meta.modified = timestamp()
 
-        return self.import_text(old, **kwargs)
+        return self.import_text(old, **kwargs) 
 
     def import_text(self, song, **kwargs):
         """Import text with appropriate strategy, return song."""
@@ -103,7 +103,8 @@ class SongFactory:
             if k(**kwargs):
                 return v(song, **kwargs)
 
-        logging.warning('import_text in song failed to choose import strategy')
+        logging.warning('import_text in song failed to choose import strategy. generating empty song')
+
 
     def new_meta(self, name=None, created=None, modified=None, info=None, confidence=None, opened=None):
         """Construct a new song metadata object."""
@@ -112,7 +113,7 @@ class SongFactory:
         meta = SongMetadata(song=None)
 
         # assign various metadata args
-        meta.name = name
+        meta.name = name if name else ''
         meta.created = created 
         meta.modified = modified
         meta.opened = opened
@@ -507,7 +508,7 @@ class SongMetadata():
         self.modified = self.created
         self.opened = self.created
 
-        self.name = None
+        self.name = ''
         self.title = self.name # TODO: migrate references to title
         self._info = None # TODO: migrate references to comments
         self.confidence = None
@@ -520,6 +521,14 @@ class SongMetadata():
         self.song_id = None
         self.library_id = None
 
+    @property
+    def title(self):
+        return self.name
+
+    @title.setter
+    def title(self, new):
+        self.name = new
+    
     @property
     def key(self):
         # TODO: allow user to transpose song by changing key here? setter method

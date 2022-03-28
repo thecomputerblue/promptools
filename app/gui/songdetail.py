@@ -98,12 +98,17 @@ class SongDetailView(tk.Frame):
         # TODO: feels like there's a redundancy here
         self.push(self.app.deck.cued)
 
-    def push(self, song, callback=None):
-        """dump old info back to song, push new song, refresh fields."""
+    def push_focused(self):
+        # TODO: doing this because my callback method doesn't accept args/ kwargs correctly. fix!
+        self.push(self.app.deck.focused)
 
+    def push(self, song, callback=None):
+        """dump old info back to song, push new song & callback refresh fields."""
+        if song:
+            logging.info(f'push in SongDetailView recieved song {song} with name: {song.name}')
         self.dump_meta_back_to_song()
         self.song = song
-        self.refresh_callback = None
+        self.refresh_callback = callback
         self.refresh_song_meta_fields()
 
     def fill_from_song_dict(self, song_dict):

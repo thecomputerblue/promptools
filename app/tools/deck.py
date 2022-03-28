@@ -15,12 +15,15 @@ class SongDeck:
 		self._cued = None
 		self._live = None
 		self._previous = None
+		self._focused = None
 
 		# refresh function assigned when a song is cued from pool / setlist 
 		self.refresh = None
 
 	def add_callback(self, param, callback, *args, **kwargs):
 		"""Add an observer & callback to the param dict."""
+		# TODO: this is... not really working. *args and **kwargs mainly
+		# simplify based on what is actually needed in this context...
 
 		if not param in self.callbacks:
 			self.callbacks[param] = {}
@@ -35,17 +38,18 @@ class SongDeck:
 	def push(self, *args):
 		"""Callback to any frames called in args."""
 
-		for k,v in self.callbacks.items():
+		for k, v in self.callbacks.items():
 			if k in args:
-				self.do_calls(v)
+				logging.info(f'callback push: {k}')
+				self.do_callbacks(callbacks=v)
 
-	def do_calls(self, calls):
-		"""Execute a list of callbacks without args."""
+	def do_callbacks(self, callbacks):
+		"""Unpack and execute callbacks"""
 
-		if not calls:
+		if not callbacks:
 			return
 
-		for k,v in calls.items():
+		for k, v in callbacks.items():
 			args = v.get('args')
 			kwargs = v.get('kwargs')
 			k(*args, **kwargs)
@@ -64,6 +68,7 @@ class SongDeck:
 	def cued(self, new):
 		self._cued = new
 		self.push("cued")
+		self.focused = new
 
 	@property
 	def live(self):
@@ -83,6 +88,21 @@ class SongDeck:
 	def previous(self, new):
 		self._previous = new
 		self.push("previous")
-	
 
-	
+	@property
+	def focused(self):
+		"""Track the song in focus (info exposed in song detail)"""
+		logging.info('got focused from deck')
+		return self._focused
+
+	@focused.setter
+	def focused(self, new):
+		"""Trigger focus callbacks."""
+		self._focused = new 
+		self.push("focused")
+
+	def new(self):
+		"""Push new song to live."""
+		logging.info('generated new song')
+		self.live = self.app.tools.factory.new_song()
+		self.focused = self.live

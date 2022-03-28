@@ -33,33 +33,33 @@ class MenuBar(tk.Frame):
 
         # workspace cascade
         workspace_menu = tk.Menu(menu_bar)
-        workspace_menu.add_command(label="Save")
-        workspace_menu.add_command(label="Save As...")
-        workspace_menu.add_command(label="Load")
+        workspace_menu.add_command(label="Save",state="disabled")
+        workspace_menu.add_command(label="Save As...",state="disabled")
+        workspace_menu.add_command(label="Load",state="disabled")
         workspace_menu.add_separator()
-        workspace_menu.add_command(label="Clear") # TODO: new as well?
-        workspace_menu.add_command(label="Reload")
+        workspace_menu.add_command(label="Clear",state="disabled") # TODO: new as well?
+        workspace_menu.add_command(label="Reload",state="disabled")
         workspace_menu.add_separator()
-        workspace_menu.add_checkbutton(label="Auto-Save On Exit")
+        workspace_menu.add_checkbutton(label="Auto-Save On Exit",state="disabled")
         # reload settings, 
-        workspace_menu.add_checkbutton(label="Reload At Startup")
+        workspace_menu.add_checkbutton(label="Reload At Startup",state="disabled")
 
         # setlist cascade
         setlist_submenu = tk.Menu(menu_bar)
-        setlist_submenu.add_command(label="Save")
-        setlist_submenu.add_command(label="Save As...")
-        setlist_submenu.add_command(label="Load")
+        setlist_submenu.add_command(label="Save",state="disabled")
+        setlist_submenu.add_command(label="Save As...",state="disabled")
+        setlist_submenu.add_command(label="Load",state="disabled")
         setlist_submenu.add_separator()
-        setlist_submenu.add_command(label="New")
-        setlist_submenu.add_command(label="Reload")
+        setlist_submenu.add_command(label="New",state="disabled")
+        setlist_submenu.add_command(label="Reload",state="disabled")
         setlist_submenu.add_separator()
-        setlist_submenu.add_checkbutton(label="Auto-Save On Exit")
-        setlist_submenu.add_checkbutton(label="Save With Workspace")    
+        setlist_submenu.add_checkbutton(label="Auto-Save On Exit",state="disabled")
+        setlist_submenu.add_checkbutton(label="Save With Workspace",state="disabled")    
 
         # file menu contents
         file_menu = tk.Menu(menu_bar)
-        file_menu.add_command(label="New Song")
-        file_menu.add_command(label="Reload Song")
+        file_menu.add_command(label="New Song", command=self.on_new_song)
+        file_menu.add_command(label="Reload Song",state="disabled")
         file_menu.add_separator()
 
         # main functions for shuttling songs around the app!
@@ -71,8 +71,8 @@ class MenuBar(tk.Frame):
         self.app.bind_all("<Command-p>", lambda event: self.on_load_cued_to_live(event))
 
         file_menu.add_separator()        
-        file_menu.add_command(label="Import Song")
-        file_menu.add_command(label="Export Song")
+        file_menu.add_command(label="Import Song",state="disabled")
+        file_menu.add_command(label="Export Song",state="disabled")
         file_menu.add_separator()
         # file_menu.add_cascade(label="Pool", menu=pool_menu)
         # file_menu.add_cascade(label="Setlist", menu=setlist_submenu)
@@ -82,74 +82,74 @@ class MenuBar(tk.Frame):
         # file_menu.add_separator()
         # file_menu.add_command(label="About")
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.on_exit)
+        file_menu.add_command(label="Quit Promptools", command=self.on_exit)
 
         # text format menu
         text_menu = tk.Menu(menu_bar)
-        text_menu.add_command(label='Clear Selected Style')
+        text_menu.add_command(label='Clear Selected Style',state="disabled")
         text_menu.add_separator()
-        text_menu.add_command(label='Bold')
-        text_menu.add_command(label='Italic')
-        text_menu.add_command(label='Underline')
-        text_menu.add_command(label='Strikethru')
+        text_menu.add_command(label='Bold',state="disabled")
+        text_menu.add_command(label='Italic',state="disabled")
+        text_menu.add_command(label='Underline',state="disabled")
+        text_menu.add_command(label='Strikethru',state="disabled")
         text_menu.add_separator()
         # hide hides text from talent, appears grey in monitor
-        text_menu.add_command(label='Hide') # TODO: combine into context sensitive toggle
+        text_menu.add_command(label='Hide',state="disabled") # TODO: combine into context sensitive toggle
         # show removes hide tags
-        text_menu.add_command(label='Show')
+        text_menu.add_command(label='Show',state="disabled")
         text_menu.add_separator()
         # remove all hide tags from document
-        text_menu.add_command(label='Show All Text')
+        text_menu.add_command(label='Show All Text',state="disabled")
         text_menu.add_separator()
-        text_menu.add_command(label='Clear All Style')
+        text_menu.add_command(label='Clear All Style',state="disabled")
         text_menu.add_separator()
         # Bring up menu to configure font size & typeface.
         # text_menu.add_command(label='Text Settings')
 
         # tag menu
         tag_menu = tk.Menu(menu_bar)
-        tag_menu.add_command(label='Clear Selected Tags')
+        tag_menu.add_command(label='Clear Selected Tags',state="disabled")
         tag_menu.add_separator()
-        tag_menu.add_command(label='BVs')
-        tag_menu.add_command(label='Chord')
-        tag_menu.add_command(label='Header')
-        tag_menu.add_command(label='Key')
-        tag_menu.add_command(label='Lyric')
+        tag_menu.add_command(label='BVs',state="disabled")
+        tag_menu.add_command(label='Chord',state="disabled")
+        tag_menu.add_command(label='Header',state="disabled")
+        tag_menu.add_command(label='Key',state="disabled")
+        tag_menu.add_command(label='Lyric',state="disabled")
         tag_menu.add_separator()
         # Operator tagged items take up space in both views but are only visible to operator
-        tag_menu.add_command(label='Operator')
+        tag_menu.add_command(label='Operator',state="disabled")
         tag_menu.add_separator()
-        tag_menu.add_command(label='Configure Colors')
+        tag_menu.add_command(label='Configure Colors',state="disabled")
         tag_menu.add_separator()
-        tag_menu.add_command(label='Clear All Tags')
+        tag_menu.add_command(label='Clear All Tags',state="disabled")
 
         guest_menu = tk.Menu(menu_bar)
-        guest_menu.add_command(label='All Guests')
+        guest_menu.add_command(label='All Guests',state="disabled")
         guest_menu.add_separator()
-        guest_menu.add_command(label='(guests go here)')
+        guest_menu.add_command(label='(guests go here)',state="disabled")
         guest_menu.add_separator()
-        guest_menu.add_command(label='Manage Guestlist')
+        guest_menu.add_command(label='Manage Guestlist',state="disabled")
         # special menu for variable data
         special_menu = tk.Menu(menu_bar)
-        special_menu.add_command(label="City")
-        special_menu.add_command(label="Date")
-        special_menu.add_cascade(label="Guests", menu=guest_menu) # TODO: cascade menu of guest list.
-        special_menu.add_command(label="Thanks")
-        special_menu.add_command(label="Venue")
+        special_menu.add_command(label="City",state="disabled")
+        special_menu.add_command(label="Date",state="disabled")
+        special_menu.add_cascade(label="Guests", menu=guest_menu,state="disabled") # TODO: cascade menu of guest list.
+        special_menu.add_command(label="Thanks",state="disabled")
+        special_menu.add_command(label="Venue",state="disabled")
 
         # edit menu contents
         edit_toggle = self.settings.editor.enabled
         edit_menu = tk.Menu(menu_bar)
         edit_menu.add_checkbutton(label="Edit Mode", accelerator="Cmd+e", variable=edit_toggle, command=self.on_edit_mode) # TODO: context specific text
         edit_menu.add_separator()
-        edit_menu.add_command(label="Undo")
-        edit_menu.add_command(label="Redo")        
+        edit_menu.add_command(label="Undo",state="disabled")
+        edit_menu.add_command(label="Redo",state="disabled")        
         edit_menu.add_separator()
-        edit_menu.add_command(label="Cut")
-        edit_menu.add_command(label="Copy")
-        edit_menu.add_command(label="Paste")
+        edit_menu.add_command(label="Cut",state="disabled")
+        edit_menu.add_command(label="Copy",state="disabled")
+        edit_menu.add_command(label="Paste",state="disabled")
         edit_menu.add_separator()
-        edit_menu.add_command(label="Find And Replace") # TODO: popup find and replace tool
+        edit_menu.add_command(label="Find And Replace",state="disabled") # TODO: popup find and replace tool
 
         # talent view menu
         self.talent_flag = tk.IntVar()
@@ -170,20 +170,20 @@ class MenuBar(tk.Frame):
         view_menu.add_cascade(label='Talent View', menu=talent_view_menu, command=lambda: print('opened talent view menu'))
         view_menu.add_separator()
         # dump the entire edit buffer to talent window to bypass unforseen errors in edit duplication
-        view_menu.add_checkbutton(label='Push Edits To Talent') 
+        view_menu.add_checkbutton(label='Push Edits To Talent',state="disabled") 
         view_menu.add_separator()
-        view_menu.add_checkbutton(label="Talent Follows Edit View")
-        view_menu.add_checkbutton(label="Editor Follows Talent Scroll")
+        view_menu.add_checkbutton(label="Talent Follows Edit View",state="disabled")
+        view_menu.add_checkbutton(label="Editor Follows Talent Scroll",state="disabled")
         view_menu.add_separator()
-        view_menu.add_checkbutton(label="Show Talent Arrow")
-        view_menu.add_checkbutton(label="Show Talent Colors")
-        view_menu.add_checkbutton(label="Wrap Talent Text")
+        view_menu.add_checkbutton(label="Show Talent Arrow",state="disabled")
+        view_menu.add_checkbutton(label="Show Talent Colors",state="disabled")
+        view_menu.add_checkbutton(label="Wrap Talent Text",state="disabled")
         view_menu.add_separator()
-        view_menu.add_checkbutton(label="Lists & Helper Pane (Left)")
-        view_menu.add_checkbutton(label="Details & Notes Pane (Right)")
-        view_menu.add_checkbutton(label="Browser & Preview Pane (Below)")
+        view_menu.add_checkbutton(label="Lists & Helper Pane (Left)",state="disabled")
+        view_menu.add_checkbutton(label="Details & Notes Pane (Right)",state="disabled")
+        view_menu.add_checkbutton(label="Browser & Preview Pane (Below)",state="disabled")
         view_menu.add_separator()
-        view_menu.add_command(label="Settings")
+        view_menu.add_command(label="Settings",state="disabled")
 
         # format menu contents
         format_menu = tk.Menu(menu_bar)
@@ -191,15 +191,15 @@ class MenuBar(tk.Frame):
         format_menu.add_cascade(label='Style', menu=text_menu)
         format_menu.add_cascade(label='Special', menu=special_menu)
         format_menu.add_separator()
-        format_menu.add_command(label='Sub Selected Enharmonics')
+        format_menu.add_command(label='Sub Selected Enharmonics', state="disabled")
         format_menu.add_separator()
-        format_menu.add_command(label='Text Size +')
-        format_menu.add_command(label='Text Size -')
+        format_menu.add_command(label='Text Size +',state="disabled")
+        format_menu.add_command(label='Text Size -',state="disabled")
         format_menu.add_separator()
-        format_menu.add_command(label='Clear Selected Formatting')
-        format_menu.add_command(label='Clear All Formatting')
+        format_menu.add_command(label='Clear Selected Formatting',state="disabled")
+        format_menu.add_command(label='Clear All Formatting',state="disabled")
         format_menu.add_separator()
-        format_menu.add_command(label="Settings")
+        format_menu.add_command(label="Settings",state="disabled")
 
         # library menu
         library_menu = tk.Menu(menu_bar)
@@ -214,31 +214,31 @@ class MenuBar(tk.Frame):
         gig_menu.add_command(label="LOAD WORKSPACE", command=self.on_load_workspace)
         gig_menu.add_command(label="Gig Name Here", state="disabled")
         gig_menu.add_separator()
-        gig_menu.add_command(label="Gig Info")
-        gig_menu.add_command(label="Setlists") # TODO: cascade?
+        gig_menu.add_command(label="Gig Info",state="disabled")
+        gig_menu.add_command(label="Setlists",state="disabled") # TODO: cascade?
         gig_menu.add_separator()
-        gig_menu.add_command(label="Save")
+        gig_menu.add_command(label="Save",state="disabled")
         gig_menu.add_separator()
-        gig_menu.add_command(label="Import")
-        gig_menu.add_command(label="Export")
+        gig_menu.add_command(label="Import",state="disabled")
+        gig_menu.add_command(label="Export",state="disabled")
         gig_menu.add_separator()
-        gig_menu.add_command(label="New")
-        gig_menu.add_command(label="Reload")
+        gig_menu.add_command(label="New",state="disabled")
+        gig_menu.add_command(label="Reload",state="disabled")
         gig_menu.add_separator()
-        gig_menu.add_command(label="Settings")
+        gig_menu.add_command(label="Settings",state="disabled")
 
 
         # pool menu. pool is a working list of files
         pool_menu = tk.Menu(menu_bar)
-        pool_menu.add_command(label="Save") # save state to db
+        pool_menu.add_command(label="Save",state="disabled") # save state to db
         pool_menu.add_separator()
-        pool_menu.add_command(label="Import")
-        pool_menu.add_command(label="Export")
+        pool_menu.add_command(label="Import",state="disabled")
+        pool_menu.add_command(label="Export",state="disabled")
         pool_menu.add_separator()
-        pool_menu.add_command(label="Clear") # reload state from db
-        pool_menu.add_command(label="Reload")
+        pool_menu.add_command(label="Clear",state="disabled") # reload state from db
+        pool_menu.add_command(label="Reload",state="disabled")
         pool_menu.add_separator()
-        pool_menu.add_command(label="Settings")
+        pool_menu.add_command(label="Settings",state="disabled")
 
         # pool_menu.add_separator()
         # pool_menu.add_checkbutton(label="Auto-Save On Exit")
@@ -249,43 +249,43 @@ class MenuBar(tk.Frame):
         # These next two are for testing db functionality. will be removed
         setlist_menu.add_command(label="DUMP SETLIST (TEMP)", command=self.dump_setlist)
         setlist_menu.add_separator()
-        setlist_menu.add_command(label="Metadata")        
+        setlist_menu.add_command(label="Metadata",state="disabled")        
         setlist_menu.add_separator()
-        setlist_menu.add_command(label="Previous")
-        setlist_menu.add_command(label="Next")
+        setlist_menu.add_command(label="Previous",state="disabled")
+        setlist_menu.add_command(label="Next",state="disabled")
         setlist_menu.add_separator()
-        setlist_menu.add_command(label="(Setlist songs go here)")
+        setlist_menu.add_command(label="(Setlist songs go here)",state="disabled")
         setlist_menu.add_separator()
 
         # bookmark menu
         bookmark_menu = tk.Menu(menu_bar)
-        bookmark_menu.add_command(label='Add Bookmark')
+        bookmark_menu.add_command(label='Add Bookmark',state="disabled")
         bookmark_menu.add_separator()
-        bookmark_menu.add_command(label='Previous')
-        bookmark_menu.add_command(label='Next')
+        bookmark_menu.add_command(label='Previous',state="disabled")
+        bookmark_menu.add_command(label='Next',state="disabled")
         bookmark_menu.add_separator()
-        bookmark_menu.add_command(label='(Populate List of Bookmarks Here)')
+        bookmark_menu.add_command(label='(Populate List of Bookmarks Here)',state="disabled")
         bookmark_menu.add_separator()
-        bookmark_menu.add_command(label='Clear Bookmarks')
+        bookmark_menu.add_command(label='Clear Bookmarks',state="disabled")
         bookmark_menu.add_separator()
-        bookmark_menu.add_command(label='Bookmark Manager')
+        bookmark_menu.add_command(label='Bookmark Manager',state="disabled")
 
         # keys menu. TODO: used in two places but will need functions to act on different song objects. 
         keys_menu = tk.Menu(menu_bar)
-        keys_menu.add_command(label='Default Song Key')
+        keys_menu.add_command(label='Default Song Key',state="disabled")
         keys_menu.add_separator()
-        keys_menu.add_command(label='C')
-        keys_menu.add_command(label='C# / Db')
-        keys_menu.add_command(label='D')
-        keys_menu.add_command(label='D# / Eb')
-        keys_menu.add_command(label='E')
-        keys_menu.add_command(label='F')
-        keys_menu.add_command(label='F# / Gb')
-        keys_menu.add_command(label='G')
-        keys_menu.add_command(label='G# / Ab')
-        keys_menu.add_command(label='A')
-        keys_menu.add_command(label='A# / Bb')
-        keys_menu.add_command(label='B')
+        # keys_menu.add_command(label='C')
+        # keys_menu.add_command(label='C# / Db')
+        # keys_menu.add_command(label='D')
+        # keys_menu.add_command(label='D# / Eb')
+        # keys_menu.add_command(label='E')
+        # keys_menu.add_command(label='F')
+        # keys_menu.add_command(label='F# / Gb')
+        # keys_menu.add_command(label='G')
+        # keys_menu.add_command(label='G# / Ab')
+        # keys_menu.add_command(label='A')
+        # keys_menu.add_command(label='A# / Bb')
+        # keys_menu.add_command(label='B')
 
         # transposer menu
         transposer_menu = tk.Menu(menu_bar)
@@ -293,7 +293,7 @@ class MenuBar(tk.Frame):
         transposer_menu.add_command(label="Close Transposer Tool", command=self.on_transposer_close)
         # transpose_menu.add_command(label="Persist")
         transposer_menu.add_separator()
-        transposer_menu.add_checkbutton(label="Show Nashville Numbers")
+        transposer_menu.add_checkbutton(label="Show Nashville Numbers",state="disabled")
         transposer_menu.add_separator()
         # transposer_menu.add_command(label="Substitute Enharmonics In Selection (A#<->Bb)")
         # transposer_menu.add_separator()
@@ -347,6 +347,9 @@ class MenuBar(tk.Frame):
 
     def on_load_workspace(self):
         self.app.data.gig.load(gig_id=0)
+
+    def on_new_song(self): 
+        self.app.deck.new()
 
     def dump_setlist(self):
         """Temporary test function, dumps setlist collection to db."""
