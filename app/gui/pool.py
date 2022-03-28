@@ -200,6 +200,18 @@ class PoolAndSetlistsFrame(tk.Frame):
         self.try_delete(i=sel)
         self.listbox_update()
 
+    @preserve_sel
+    def try_undo(self, sel, *args, **kwargs):
+        logging.info('try_undo in PoolAndSetlistsFrame')
+
+    @preserve_sel
+    def try_add(self, sel, *args, **kwargs):
+        logging.info('try_add in PoolAndSetlistsFrame')
+
+    @preserve_sel
+    def on_duplicate(self, sel, *args, **kwargs):
+        logging.info('on_duplicate in PoolAndSetlistsFrame')
+
     @pass_sel
     def move(self, sel, target: str or int):
         """Move song within list."""
@@ -347,17 +359,16 @@ class PoolControlRow(tk.Frame):
         self.tools = parent.tools
   
         # cross out played song
-        self.scratch = tk.Button(self, text="Scratch", command=None)
-        self.scratch.pack(side="left")
+        self.add = tk.Button(self, text="+", command=self.suite.try_add)
+        self.add.pack(side="left")
 
-        # cross out played song
-        self.rename = tk.Button(self, text="Rename", command=None)
-        self.rename.pack(side="left")
+        self.duplicate = tk.Button(self, text="\u2397", command=self.suite.on_duplicate)
+        self.duplicate.pack(side="left")
 
         self.trash = tk.Button(self, text="\u2715", command=self.suite.on_remove)
         self.trash.pack(side="left")
 
-        self.undo = tk.Button(self, text="Undo", command=None)
+        self.undo = tk.Button(self, text="Undo", command=self.suite.try_undo)
         self.undo.pack(side="left")
 
         # lock
@@ -369,4 +380,4 @@ class PoolControlRow(tk.Frame):
         self.lock.pack(side="right")
 
         # keep all buttons in a list for lock toggle fn
-        self.allbuttons = [self.scratch, self.rename, self.trash]
+        self.allbuttons = [self.add, self.duplicate, self.trash, self.undo]
