@@ -57,6 +57,7 @@ class Settings:
         self.keys = KeySettings(self, "KeySettings")
         self.meta = MetaSettings(self, "MetaSettings")
         self.paths = PathSettings(self, "PathSettings") # changed from dirs
+        self.scalers = ScalerSettings(self, "ScaleSettings")
         self.scroll = ScrollSettings(self, "ScrollSettings") # TODO: move speed params etc here
         self.setlist = SetlistSettings(self, "SetlistSettings")
         self.tags = TagSettings(self, "TagSettings")        
@@ -589,6 +590,30 @@ class WorkspaceSettings(SettingsBaseClass):
         # TODO: callback so this updates when gig_id changes
         self.last_gig_id = self.setting(tk.IntVar, 'last_gig_id', inits)
         self.reload_at_init = self.setting(tk.BooleanVar, "reload_at_init", inits)
+
+
+class ScalerSettings(SettingsBaseClass):
+    """Settings for scaling text / arrow / etc. in talent & editor views."""
+
+    def __init__(self, settings, name):
+        SettingsBaseClass.__init__(self, settings, name)
+
+        self.defaults = {
+        'all': 1,
+        'arrow': 1,
+        'editor': 1,
+        'talent': 1,
+        }
+
+        inits = merge(self.defaults, self.custom)
+
+        self.all = self.setting(tk.DoubleVar, 'all', inits)
+        self.arrow = self.setting(tk.DoubleVar, 'arrow', inits)        
+        self.editor = self.setting(tk.DoubleVar, 'editor', inits)
+        self.talent = self.setting(tk.DoubleVar, 'talent', inits)
+
+        
+
 
 class LibrarySettings(SettingsBaseClass):
     """Class for library settings, especially read/write behaviors."""

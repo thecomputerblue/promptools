@@ -138,3 +138,4 @@ devnotes
 app/data/settings.json
 app/data/appdata.db
 app/data/settings.json
+*.json

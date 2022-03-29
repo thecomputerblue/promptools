@@ -3,6 +3,23 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+# helpers
+def fs_coords(operator, talent):
+    """Return dict of talent and operator coords for go_fullscreen"""
+    coords = {}
+
+    # offset coords
+    coords['xoffs'] = talent.x
+    coords['yoffs'] = talent.y
+
+    # screen sizes
+    coords['tw'] = talent.width
+    coords['th'] = talent.height 
+    coords['ow'] = operator.width
+    coords['oh'] = operator.height
+
+    return coords
+
 class TalentWindow(tk.Toplevel):
     """Class for the Talent POV, which should be identical to the TalentMonitor
 	but scaled to full screen on a second screen."""
@@ -145,35 +162,16 @@ class TalentWindow(tk.Toplevel):
         self.window.geometry(f"{self.window.win_x}x{self.window.win_y}")
 
     def go_windowed(self):
-        c = self.get_coords()
+        c = fs_coords(
+            operator = self.suite.screens.operator,
+            talent = self.suite.screens.talent
+            )
         logging.info('talent went fullscreen')
         self.deiconify()
         self.window.store_winfo()
         self.window.wm_attributes('-topmost', True)
         self.window.wm_attributes("-fullscreen", True)
         self.window.geometry(f"{c.get('tw')}x{c.get('th')}+{c.get('xoffs')}-{c.get('yoffs')}")
-
-    def get_coords(self):
-        """Return dict of talent and operator coords for go_fullscreen"""
-        operator = self.suite.screens.operator
-        talent = self.suite.screens.talent
-        coords = {}
-        # x=0, y=0, width=2560, height=1080, width_mm=None, height_mm=None, name=None, is_primary=True
-
-        # offset coords
-        coords['xoffs'] = talent.x
-        coords['yoffs'] = talent.y
-
-        # screen sizes
-        coords['tw'] = talent.width
-        coords['th'] = talent.height 
-        coords['ow'] = operator.width
-        coords['oh'] = operator.height
-
-        # coords[xw] = operator.width
-        # coords[xh] = operator.height
-
-        return coords
 
 
 class PromptArrow(tk.Frame):
@@ -188,7 +186,6 @@ class PromptArrow(tk.Frame):
         # Sibling arrow for two-way positional update, not currently used...
         self.sibling = None
 
-        # Create canvas
         self.canvas = self.create_canvas(**kwargs)
         self.canvas.pack(expand=True, fill="both")
 
@@ -265,37 +262,40 @@ class PromptArrow(tk.Frame):
 
     def drag(self, event):
         """Handle dragging of an object"""
-        # TODO: prevent dragging out of sight.
-
-        # Compute how much the mouse has moved.
-        delta_x = event.x - self._drag_data["x"]
-        delta_y = event.y - self._drag_data["y"]
-        # Move the object the appropriate amount.
-        # 0 is x, vertical drag only...
-
-
         # TODO: make this less... squirmy
         # move arrow, keeping within view
-        coords = self.canvas.coords(self._drag_data["item"])
-        arrow_top = coords[1]
-        arrow_foot = coords[5]
-        win_y = self.winfo_height()
-        
-        if arrow_top < 0:
-            self.canvas.move(self._drag_data["item"], 0, 1)
+        obj = self._drag_data["item"]
+        coords = self.canvas.coords(obj)
+        self.drag_obj(
+            canvas=self.canvas,
+            obj=obj,
+            head=coords[1],
+            foot=coords[5],
+            deltas=self.deltas(event),
+            win_xy=self.win_xy(),
+            )
+        self.update_pos(event)
 
-        elif arrow_foot > win_y and arrow_top > 0: 
-            self.canvas.move(self._drag_data["item"], 0, -1)
+    def win_xy(self):
+        return (self.winfo_width(), self.winfo_height())
 
+    def drag_obj(self, canvas, obj, head, foot, deltas, win_xy):
+        # TODO: move out of this class since it isn't dependent on it
+        if head < 0:
+            canvas.move(obj, 0, 1)
+        elif foot > win_xy[1] and head > 0: 
+            canvas.move(obj, 0, -1)
         else:
-            self.canvas.move(self._drag_data["item"], 0, delta_y)  
+            canvas.move(obj, 0, deltas[1])  
 
-        # record the new position
+    def update_pos(self, event):
         self._drag_data["x"] = event.x
         self._drag_data["y"] = event.y
 
-    def arrow_within_view(self, event):
-        """Return True if y value is within the bounds of the screen."""
+    def deltas(self, event) -> tuple:
+        delta_x = event.x - self._drag_data["x"]
+        delta_y = event.y - self._drag_data["y"]
+        return (delta_x, delta_y)
 
     def move_sibling(self, delta_y):
         """Update arrow position to match position of another arrow."""
@@ -335,23 +335,16 @@ class ArrowScaler:
 
     def resize(self, event):
         """If frame size has changed, determine the scale difference."""
-        if event.widget == self.parent and (
-            self.width != event.width or self.height != event.height
-        ):
-
-            # Get the % change as a float (should be around 1 +- .1)
-            wscale = float(event.width) / self.width
-            hscale = float(event.height) / self.height
-
-            # Update dimensions
-            self.width, self.height = event.width, event.height
-
-            # Scale the arrow (and whatever else is in there...)
-            self.resize_shapes(wscale, hscale)
+        if event.widget != self.parent or (self.width == event.width and self.height == event.height):
+            return
+        wscale = float(event.width) / self.width
+        hscale = float(event.height) / self.height
+        self.width, self.height = event.width, event.height
+        self.resize_shapes(wscale, hscale)
 
     def resize_shapes(self, wscale, hscale):
         """Resize canvas shapes, retaining proportions."""
-        # Change last arg to 'hscale' to allow arrow to deform
+        # change last arg to 'hscale' to allow arrow to deform
         self.parent.canvas.scale("all", 0, 0, wscale, wscale)
 
 
@@ -359,7 +352,6 @@ class TextScaler:
     """Track resizing of Talent window to update font size. """
 
     def __init__(self, parent):
-
         self.parent = parent
         self.app = parent.app
         self.suite = parent.suite
@@ -372,6 +364,10 @@ class TextScaler:
         self._func_id = None
         self.bind_config()
         # self.scale_text()
+
+        # callback for refresh
+        scaler = self.settings.scalers.talent
+        scaler.trace("w", lambda *args: self.scale_text())
 
 
     def bind_config(self):
@@ -389,30 +385,23 @@ class TextScaler:
         ):
             logging.info(f'{event.widget=}: {event.height=}, {event.width=}\n')
 
-            # Scaling for arrow resize.
-            wscale = float(event.width) / self.width
-            hscale = float(event.height) / self.height
+            # Scaling for arrow resize. not used?
+            # wscale = float(event.width) / self.width
+            # hscale = float(event.height) / self.height
 
             self.width, self.height = event.width, event.height
 
             self.scale_text()
 
     def scale_text(self):
-        # Font
-        font = self.settings.fonts.talent
+        font = self.settings.fonts.talent.copy()
+        font.config(size=self.gen_font_size())
+        self.suite.text.tag_configure("size", font=font)
 
-        # Size formula
-        self.size = self.width // 30
-
-        # Construct new.
-        # TODO: switch to tuple
-        new = font.copy()
-        new.config(size=self.size)
-        # new = font + " " + str(self.size)
-
-        # Update text and arrow size.
-        self.suite.text.tag_configure("size", font=new)
-        # self.app.arrow.pack_config(ipady=size)
+    def gen_font_size(self):
+        """Formula for calculating font size."""
+        s = self.settings.scalers
+        return int((self.width * s.talent.get() * s.all.get()) // 30) # <- TODO: // value could be stored in settings
 
 class RightClickMenu(tk.Frame):
     """Menu for when you right click within monitor frame."""
