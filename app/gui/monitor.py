@@ -116,8 +116,8 @@ class TalentMonitor(tk.Frame):
 
         # self.text.bind("<space>", lambda _: self.toggle_scroll())
         # Make it so clicking in the talent window gives frame focus.
-        self.bind("<Button-1>", lambda _: self.focus_set())
-        self.text.bind("<Button-1>", lambda _: self.focus_set())
+        self.bind("<Button-1>", lambda _: self.on_focus())
+        self.text.bind("<Button-1>", lambda _: self.on_focus())
 
         # Scroll key bindings. These need to be bound to inner & outer frame
         # TODO: figure if there is a way to bind just once
@@ -153,6 +153,12 @@ class TalentMonitor(tk.Frame):
 
         # callback
         self.app.deck.add_callback('live', self.push)
+
+    def on_focus(self):
+        """When you click in the widget, do the tkinter focus_set() method
+        and also update the deck."""
+        self.focus_set()
+        self.app.deck.focused = self.song
 
     def push(self):
         """Push live song to monitor with appropriate view reset."""
