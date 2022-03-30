@@ -50,4 +50,4 @@ hire me!
 - Joel
 
 P.S. Use this at your own risk. I take no responsibility for anything that
-happens from use of this software, unless its good!
+happens from use of this software, unless it's good!
