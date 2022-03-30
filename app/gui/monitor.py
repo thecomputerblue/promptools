@@ -366,10 +366,6 @@ class TalentMonitor(tk.Frame):
         if self.tfollow:
             self.app.talent.match_sibling_yview()
 
-    # def talent_match_monitor_yview(self):
-    #     """Move talent view to monitor view."""
-    #     self.app.talent.text.yview_moveto(self.text.yview()[0])
-
     def default_autoscroll_speed(self):
         """Set default autoscroll speed."""
         rates = self.settings.scroll.rates
@@ -398,6 +394,7 @@ class TalentMonitor(tk.Frame):
         self.app.active_text.set(new)
 
         # Reset monitor edit state
+        # TODO: decorator
         self.text.config(state=edit_state)
 
     def add_to_list(self, target):
@@ -405,11 +402,8 @@ class TalentMonitor(tk.Frame):
 
         if not self.song:
             return
-
         factory = self.app.tools.factory
-
         self.commit_changes_to_song()
-
         target.add_song(song=self.song)
 
     def get_info(self):

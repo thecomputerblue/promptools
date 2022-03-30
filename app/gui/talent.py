@@ -220,6 +220,8 @@ class PromptArrow(tk.Frame):
         self.canvas.tag_bind("arrow", "<ButtonRelease-1>", self.drag_stop)
         self.canvas.tag_bind("arrow", "<B1-Motion>", self.drag)
 
+        self.settings.add_callback(self.color_arrow)
+
     def create_canvas(self, *args, **kwargs):
         """Create the canvas."""
         canvas = tk.Canvas(
@@ -245,6 +247,12 @@ class PromptArrow(tk.Frame):
         )
 
         # return arrow
+
+    def color_arrow(self):
+        color=self.settings.color.get(),
+        outline=self.settings.outline.get(),
+        borderwidth=self.settings.borderwidth.get()
+        self.canvas.itemconfig("arrow", fill=color, outline=outline, width=borderwidth)
 
     def drag_start(self, event):
         """Begining drag of an object"""

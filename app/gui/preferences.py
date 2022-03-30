@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter.colorchooser import askcolor
 import logging
 
 
@@ -135,10 +136,20 @@ class TalentTab(tk.Frame):
         self.font_family_menu = tk.OptionMenu(self, self.font_family, *self.fonts)
         self.font_family_menu.pack(anchor="w")
 
+        self.arrowcolor = tk.Button(self, text="Choose Arrow Color", command=self.color_chooser)
+        self.arrowcolor.pack(anchor="w")
+
     def font_family_update(self):
         """Push font family update to other frames."""
         self.settings.fonts.talent.family.set(self.font_family.get())
         self.settings.fonts.monitor.family.set(self.font_family.get())
         self.settings.fonts.preview.family.set(self.font_family.get())
+
+    def color_chooser(self, *args):
+        color = self.settings.arrow.color
+        sel = askcolor(color=color.get(), title="Choose Arrow Color")[1]
+        if sel:
+            color.set(sel)
+
 
 

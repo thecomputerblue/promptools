@@ -1,9 +1,6 @@
 # manages app settings, including storing / recalling settings
 # between sessions.
 
-# TODO: when eventually porting to kivy/pyqt you'll need to migrate
-# all the tkinter references in here.
-
 import tkinter as tk
 from tkinter import font
 import logging
@@ -11,7 +8,11 @@ import json
 import os
 import io
 
+import tools.colors as colors
 from tools.scroll import AutoscrollBehavior
+
+# TODO: when eventually porting to kivy/pyqt you'll need to migrate
+# all the tkinter references in here.
 
 # helpers
 def merge(defaults, custom): 
@@ -110,6 +111,7 @@ class SettingsBaseClass:
     def __init__(self, settings, name):
         self.app = settings.app 
         self.settings = settings
+        self.callbacks = []
 
         # initialize the custom dict for this module.
         if name not in settings.custom:
@@ -134,6 +136,14 @@ class SettingsBaseClass:
         self.trace(setting, name)
 
         return setting
+
+    def add_callback(self, c):
+        self.callbacks.append(c)
+
+    def do_callbacks(self):
+        if not self.callbacks:
+            return
+        [c() for c in self.callbacks]
 
 
 class PathSettings(SettingsBaseClass):
@@ -401,6 +411,7 @@ class FontSettings(SettingsBaseClass):
 
     def sub_merge(self, sub):
         """Merges nested dicts for the individual font settings."""
+        # TODO: multiple ineritance for Font, pass these in on init?
         return merge(self.defaults.get(sub), self.custom.get(sub))
 
     def make_font(self, font):
@@ -465,11 +476,24 @@ class ArrowSettings(SettingsBaseClass):
     def __init__(self, settings, name):
         SettingsBaseClass.__init__(self, settings, name)
 
+        self.defaults = {
+        'color': "#E44C62",
+        'lighten': 0.5,
+        'borderwidth': 2,
+        'pos': 0.2,
+        'scale': 1.0,
+        }
+
+        inits = merge(self.defaults, self.custom)
+
         self.color = tk.StringVar()
-        self.color.set("red")
+        self.color.set(inits.get('color'))
+        self.color.trace("w", self.update_arrow_color)
+
+        self.lighten = inits.get('lighten')
 
         self.outline = tk.StringVar()
-        self.outline.set("pink")
+        self.outline.set(colors.gen_outline_color(self.color.get(), self.lighten))
 
         self.borderwidth = tk.IntVar()
         self.borderwidth.set(2)
@@ -479,6 +503,15 @@ class ArrowSettings(SettingsBaseClass):
 
         self.scale = tk.DoubleVar()
         self.scale.set(1.0)  # muptliplier for base arrow size
+
+        self.callbacks = []
+
+    def update_arrow_color(self, *args):
+        color = self.color.get()
+        self.outline.set(colors.gen_outline_color(color, self.lighten))
+        self.custom['color'] = color
+        self.do_callbacks()
+
 
 class MetaSettings(SettingsBaseClass):
     """Settings for metadata pane(s)."""
