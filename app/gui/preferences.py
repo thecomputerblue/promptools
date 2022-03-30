@@ -135,7 +135,8 @@ class TalentTab(tk.Frame):
         self.font_family.trace("w", lambda *args: self.font_family_update())
         self.font_family_menu = tk.OptionMenu(self, self.font_family, *self.fonts)
         self.font_family_menu.pack(anchor="w")
-
+        self.arrow_label = tk.Label(self, text="Arrow")
+        self.arrow_label.pack(anchor="w")
         self.arrowcolor = tk.Button(self, text="Choose Arrow Color", command=self.color_chooser)
         self.arrowcolor.pack(anchor="w")
 
@@ -147,7 +148,10 @@ class TalentTab(tk.Frame):
 
     def color_chooser(self, *args):
         color = self.settings.arrow.color
+        # askcolor returns a tuple of (rgb, hex), note I am grabbing hex
         sel = askcolor(color=color.get(), title="Choose Arrow Color")[1]
+        # TODO: update color as you are dragging around the color wheel. will probably need to
+        # add something to the askcolor class
         if sel:
             color.set(sel)
 
