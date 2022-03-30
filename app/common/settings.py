@@ -18,6 +18,7 @@ def merge(defaults, custom):
     """Merge two settings dicts, prioritizing custom"""
 
     if not custom:
+        logging.info('no custom')
         return defaults
 
     merge = {}
@@ -378,27 +379,74 @@ class FontSettings(SettingsBaseClass):
     def __init__(self, settings, name):
         SettingsBaseClass.__init__(self, settings, name)
 
-        app = self.app
-        # TODO: group fonts into lists for batch scaling.
-        self.gui = Font(root=app, family="arial", size=12)
-        self.talent = Font(root=app, family="monaco", size=24)
-        self.monitor = Font(root=app, family="monaco", size=24)
-        self.preview = Font(root=app, family="monaco", size=12)
-        self.cue_title = Font(root=app, family="monaco", size=18)
-        self.library = Font(root=app, family="monaco", size=18)
-        self.button = Font(root=app, family="monaco", size=24)
-        self.transposer = Font(root=app, family="arial", size=18)
+        self.defaults = {
+        'gui':          {'family': "arial", 'size': 12},
+        'talent':       {'family': "monaco", "size": 24},
+        'monitor':      {'family': "monaco", "size": 24},
+        'preview':      {'family': 'monaco', "size": 12},
+        'cue_title':    {'family': 'monaco', 'size': 18},
+        'library':      {'family': 'monaco', 'size': 18},
+        'button':       {'family': 'monaco', 'size': 18},
+        'transposer':   {'family': 'arial', 'size': 18}
+        }
+
+        self.gui = self.make_font('gui')
+        self.talent = self.make_font('talent')
+        self.monitor = self.make_font('monitor')
+        self.preview = self.make_font('preview')
+        self.cue_title = self.make_font('cue_title')
+        self.library = self.make_font('library')
+        self.button = self.make_font('button')
+        self.transposer = self.make_font('transposer')
+
+    def sub_merge(self, sub):
+        """Merges nested dicts for the individual font settings."""
+        return merge(self.defaults.get(sub), self.custom.get(sub))
+
+    def make_font(self, font):
+        properties = self.sub_merge(font)
+        if not self.custom.get(font):
+            self.custom[font] = {}
+        return Font(root=self.app, custom=self.custom.get(font), properties=properties)
+
 
 class Font(tk.font.Font):
     """Augmented tkinter Font class so I can scale fonts from a reference point."""
 
-    def __init__(self, root, family, size, *args):
-        font.Font.__init__(self, root=root, family=family, size=size, *args)
+    def __init__(self, root, custom, properties, *args):
+        font.Font.__init__(self, root=root, family=properties.get('family'), size=properties.get('size'), *args)
 
-        # store these defaults for use later
-        self.family = family
-        # size used as a base for scaling later on prompter font.
-        self.size = size
+        # needed to pass custom settings back to the custom settings dict
+        self.custom = custom
+
+        self.family = tk.StringVar()
+        self.family.set(properties.get('family'))
+        self.family.trace("w", lambda *args: self._family_set())
+
+        self.size = tk.IntVar()
+        self.size.set(properties.get('size'))
+        self.size.trace("w", lambda *args: self._size_set())
+
+        self.callbacks = []
+
+    def _family_set(self):
+        self.custom['family'] = self.family.get()
+        self.config(family=self.family.get())
+        self.do_callbacks()
+
+    def _size_set(self):
+        self.custom['size'] = self.size.get()
+        self.config(size=self.size.get())
+        self.do_callbacks()
+    
+    def add_callback(self, c):
+        self.callbacks.append(c)
+
+    def do_callbacks(self):
+        if not self.callbacks:
+            return
+        [c() for c in self.callbacks]
+
 
 class WindowSettings(SettingsBaseClass):
     """Class tracking windows within program."""
@@ -612,7 +660,7 @@ class ScalerSettings(SettingsBaseClass):
         self.editor = self.setting(tk.DoubleVar, 'editor', inits)
         self.talent = self.setting(tk.DoubleVar, 'talent', inits)
 
-        
+
 
 
 class LibrarySettings(SettingsBaseClass):

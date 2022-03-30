@@ -151,8 +151,17 @@ class TalentMonitor(tk.Frame):
         # binding for popup menu
         self.text.bind("<Button-2>", self.menu.do_popup)
 
-        # callback
+        # callbacks
         self.app.deck.add_callback('live', self.push)
+
+        self.settings.fonts.monitor.add_callback(self.refresh_font)
+
+    def refresh_font(self):
+        self.suite.text.tag_configure("size", font=self.settings.fonts.monitor)
+
+    def get_font_family(self):
+        """Get font family from settings."""
+        return self.settings.fonts.monitor.family.get()
 
     def on_focus(self):
         """When you click in the widget, do the tkinter focus_set() method

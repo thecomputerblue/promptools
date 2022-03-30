@@ -115,7 +115,7 @@ class TalentWindow(tk.Toplevel):
         self.text_scaler = TextScaler(self) # TODO: move to app tools?
         # self.config(cursor='pencil')
 
-        # callback
+        # callbacks
         self.app.deck.add_callback('live', self.push)
 
     def push(self):
@@ -367,41 +367,53 @@ class TextScaler:
 
         # callback for refresh
         scaler = self.settings.scalers.talent
-        scaler.trace("w", lambda *args: self.scale_text())
+        scaler.trace("w", lambda *args: self.refresh_font())
 
+        # refresh font when it changes
+        self.settings.fonts.talent.add_callback(self.refresh_font)
 
     def bind_config(self):
-        self._func_id = self.suite.bind("<Configure>", self.on_resize)
+        self._func_id = self.suite.bind("<Configure>", self.on_window_resize)
 
-    def on_resize(self, event):
+    def on_window_resize(self, event):
         """Calculate new text on resize."""
-        # TODO: this is a hack to ignore the momentary 1x1 resize on program init.
-        if event.widget == self.suite and event.width <= 1 or event.width <= 1:
-            logging.info("talent window was resized to 1x1 or less. text not resized.")
+        if event.widget != self.suite or not self.valid_resize(event):
             return
+        self.width, self.height = event.width, event.height
+        self.refresh_font()
 
-        if event.widget == self.suite and (
-            self.width != event.width or self.height != event.height
-        ):
-            logging.info(f'{event.widget=}: {event.height=}, {event.width=}\n')
+    def valid_resize(self, event):
+        """Need to reject exceedingly small resizes, which happen at tkinter
+        init, and which break scaling on arrow / text."""
+        if event.width <= 1 or event.width <= 1:
+            return False
+        if self.size_changed(event):
+            return True
 
-            # Scaling for arrow resize. not used?
-            # wscale = float(event.width) / self.width
-            # hscale = float(event.height) / self.height
+    def size_changed(self, event):
+        return self.width != event.width and self.height != event.height 
 
-            self.width, self.height = event.width, event.height
+    def refresh_font(self):
+        """Update the font parameters."""
 
-            self.scale_text()
-
-    def scale_text(self):
+        # get base font
         font = self.settings.fonts.talent.copy()
+        # apply custom params
         font.config(size=self.gen_font_size())
+        font.config(family=self.get_font_family())
+        # apply customized font to text widget
         self.suite.text.tag_configure("size", font=font)
+        # TODO: maybe this should live in settings...
 
     def gen_font_size(self):
         """Formula for calculating font size."""
         s = self.settings.scalers
         return int((self.width * s.talent.get() * s.all.get()) // 30) # <- TODO: // value could be stored in settings
+
+    def get_font_family(self):
+        """Get font family from settings."""
+        logging.info('trying to get font family')
+        return self.settings.fonts.talent.family.get()
 
 class RightClickMenu(tk.Frame):
     """Menu for when you right click within monitor frame."""

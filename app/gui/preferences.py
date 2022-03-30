@@ -127,8 +127,18 @@ class TalentTab(tk.Frame):
         )
         self.talent_text_scale.pack(anchor="w")
 
+        # font customization
         self.fonts = ["Courier", "Menlo", "Monaco"]
-        self.selected_font = tk.StringVar()
-        self.selected_font.set(self.fonts[0])
-        self.font_menu = tk.OptionMenu(self, self.selected_font, *self.fonts)
-        self.font_menu.pack(anchor="w")
+        self.font_family = tk.StringVar()
+        self.font_family.set(self.settings.fonts.talent.family.get())
+        self.font_family.trace("w", lambda *args: self.font_family_update())
+        self.font_family_menu = tk.OptionMenu(self, self.font_family, *self.fonts)
+        self.font_family_menu.pack(anchor="w")
+
+    def font_family_update(self):
+        """Push font family update to other frames."""
+        self.settings.fonts.talent.family.set(self.font_family.get())
+        self.settings.fonts.monitor.family.set(self.font_family.get())
+        self.settings.fonts.preview.family.set(self.font_family.get())
+
+
