@@ -149,11 +149,11 @@ class TalentTab(tk.Frame):
     def color_chooser(self, *args):
         color = self.settings.arrow.color
         # askcolor returns a tuple of (rgb, hex), note I am grabbing hex
-        sel = askcolor(color=color.get(), title="Choose Arrow Color")[1]
+        new = askcolor(color=color.get(), title="Choose Arrow Color")[1]
         # TODO: update color as you are dragging around the color wheel. will probably need to
         # add something to the askcolor class
-        if sel:
-            color.set(sel)
+        if new:
+            color.set(new)
 
 
 

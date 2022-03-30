@@ -369,10 +369,8 @@ class MenuBar(tk.Frame):
 
     def on_preferences(self):
         if not self.app.settings.windows.preferences.get():
-            self.prefs = PreferencesWindow(self)
-        else:
-            self.prefs.lift()
-
+            PreferencesWindow(self)
+            
     # functions for talent view cascade
     def on_normal(self):
         self.talent_flag.set(0)
