@@ -68,8 +68,8 @@ class ScrollTool():
 
     def schedule_scroll(self):
         """Schedule next scroll, accounting for latency in the after queue."""
-
-        self.app.after(self.delay_comp(), self.scroll_loop)
+        self.app.after(self.scaled_sleep_time(), self.scroll_loop)
+        # self.app.after(self.delay_comp(), self.scroll_loop)
 
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""
@@ -77,7 +77,8 @@ class ScrollTool():
         now = datetime.datetime.now()
         delta = max(datetime.timedelta(), self.next_frame - now)
         time = int(delta.total_seconds() * 1000)
-        print(time)
+        fps = int(1000/time) if time else 0
+        print(f'ms: {time}, fps: {fps}')
         return time
 
     def chunk_scroll(self, direction):
