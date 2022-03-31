@@ -344,25 +344,30 @@ class AutoScrollSettings(SettingsBaseClass):
         self.pixels = tk.IntVar()
         self.pixels.set(inits.get('pixels'))
         self.pixels.trace("w", self.do_callbacks)
+        self.pixels.trace("w", lambda *args: self.save_setting('pixels', self.pixels))
 
         self.steps = tk.IntVar()
         self.steps.set(inits.get('steps'))
         self.steps.trace("w", self.do_callbacks)
+        self.steps.trace("w", lambda *args: self.save_setting('steps', self.steps))
 
         # speed scale position in %. gets rounded to nearest setting.
         self.pos = tk.DoubleVar()
         self.pos.set(inits.get('pos'))
         self.pos.trace("w", self.do_callbacks)
+        self.pos.trace("w", lambda *args: self.save_setting('pos', self.pos))
 
         # monitor snap to talent view between scrolls.
         self.mon_snap = tk.BooleanVar()
         self.mon_snap.set(inits.get('mon_snap'))
         self.mon_snap.trace("w", self.do_callbacks)
+        self.mon_snap.trace("w", lambda *args: self.save_setting('mon_snap', self.mon_snap))
 
         # monitor follows talent during scroll
         self.mon_follow = tk.BooleanVar()
         self.mon_follow.set(inits.get('mon_follow'))
         self.mon_follow.trace("w", self.do_callbacks)
+        self.mon_follow.trace("w", lambda *args: self.save_setting('mon_follow', self.mon_follow))
 
         # monitor refresh rates when following talent scroll
         self._mon_ms = None
@@ -372,6 +377,13 @@ class AutoScrollSettings(SettingsBaseClass):
 
         # generate list of autoscroll rates
         self._rates = self.make_scroll_rates()
+
+        # save settings with callback
+
+    def save_setting(self, target: str, tk_setting):
+        """Save setting in the custom dict."""
+        # TODO: move to SettingsBaseClass / confirm I didn't already write one of these...
+        self.custom[target] = tk_setting.get()
 
     def make_scroll_rates(self):
         """Make the scale used for autoscroll."""
@@ -404,6 +416,7 @@ class AutoScrollSettings(SettingsBaseClass):
         self._mon_ms = ms 
         self._mon_fps = ms_to_fps(ms)
         self.do_callbacks()
+        self.custom['mon_ms'] = ms
 
     @property
     def mon_fps(self):
@@ -414,7 +427,7 @@ class AutoScrollSettings(SettingsBaseClass):
         self._mon_fps = fps
         self._mon_ms = fps_to_ms(fps)
         self.do_callbacks()
-
+        self.custom['mon_fps'] = fps
 
 class ViewSettings(SettingsBaseClass):
     """Class for view settings."""
