@@ -30,6 +30,12 @@ def merge(defaults, custom):
 
     return merge
 
+def ms_to_fps(ms):
+    return 1000 / ms
+
+def fps_to_ms(fps):
+    return 
+
 
 class Settings:
     """Class for managing program wide settings."""
@@ -51,7 +57,8 @@ class Settings:
         # self.misc_settings()
         self.appset = AppSettings(self, "AppSettings")
         self.arrow = ArrowSettings(self, "ArrowSettings")
-        self.chunk = ChunkSettings(self, "ChunkSettings")
+        self.scroll = AutoScrollSettings(self, "AutoScrollSettings") # TODO: move speed params etc here
+        self.chunk = ChunkScrollSettings(self, "ChunkScrollSettings")
         self.editor = EditSettings(self, "EditSettings")
         self.fonts = FontSettings(self, "FontSettings")
         self.importer = ImportSettings(self, "ImportSettings")
@@ -60,7 +67,7 @@ class Settings:
         self.meta = MetaSettings(self, "MetaSettings")
         self.paths = PathSettings(self, "PathSettings") # changed from dirs
         self.scalers = ScalerSettings(self, "ScaleSettings")
-        self.scroll = ScrollSettings(self, "ScrollSettings") # TODO: move speed params etc here
+
         self.setlist = SetlistSettings(self, "SetlistSettings")
         self.tags = TagSettings(self, "TagSettings")        
         self.transposer = TransposerSettings(self, "TransposerSettings")
@@ -140,7 +147,7 @@ class SettingsBaseClass:
     def add_callback(self, c):
         self.callbacks.append(c)
 
-    def do_callbacks(self):
+    def do_callbacks(self, *args):
         if not self.callbacks:
             return
         [c() for c in self.callbacks]
@@ -173,7 +180,7 @@ class PathSettings(SettingsBaseClass):
         self.db.set(inits.get("appdata"))
 
 
-class ChunkSettings(SettingsBaseClass):
+class ChunkScrollSettings(SettingsBaseClass):
     """Class for chunk scroll settings."""
     # TODO: dataclass?
 
@@ -307,28 +314,64 @@ class EditSettings(SettingsBaseClass):
         self.talent_follows_monitor_when_editing = self.setting(tk.BooleanVar, 'talent_follows_monitor_when_editing', inits)
 
 
-class ScrollSettings(SettingsBaseClass):
+class AutoScrollSettings(SettingsBaseClass):
     """Class for scroll settings."""
 
     def __init__(self, settings, name):
         SettingsBaseClass.__init__(self, settings, name)
 
+        self.defaults = {
+            # 'interval': 1.0,
+            'pixels': 3,
+            'mon_snap': True,
+            'mon_follow': False,
+            'mon_fps': 10,
+            'running': False,
+            'steps': 20, # number of speed settings on scale
+            'pos': 0.8, # speed scale marker % from end 
+        }
+
+        inits = merge(self.defaults, self.custom)
+
         self.running = tk.BooleanVar()
-        self.chunk = ChunkSettings(settings, name)
-        # self.chunk_scrolling = tk.BooleanVar()
-        self.interval = 1.0
-        self.pixels = 1
-        self.rates = self.make_scroll_rates()
-        self.current = tk.IntVar()
+        self.running.set(inits.get('running'))
+        self.running.trace("w", self.do_callbacks)
+
+        # TODO: forgot what this was for, doesn't seem to be used...
+        # self.interval = tk.DoubleVar()
+        # self.interval.set(inits.get('interval'))
+
+        self.pixels = tk.IntVar()
+        self.pixels.set(inits.get('pixels'))
+        self.pixels.trace("w", self.do_callbacks)
+
+        self.steps = tk.IntVar()
+        self.steps.set(inits.get('steps'))
+        self.steps.trace("w", self.do_callbacks)
+
+        # speed scale position in %. gets rounded to nearest setting.
+        self.pos = tk.DoubleVar()
+        self.pos.set(inits.get('pos'))
+        self.pos.trace("w", self.do_callbacks)
 
         # monitor snap to talent view between scrolls.
         self.mon_snap = tk.BooleanVar()
-        self.mon_snap.set(True)
+        self.mon_snap.set(inits.get('mon_snap'))
+        self.mon_snap.trace("w", self.do_callbacks)
 
-        # monitor refresh during scroll.
+        # monitor follows talent during scroll
         self.mon_follow = tk.BooleanVar()
-        self.mon_follow.set(False)
-        self.mon_fps = 10
+        self.mon_follow.set(inits.get('mon_follow'))
+        self.mon_follow.trace("w", self.do_callbacks)
+
+        # monitor refresh rates when following talent scroll
+        self._mon_ms = None
+        self._mon_fps = None
+        # propagates correct val to self.mon_ms via setter method
+        self.mon_fps = inits.get('mon_fps')
+
+        # generate list of autoscroll rates
+        self._rates = self.make_scroll_rates()
 
     def make_scroll_rates(self):
         """Make the scale used for autoscroll."""
@@ -344,22 +387,33 @@ class ScrollSettings(SettingsBaseClass):
         return rates
 
     @property
+    def rates(self):
+        return self._rates
+
+    @rates.setter 
+    def rates(self, new):
+        self._rates = new 
+        self.do_callbacks()
+    
+    @property
     def mon_ms(self):
         return self._mon_ms
 
     @mon_ms.setter
     def mon_ms(self, ms):
         self._mon_ms = ms 
-        self._mon_fps = 1000 / ms
+        self._mon_fps = ms_to_fps(ms)
+        self.do_callbacks()
 
     @property
     def mon_fps(self):
-        return self._monitor_refresh_fps
+        return self._mon_fps
 
     @mon_fps.setter
     def mon_fps(self, fps):
         self._mon_fps = fps
-        self._mon_ms = 1000 // fps 
+        self._mon_ms = fps_to_ms(fps)
+        self.do_callbacks()
 
 
 class ViewSettings(SettingsBaseClass):

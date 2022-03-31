@@ -1,13 +1,47 @@
 import datetime
+import logging
 
 class ScrollTool():
     """Class for scroll & follow behaviors."""
 
     def __init__(self, app):
         self.app = app
+        self.settings = app.settings
+
+        # autoscroll rates
+        self.rates = app.settings.scroll.rates
+
+        # scroll settings should push on change to fill these
+        self._pos = None
+        self.pos = self.settings.scroll.pos.get()
+
+        self.running = False
 
         # init frame counter for delay comp
         self.reset_scroll_frame_counter()
+
+        # register callback so params get updated when settings change
+        self.settings.scroll.add_callback(self.refresh)
+
+    def refresh(self):
+        """Fetch all the scroll parameters and update."""
+        logging.info('refresh in ScrollTool')
+        self.pos = self.settings.scroll.pos.get()
+        self.running = self.settings.scroll.running.get()
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @pos.setter 
+    def pos(self, new):
+        pos = self.percent_to_pos(new)
+        self._pos = self.percent_to_pos(new)
+
+    def percent_to_pos(self, new):
+        """Convert the pos % setting to the nearest scale value."""
+        scale = len(self.rates)
+        return int(scale * new // 1)
 
     def reset_scroll_frame_counter(self):
         """Reset the frane counter for delay comp."""
@@ -15,31 +49,16 @@ class ScrollTool():
 
     def scroll_loop(self):
         """Schedulet the autoscroll based on rate slider."""
-        app = self.app
-        scroll = app.settings.scroll
-        running = scroll.running.get()
-        talent = app.talent
-
-        # TODO: Move monitor.running to self
-        # TODO: something seems like it could be optimized here...
-        if running:
-            rate = scroll.current.get()
-            talent.scroll() if rate != 0 else None
+        if self.running:
+            self.app.talent.scroll() if self.pos != 0 else None
             self.schedule_scroll()
-        elif app.settings.scroll.mon_snap.get():
-            app.monitor.match_sibling_yview()
+        elif self.app.settings.scroll.mon_snap.get():
+            self.app.monitor.match_sibling_yview()
 
-            
     def scaled_sleep_time(self):
         """Sleep for the time set by the speed slider."""
-
-        app = self.app
-        pos = app.monitor.autoscroll_scale.get()
-        # running = app.monitor.running.get()
-        running = app.settings.scroll.running.get()
-        rates = app.settings.scroll.rates
-
-        return int(rates[pos]) if running else int(rates[-1])
+        rates = self.app.settings.scroll.rates
+        return int(rates[self.pos-1]) if self.running else int(rates[-1])
 
     def start_scroll(self):
         """When you start scroll from stopped, reset next frame."""
@@ -54,12 +73,12 @@ class ScrollTool():
 
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""
-
         self.next_frame += datetime.timedelta(milliseconds=self.scaled_sleep_time())
         now = datetime.datetime.now()
         delta = max(datetime.timedelta(), self.next_frame - now)
-
-        return int(delta.total_seconds() * 1000)
+        time = int(delta.total_seconds() * 1000)
+        print(time)
+        return time
 
     def chunk_scroll(self, direction):
         """Scrolls for a little bit."""
@@ -76,7 +95,7 @@ class ScrollTool():
             return
 
         scroll = app.settings.scroll
-        chunk = scroll.chunk
+        chunk = app.settings.chunk
         talent = app.talent
         monitor = app.monitor
 

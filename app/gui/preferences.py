@@ -27,7 +27,7 @@ class PreferencesWindow(tk.Toplevel):
         win_h = 500
         self.geometry(f"{str(win_w)}x{str(win_h)}")
 
-        # TODO: stop window resizing
+        # TODO: stop window from resizing
         self.resizable(width=False, height=False)
 
         # always popup in center of operator window
@@ -42,6 +42,7 @@ class PreferencesWindow(tk.Toplevel):
 
     def quit_window(self):
         """When you close window, update the flag."""
+        # TODO: remove callbacks
         self.settings.windows.preferences.set(False)
         self.destroy()
 

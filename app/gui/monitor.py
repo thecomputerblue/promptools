@@ -2,6 +2,8 @@ import tkinter as tk
 import time
 import logging
 
+from gui.prompttoolbar import PromptToolBar
+
 # TODO: change the name of this to Editor, and its instance in app
 # to editor. Will require fixing a bunch of references but will be
 # less confusing in the long run.
@@ -68,33 +70,7 @@ class TalentMonitor(tk.Frame):
         self.rowconfigure(1, weight=4)
         self.rowconfigure(2, weight=3)
 
-
         # TODO: move all this,should not live here. will need to update local fns.
-
-        rates = self.settings.scroll.rates
-        scrollvar = self.settings.scroll.current
-        self.autoscroll_scale = tk.Scale(
-            self,
-            from_=0,
-            to=len(rates) - 1,  # adjust based on global scroll scale
-            orient="horizontal",
-            showvalue=0,
-            sliderlength=20,
-            length=500,
-            variable=scrollvar
-        )
-
-        self.default_autoscroll_speed()
-
-        # Speed label
-        self.speed_label = tk.Label(
-            self,
-            text="Autoscroll speed",
-        )
-
-        # self.autoscroll_scale.grid(row=3, column=1)
-        # self.speed_label.grid(row=3, column=1)
-
         self.menu = RightClickMenu(self)
 
         # bind callbacks
@@ -153,7 +129,6 @@ class TalentMonitor(tk.Frame):
 
         # callbacks
         self.app.deck.add_callback('live', self.push)
-
         self.settings.fonts.monitor.add_callback(self.refresh_font)
 
     def refresh_font(self):
@@ -366,13 +341,7 @@ class TalentMonitor(tk.Frame):
         if self.tfollow:
             self.app.talent.match_sibling_yview()
 
-    def default_autoscroll_speed(self):
-        """Set default autoscroll speed."""
-        rates = self.settings.scroll.rates
-        # Float position of slider with 1 being far right.
-        pos = 0.85
-        formula = int((len(rates) * pos))
-        self.autoscroll_scale.set(formula)
+
 
     @property
     def contents(self):
@@ -618,11 +587,16 @@ class Toolbar(tk.Frame):
         self.parent = parent
         self.app = parent.app
         self.suite = parent.suite
+        self.settings = parent.settings
 
         self.edit = EditToolBar(self)
         self.prompt = PromptToolBar(self)
 
-        self.prompt.pack(fill="both", expand=True, anchor="w")
+        self.prompt.pack(
+            # fill="both",
+            expand=False,
+            anchor="w"
+            )
 
         # trace editmode and update view when it changes.
         self.editmode = self.app.settings.editor.enabled
@@ -639,19 +613,6 @@ class Toolbar(tk.Frame):
             self.edit.forget()
             self.prompt.pack()
 
-
-class PromptToolBar(tk.Frame):
-    """Toolbar shown in prompt mode."""
-
-    def __init__(self, parent):
-        tk.Frame.__init__(self, parent)
-
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-
-        self.placeholder = tk.Label(self, text="PLACEHOLDER FOR PROMPT TOOLBAR")
-        self.placeholder.pack(expand=True, fill="both", anchor="w")
 
 class EditToolBar(tk.Frame):
     """Toolbar shown in edit mode."""

@@ -48,10 +48,8 @@ class TalentWindow(tk.Toplevel):
 
         # Current frame song
         self.song = None
-        # Pixel increment
-        self.pixels = self.settings.scroll.pixels
 
-
+        self.pixels = self.settings.scroll.pixels.get()
         self.frozen = False #TODO: move to settings
 
         # fullscreen tkvar. trace to trigger toggle
@@ -99,8 +97,6 @@ class TalentWindow(tk.Toplevel):
         # giving columns weight allows vertical expansion.
         self.grid_rowconfigure(0, weight=1)
 
-
-
         # scroll bindings
         self.bind("<space>", lambda _: self.app.monitor.toggle_scroll())
         self.bind("<KeyPress-Shift_L>", lambda _: self.app.monitor.shift_scroll_on())
@@ -117,6 +113,11 @@ class TalentWindow(tk.Toplevel):
 
         # callbacks
         self.app.deck.add_callback('live', self.push)
+        self.app.settings.scroll.add_callback(self.refresh_scroll)
+
+    def refresh_scroll(self, *args):
+        """Fetch scroll params."""
+        self.pixels = self.settings.scroll.pixels.get()
 
     def push(self):
         live = self.app.deck.live
