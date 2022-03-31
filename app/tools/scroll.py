@@ -68,8 +68,9 @@ class ScrollTool():
 
     def schedule_scroll(self):
         """Schedule next scroll, accounting for latency in the after queue."""
-        self.app.after(self.scaled_sleep_time(), self.scroll_loop)
-        # self.app.after(self.delay_comp(), self.scroll_loop)
+        # bypass delay_comp by swapping tho the line immediately below this
+        # self.app.after(self.scaled_sleep_time(), self.scroll_loop)
+        self.app.after(self.delay_comp(), self.scroll_loop)
 
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""

@@ -26,7 +26,7 @@ class PromptToolBar(tk.Frame):
 
         self.autoscroll_label = tk.Label(
             self,
-            text="Scroll Speed",
+            text="FPS",
         )
 
         self.pixels_scale = tk.Scale(
@@ -44,7 +44,7 @@ class PromptToolBar(tk.Frame):
 
         self.pixels_label = tk.Label(
             self,
-            text="Pixels",
+            text="Pixels Per Frame",
         )
 
         self.autoscroll_label.pack(side="left", anchor="w")
