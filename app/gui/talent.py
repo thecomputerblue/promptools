@@ -150,8 +150,22 @@ class TalentWindow(tk.Toplevel):
 
     def scroll(self, direction="down"):
         """Advance scroll based on pixels size."""
-        amt = self.pixels if direction=="down" else -self.pixels
+        amt = self.scale_pixels_by_font_size(self.pixels)
+        amt = amt if direction=="down" else -amt
         self.text.yview_scroll(amt, "pixels")
+
+    def scale_pixels_by_font_size(self, amt):
+        """Scale pixel increment by text size for more consistent speed on resize."""
+        if not amt:
+            return 0
+        scaler = self.gen_font_scaler()
+        return max(1, int(amt*scaler))
+
+    def gen_font_scaler(self):
+        """Generate a float which scales pixel rate in a helpful way."""
+        base = self.text_scaler.font_size
+        normal = 44 # 'normal' font size. bigger skips more pixels, smaller fewer.
+        return base / normal
 
     def toggle_fullscreen(self):
         self.go_windowed() if self.fullscreen.get() else self.go_fullscreen()
@@ -374,6 +388,9 @@ class TextScaler:
         self.bind_config()
         # self.scale_text()
 
+        # set default font size (used to scale scrolling speed)
+        self.font_size = self.gen_font_size()
+
         # callback for refresh
         scaler = self.settings.scalers.talent
         scaler.trace("w", lambda *args: self.refresh_font())
@@ -408,7 +425,8 @@ class TextScaler:
         # get base font
         font = self.settings.fonts.talent.copy()
         # apply custom params
-        font.config(size=self.gen_font_size())
+        self.font_size = self.gen_font_size()
+        font.config(size=self.font_size)
         font.config(family=self.get_font_family())
         # apply customized font to text widget
         self.suite.text.tag_configure("size", font=font)

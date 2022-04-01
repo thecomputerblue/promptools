@@ -138,11 +138,8 @@ class ScrollTool():
     def monitor_refresh_conditions(self):
         """Conditions for monitor refresh loop to execute refresh."""
         scroll = self.app.settings.scroll
-
         if scroll.mon_follow.get():
             return scroll.running
-
-        return False
 
 
 class AutoscrollBehavior():
