@@ -8,6 +8,10 @@ from gui.prompttoolbar import PromptToolBar
 # to editor. Will require fixing a bunch of references but will be
 # less confusing in the long run.
 
+# helpers
+def toggle_bool(arg):
+    return not arg
+
 class TalentMonitor(tk.Frame):
     """Class for Text field that shows
     what the talent is seeing on the Teleprompter."""
@@ -112,11 +116,24 @@ class TalentMonitor(tk.Frame):
         self.bind("<KeyRelease-Shift_R>", lambda _: self.shift_scroll_off())
         self.text.bind("<KeyRelease-Shift_R>", lambda _: self.shift_scroll_off())
 
-        self.bind("<.>", lambda _: self.arrow_scroll(direction="down"))
-        self.text.bind("<.>", lambda _: self.arrow_scroll(direction="down"))
+        # chunk scroll controls
+        # TODO: these should all move...
+        chunk_scroll = self.app.tools.scroll.chunk_scroll
+        self.bind("<.>", lambda _: chunk_scroll(direction="down"))
+        self.text.bind("<.>", lambda _: chunk_scroll(direction="down"))
 
-        self.bind("<,>", lambda _: self.arrow_scroll(direction="up"))
-        self.text.bind("<,>", lambda _: self.arrow_scroll(direction="up"))
+        self.bind("<,>", lambda _: chunk_scroll(direction="up"))
+        self.text.bind("<,>", lambda _: chunk_scroll(direction="up"))
+
+        self.bind("</>", lambda _: chunk_scroll(direction="left"))
+        self.text.bind("</>", lambda _: chunk_scroll(direction="left"))
+
+        self.bind("<z>", lambda _: chunk_scroll(direction="right"))
+        self.text.bind("<z>", lambda _: chunk_scroll(direction="right"))
+
+        carriage_return = self.app.tools.scroll.carriage_return
+        self.bind("<Return>", lambda _: carriage_return())
+        self.text.bind("<Return>", lambda _: carriage_return())
 
         # Binding to get coords of selected text. Will use this later for applying color tags.
         self.text.bind("<ButtonRelease>", lambda _: self.selection_info())
@@ -247,10 +264,6 @@ class TalentMonitor(tk.Frame):
         scroll = -pixels if direction == "up" else pixels
         self.text.yview_scroll(scroll, "pixels")
 
-    def toggle_bool(self, arg):
-
-        return False if arg else True
-
     def shift_scroll_on(self, event=None):
         """Holding shift scrolls prompter."""
 
@@ -281,11 +294,6 @@ class TalentMonitor(tk.Frame):
             scroll.running.set(True)
             self.schedule_scroll()
             logging.info('toggle_scroll ON')
-
-    def arrow_scroll(self, direction):
-        """Scroll behavior for arrow keys arrow."""
-
-        self.app.tools.scroll.chunk_scroll(direction)
 
     def toggle_edit(self, event):
         """Toggle editing from keyboard shortcut."""
@@ -340,8 +348,6 @@ class TalentMonitor(tk.Frame):
         # TODO: toggle for follow behavior.
         if self.tfollow:
             self.app.talent.match_sibling_yview()
-
-
 
     @property
     def contents(self):

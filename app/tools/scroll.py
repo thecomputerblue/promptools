@@ -82,20 +82,25 @@ class ScrollTool():
         print(f'ms: {time}, fps: {fps}')
         return time
 
+    def carriage_return(self):
+        """Advance 1 line and reset x_view."""
+        if self.app.settings.editor.enabled.get():
+            return
+        self.app.talent.carriage_return()
+
     def chunk_scroll(self, direction):
         """Scrolls for a little bit."""
 
         def toggle(chunk):
             chunk.enabled = False if chunk.enabled else True
 
-        app = self.app
-        settings = app.settings
-        editing = settings.editor.enabled.get()
-
+        logging.info(f'chunk scrolling in direction: {direction}')
         # do not chunk scroll when editing
-        if editing:
+        if self.app.settings.editor.enabled.get():
             return
 
+        app = self.app
+        settings = app.settings
         scroll = app.settings.scroll
         chunk = app.settings.chunk
         talent = app.talent

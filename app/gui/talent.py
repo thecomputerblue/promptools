@@ -103,8 +103,11 @@ class TalentWindow(tk.Toplevel):
         self.bind("<KeyRelease-Shift_L>", lambda _: self.app.monitor.shift_scroll_off())
         self.bind("<KeyPress-Shift_R>", lambda _: self.app.monitor.shift_scroll_on())
         self.bind("<KeyRelease-Shift_R>", lambda _: self.app.monitor.shift_scroll_off())
-        self.bind("<.>", lambda _: self.app.monitor.arrow_scroll(direction="down"))
-        self.bind("<,>", lambda _: self.app.monitor.arrow_scroll(direction="up"))
+        self.bind("<.>", lambda _: self.app.tools.scroll.chunk_scroll(direction="down"))
+        self.bind("<,>", lambda _: self.app.tools.scroll.chunk_scroll(direction="up"))
+        self.bind("</>", lambda _: self.app.tools.scroll.chunk_scroll(direction="right"))
+        self.bind("<z>", lambda _: self.app.tools.scroll.chunk_scroll(direction="left"))
+        self.bind("<Return>", lambda _: self.app.tools.scroll.carriage_return())
         self.bind("<KeyPress-Escape>", self.esc_fs_toggle)
 
         # scaler
@@ -149,10 +152,19 @@ class TalentWindow(tk.Toplevel):
         loader.clone_tk_text(mon, tal)
 
     def scroll(self, direction="down"):
-        """Advance scroll based on pixels size."""
+        """Scroll in direction by self.pixels"""
         amt = self.scale_pixels_by_font_size(self.pixels)
-        amt = amt if direction=="down" else -amt
-        self.text.yview_scroll(amt, "pixels")
+        amt = amt if direction=="down" or direction=="left" else -amt
+        if direction=="down" or direction=="up":
+            self.text.yview_scroll(amt, "pixels")
+        elif direction=="right" or direction=="left":
+            logging.info('talent scroll RIGHT')
+            # amt = amt*2 # scale l/r scroll
+            self.text.xview_scroll(amt, "pixels")
+
+    def carriage_return(self):
+        self.text.yview_scroll(1, "units")
+        self.text.xview_moveto(0)
 
     def scale_pixels_by_font_size(self, amt):
         """Scale pixel increment by text size for more consistent speed on resize."""
