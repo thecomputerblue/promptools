@@ -1,0 +1,171 @@
+PROMPTOOLS ALPHA
+Last updated: 4/1/2022
+
+This document serves as a basic reference for how to use the current build
+of promptools. It will eventually be replaced with a proper user manual.
+
+MAIN WINDOW OVERVIEW
+
+	LEFT COLUMN
+		TOP : Pool
+			Contains all songs loaded in memory. You can only delete a song
+			from here if it doesn't appear in the setlist. Songs are always
+			displayed alphabetically. Pool is meant to be used to workshop
+			different song versions or have a "shortlist" of things pre-loaded
+			ie. in a rehearsal situation.
+
+		MIDDLE : Setlist
+			Contains an ordered list of songs. Have not yet implemented setlist
+			navigation, which will allow you to string songs together into a
+			continuous feed, or easily jump between songs, change setlist version
+			mid-show or whatever.
+			For now you can see the beginnings of this, with automatic colors
+			being applied. Pink = last played, green = currently playing, yellow =
+			next up. 
+
+		BOTTOM : Helper
+			Displays pop-up messages to let you know if something went wrong
+			or describe something being hovered over. Not very implemented yet.
+
+	CENTER COLUMN
+		TOP: Editor
+			Shows whatever is loaded to talent, and this is where you can make
+			edits to that doc. When scrolling talent, this will currently only
+			update when scroll stops, so do not rely on it as a monitor view.
+			It is called "monitor" in the code but I will eventually update to
+			"editor" for clarity.
+
+		MIDDLE LEFT: Quick Browser
+			Quickly browse library and text_files folder for songs to load.
+			Features a search bar. Will add a third tab which will be an
+			integrated file browser.
+
+		MIDDLE RIGHT: Cue/Preview
+			Previews whatever song is cued, showing the title in large letters
+			above.
+
+		BOTTOM: Big Button
+			A large context-sensitive button. For now it only loads the cued
+			song to live. In the future it will adapt to be a sort of "naive
+			operation" mode, so if you need to step away from scrolling (brb)
+			anyone can easily cover for a few minutes by clicking the button
+			with reasonable timing.
+
+	RIGHT COLUMN
+		TOP: Notepad
+			Simple scribble pad for taking notes. Currently doesn't save or
+			anything. Eventual plans to make it a more useful utility.
+		MIDDLE: Gig Info
+			Metadata about the current gig. Not implemented yet.
+		BOTTOM: Song Info
+			Metadata about the currently focused song. Only some of this
+			saves so far.  
+
+CONTROLS
+
+	PROMPT MODE
+		You are in PROMPT mode when the MONITOR border is green or grey.
+		When it is green, it is in focus.
+		TALENT or MONITOR frame must be in focus for these commands work. 
+
+		ENTER / RETURN : advance 1 line and reset x_view
+		SPACEBAR : toggle VERTICAL autoscrolling at autoscroll rate
+		SHIFT : hold to scroll VERTICALLY at autoscroll rate. release to stop
+				(cancels any active autoscroll).
+		z : scroll view LEFT (toward beginning of line)
+		/ : scroll view RIGHT (toward end of line)
+		, : chunk scroll UP (quick burst of backwards scrolling which will not
+			cancel autoscroll)
+		. : chunk scroll DOWN (quick burst of forwards scrolling which will not
+			cancel autoscroll)
+
+		chunk scroll does not work in tandem with shift scroll for "tkinter"
+		reasons I have yet to discover. will figure something out eventually.
+
+	EDIT MODE
+		You are in EDIT mode when the monitor border is yellow or brown.
+		When it is yellow, it is in focus.
+		The MONITOR frame must be in focus for these commands to work.
+
+		The RIGHT CLICK MENU currently not working as i remodeled the way color
+		settings are stored and haven't updated references here.
+
+		(usual universal word processing commands mostly work by default)
+		(will eventually implement my own stack for this)
+
+	ALL MODES
+		CMD + p : load CUED song to LIVE
+		CMD + l : load LIVE song to SETLIST
+		CMD + o : load LIVE song to POOL
+		CMD + e : toggle EDIT mode 
+
+	TALENT FOCUS
+		ESC : toggle fullscreen
+
+		Many mouse functions are implemented by tkinter by default, some to
+		be disabled by me later as they interfere with intended operation.
+		For now, you can click to highlight text, scroll with the jog wheel,
+		or click the jog wheel and slide the document around. I'm assuming
+		touch controls work to some degree but haven't tried.
+
+TOOLS
+
+	TRANSPOSER
+		Allows you to transpose songs with chords to any key, including
+		swapping chord names for Nashville Numbers notation. Will add Roman
+		Numerals for the classical heads. Currently chord detection is having
+		trouble with "A" and "Am" in certain instances. I know what is causing
+		this regression, but want to get some more foundational things finished
+		before I fix it.
+
+		Transposer acts on whatever song is cued, and you will see its results
+		in the preview window. Press CMD + p to load the transposed song. If you
+		want to transpose an already loaded song, for now the best bet is to
+		save to pool with CMD + o, click in pool to preview, and transpose from
+		there.
+
+		For now, transposer does not work on songs loaded from the database (ie.
+		saved between runs) because I need to iron out the way key is stored,
+		calculated, and recovered. It should work fine on .rtf and .txt files.
+
+		To declare a key in your song file, wrap a chord with parentheses. So
+		(C) will indicate the song is in the key of C, (Am) will indicate it
+		is in the key of A minor, and any chords detected after this will be
+		transposed relative to that key, ensuring you get the permutation with
+		the correct accidental (ie. in some keys musicians prefer to see a chord
+		indicated as G#, in others as Ab. these are the same chord*). 
+
+		* There are some theoretical differences, but these only matter to
+		composers and music theorists.
+
+	FUTURE TOOLS
+		- batch song import / processing / export
+		- tools to interface with other prompter software in case you are stuck
+			using something else on a gig but want to use promptools features
+		- cuecards : an additional pop-up window to a second connected screen
+			which will be forwarded embedded cues from the main script. useful
+			if you have a second monitor that needs to show auxiliary info
+		- timecode / midi? long way off on this...
+
+PREFERENCES
+	Access under File -> Preferences
+
+	LOOK & FEEL
+		Here you can change the arrow color, text size, and monospaced font.
+		Promptools only allows monospaced font to preserve chord alignment.
+		I will add a bunch more monospaced fonts in the future.
+
+		Color toggle is not yet implemented.
+
+		Eventually will be formatted nicely, and feature
+		a bunch of other options such as:
+			- monitor follows talent scroll (performance issues currently,
+				so this is not enabled while I figure that out)
+			- custom colors for text
+			- scroll acceleration options
+			- framerate fine-tuning
+			- arrow size
+			- toggle arrow
+			- margin adjustment
+			- text alignment
+			- infobar in talent view (clock, elapsed time, current song key, etc)
