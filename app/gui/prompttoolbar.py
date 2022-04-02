@@ -1,15 +1,12 @@
-import tkinter as tk 
+import tkinter as tk
+from tools.apppointers import AppPointers
 
-class PromptToolBar(tk.Frame):
+class PromptToolBar(tk.Frame, AppPointers):
     """Toolbar shown above monitor/editor in prompt mode."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-        self.settings = parent.settings
+        AppPointers.__init__(self, parent)
 
         self.autoscroll_scale = tk.Scale(
             self,

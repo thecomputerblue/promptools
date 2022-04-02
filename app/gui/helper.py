@@ -1,13 +1,14 @@
 import tkinter as tk
 import logging
 
-class HelperBox(tk.Frame):
+from tools.apppointers import AppPointers
+
+class HelperBox(tk.Frame, AppPointers):
     """Box that will show info on currently hovered-over tool."""
     
     def __init__(self, parent):
         tk.Frame.__init__(self, parent.frame)
-
-        self.app = parent.app
+        AppPointers.__init__(self, parent)
 
         self.tip = tk.Label(self, text="")
         self.tip.pack(side="top", anchor="n", expand=False,

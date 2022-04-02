@@ -1,12 +1,14 @@
 import tkinter as tk 
 
-class GuiTools:
+from tools.apppointers import AppPointers
+
+class GuiTools(AppPointers):
     """Class with generic methods for gui element manipulation. Using to avoid
     duplicate methods between modules. As you find redundant functions, migrate
     here. """
 
     def __init__(self, app, *args, **kwargs):
-        self.app = app 
+        AppPointers.__init__(self, app)
 
     def toggle_lock(self, label, var, follow_fn=None, *args, **kwargs):
         """Generic lock toggle method. Follow fn_ will execute after lock toggle."""

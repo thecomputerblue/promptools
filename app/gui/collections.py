@@ -3,8 +3,9 @@ import logging
 
 from gui.setlist import SetlistFrame
 from gui.pool import PoolAndSetlistsFrame, PoolAndSetlistsNotebook
+from tools.apppointers import AppPointers
 
-class CollectionsSuite(tk.PanedWindow):
+class CollectionsSuite(tk.PanedWindow, AppPointers):
     """Paned frame for the song collections on the left side of the app.
     It shows the live setlist, and the gig song pool."""
 
@@ -16,11 +17,7 @@ class CollectionsSuite(tk.PanedWindow):
             bg="light blue",
             # showhandle=True
             )
-
-        # context
-        self.parent = parent
-        self.app = parent
-        self.suite = self
+        AppPointers.__init__(self, parent)
 
         # make frames
         self.pool = PoolAndSetlistsNotebook(self)

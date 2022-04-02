@@ -1,15 +1,16 @@
 import datetime
 import logging
 
-class ScrollTool():
+from tools.apppointers import AppPointers
+
+class ScrollTool(AppPointers):
     """Class for scroll & follow behaviors."""
 
-    def __init__(self, app):
-        self.app = app
-        self.settings = app.settings
+    def __init__(self, parent):
+        AppPointers.__init__(self, parent)
 
         # autoscroll rates
-        self.rates = app.settings.scroll.rates
+        self.rates = self.app.settings.scroll.rates
 
         # scroll settings should push on change to fill these
         self._pos = None

@@ -7,6 +7,8 @@ import logging
 import common.res as res
 import common.ids as ids
 
+from tools.apppointers import AppPointers
+
 # helper functions
 # TODO: many of the Transposer class functions could go here,
 # as they don't directly concern the inner workings of the transposer.
@@ -42,18 +44,17 @@ def recursive_qual_checker(quals):
     return False
 
 
-class Transposer:
+class Transposer(AppPointers):
     """Process song objects into different transpositions, or convert to Nashville Numbers."""
 
     def __init__(self, parent):
-        self.app = parent.app
-        self.settings = parent.app.settings.transposer
+        AppPointers.__init__(self, parent)
 
     def transpose_tk(self, song, target): 
         """Transpose a tk tuple list."""
 
         # if transposition isn't enabled, return.
-        if not self.settings.enabled.get():
+        if not self.settings.transposer.enabled.get():
             return
 
         transposition = self.convert_transposition_to_int_tk(song=song, target=target)
@@ -300,7 +301,7 @@ class Transposer:
         tups = song.tk_tuples
         key_id = song.key.initial_id
         minor = ''
-        nashville = self.settings.nashville.get()
+        nashville = self.settings.transposer.nashville.get()
         end = frame.text.index('end-1c')
 
         active_styles = []

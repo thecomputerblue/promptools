@@ -3,6 +3,7 @@ import time
 import logging
 
 from gui.prompttoolbar import PromptToolBar
+from tools.apppointers import AppPointers
 
 # TODO: change the name of this to Editor, and its instance in app
 # to editor. Will require fixing a bunch of references but will be
@@ -12,7 +13,7 @@ from gui.prompttoolbar import PromptToolBar
 def toggle_bool(arg):
     return not arg
 
-class TalentMonitor(tk.Frame):
+class TalentMonitor(tk.Frame, AppPointers):
     """Class for Text field that shows
     what the talent is seeing on the Teleprompter."""
 
@@ -25,12 +26,7 @@ class TalentMonitor(tk.Frame):
             highlightthickness=10,  # border width
             # background='black'
         )
-
-        # context pointers
-        self.parent = parent
-        self.app = parent
-        self.suite = self
-        self.settings = self.app.settings
+        AppPointers.__init__(self, parent)
 
         # relevant frame parameters
         self.song = None

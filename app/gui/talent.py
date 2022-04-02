@@ -1,7 +1,8 @@
 import tkinter as tk
 import logging
 
-logging.basicConfig(level=logging.INFO)
+from tools.apppointers import AppPointers
+# logging.basicConfig(level=logging.INFO)
 
 # helpers
 def fs_coords(operator, talent):
@@ -20,7 +21,7 @@ def fs_coords(operator, talent):
 
     return coords
 
-class TalentWindow(tk.Toplevel):
+class TalentWindow(tk.Toplevel, AppPointers):
     """Class for the Talent POV, which should be identical to the TalentMonitor
 	but scaled to full screen on a second screen."""
 
@@ -32,14 +33,16 @@ class TalentWindow(tk.Toplevel):
             highlightbackground="black",  # when frame is out of focus
             highlightcolor="black",
         )
+        AppPointers.__init__(self, parent)
 
         # context
-        self.parent = parent
-        self.app = parent
-        self.suite = self
+        # self.parent = parent
+        # self.app = parent
+        # self.suite = self
+
         self.window = self
-        self.screens = self.app.tools.screens
-        self.settings = self.app.settings
+        self.screens = self.tools.screens
+        # self.settings = self.app.settings
 
         # window settings
         self.title("Talent")

@@ -1,14 +1,14 @@
 import sqlite3
 import logging
 
+from tools.apppointers import AppPointers
 
-class AppData:
+class AppData(AppPointers):
     """Class for app data used in saving and recalling workspace, settings."""
 
     def __init__(self, app):
-        self.app = app
-        self.dbmanager = app.tools.dbmanager
-        self.deck = app.deck
+        AppPointers.__init__(self, app)
+
         self.gig = GigData(self)
 
     @property

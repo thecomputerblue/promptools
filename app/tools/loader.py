@@ -2,6 +2,7 @@ import logging
 from tools.song import Song
 from tkinter import font
 
+from tools.apppointers import AppPointers
 # helpers
 def unpack_pos(pos: str) -> list:
     """Convert tkinter pos to line and column integers.
@@ -16,11 +17,11 @@ def pack_pos(line: int, col: int) -> str:
 
     return str(line) + "." + str(col)
 
-class LoadTool():
+class LoadTool(AppPointers):
     """Contain functions for loading songs between frames."""
 
     def __init__(self, app):
-        self.app = app
+        AppPointers.__init__(self, app)
 
     def preserve_sel(method):
         """Preserve selection while executing a method."""

@@ -1,6 +1,8 @@
 import logging
 
-class SongDeck:
+from tools.apppointers import AppPointers
+
+class SongDeck(AppPointers):
 	"""Implements an observer pattern so frames of the app
 	update correctly when a param is loaded to live, unloaded,
 	or cued."""
@@ -9,7 +11,8 @@ class SongDeck:
 	# it for more comprehensive triggers.
 
 	def __init__(self, app):
-		self.app = app
+		AppPointers.__init__(self, app)
+		
 		self.callbacks = {}
 
 		self._cued = None

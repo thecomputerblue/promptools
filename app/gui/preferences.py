@@ -5,20 +5,17 @@ from tkinter import ttk
 from tkinter.colorchooser import askcolor
 import logging
 
+from tools.apppointers import AppPointers
 
-class PreferencesWindow(tk.Toplevel):
+class PreferencesWindow(tk.Toplevel, AppPointers):
     """Class for the window for configuring program preferences."""
 
     def __init__(self, parent, *args, **kwargs):
-        tk.Toplevel.__init__(self, parent.frame)
-        self.parent = parent
-        self.app = parent.app
-        self.frame = parent.frame
-        self.settings = self.app.settings
-        app = parent.app
+        tk.Toplevel.__init__(self, parent.app)
+        AppPointers.__init__(self, parent)
 
         # flag that this is open
-        self.app.settings.windows.preferences.set(True)
+        self.settings.windows.preferences.set(True)
 
         self.title("Preferences")
 
@@ -31,8 +28,8 @@ class PreferencesWindow(tk.Toplevel):
         self.resizable(width=False, height=False)
 
         # always popup in center of operator window
-        x = int(app.winfo_screenwidth() / 2 - win_w / 2)
-        y = int(app.winfo_screenheight() / 2 - win_h / 2)
+        x = int(self.app.winfo_screenwidth() / 2 - win_w / 2)
+        y = int(self.app.winfo_screenheight() / 2 - win_h / 2)
         self.geometry(f"+{x}+{y}")
 
         # destroy method
@@ -47,13 +44,12 @@ class PreferencesWindow(tk.Toplevel):
         self.destroy()
 
 
-class PreferencesNotebook(ttk.Notebook):
+class PreferencesNotebook(ttk.Notebook, AppPointers):
     """ttk notebook for managing several preference tabs."""
 
     def __init__(self, parent):
         ttk.Notebook.__init__(self, parent)
-
-        self.app = parent.app
+        AppPointers.__init__(self, parent)
 
         general_tab = GeneralTab(self)
         general_tab.pack(fill="both", expand=True)
@@ -72,27 +68,23 @@ class PreferencesNotebook(ttk.Notebook):
         # self.pack(expand=True)
 
 
-class GeneralTab(tk.Frame):
+class GeneralTab(tk.Frame, AppPointers):
     """Class for the General Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         self.testcheck = tk.Checkbutton(self, text="Test checkbox")
         self.testcheck.pack(anchor="w")
 
 
-class ImportExportTab(tk.Frame):
+class ImportExportTab(tk.Frame, AppPointers):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         # Settings
         self.import_label = tk.Label(self, text="Import Settings")
@@ -105,14 +97,12 @@ class ImportExportTab(tk.Frame):
         self.import_raw.pack(anchor="w")
 
 
-class TalentTab(tk.Frame):
+class TalentTab(tk.Frame, AppPointers):
     """Class for the Talent Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         self.view_label = tk.Label(self, text="View")
         self.view_label.pack(anchor="w")

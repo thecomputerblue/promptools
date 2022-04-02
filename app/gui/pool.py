@@ -5,6 +5,8 @@ import copy
 import logging
 import string
 
+from tools.apppointers import AppPointers
+
 # helpers
 def scrub_text(text):
     """Remove text formatting for search comparison."""
@@ -15,19 +17,15 @@ def scrub_text(text):
 def alphabetize_songs(songs):
     return sorted(songs, key=lambda song: song.name)
 
-class PoolAndSetlistsNotebook(ttk.Notebook):
+class PoolAndSetlistsNotebook(ttk.Notebook, AppPointers):
     """Two pages for song pool and setlists respectively."""
 
     def __init__(self, parent, *args, **kwargs):
         ttk.Notebook.__init__(self, parent,
             padding=0
             )
+        AppPointers.__init__(self, parent)
 
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.suite = self
-        self.tools = self.app.tools.gui
         self.gig = self.app.data.gig
 
         self.pool = PoolAndSetlistsFrame(self)
@@ -38,39 +36,30 @@ class PoolAndSetlistsNotebook(ttk.Notebook):
         self.setlists.pack(fill="both", expand=True)
         self.add(self.setlists, text="Setlists")
 
-class SetlistPage(tk.Frame):
+class SetlistPage(tk.Frame, AppPointers):
     """Page for gig setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
             self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
         )        
-
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.suite = self
+        AppPointers.__init__(self, parent)
 
         self.dummy = tk.Label(self, text='implement setlists')
         self.dummy.pack()
 
 
-class PoolAndSetlistsFrame(tk.Frame):
+class PoolAndSetlistsFrame(tk.Frame, AppPointers):
     """Pane for showing the gig song pool and setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
             self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
         )
-
-        # context
-        self.parent = parent
-        self.app = parent.app
+        AppPointers.__init__(self, parent)
         self.suite = self
-        self.tools = parent.tools
-        self.gig = parent.gig
-        self.deck = self.app.deck
-        self.helper = self.app.tools.helper
+
+        self.gig = self.parent.gig
 
         # subframes
         self.header = PoolHeader(self)
@@ -322,13 +311,12 @@ class PoolAndSetlistsFrame(tk.Frame):
         self.listbox.insert("end", item)
 
 
-class PoolHeader(tk.Frame):
+class PoolHeader(tk.Frame, AppPointers):
     """Class for the Pool header & searchbar."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         # label
         self.label = tk.Label(self, text="Search")
@@ -346,17 +334,12 @@ class PoolHeader(tk.Frame):
         self.clear.pack(side="right", anchor="e")
 
 
-class PoolControlRow(tk.Frame):
+class PoolControlRow(tk.Frame, AppPointers):
     """Row for the setlist buttons for moving entries around."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent
-        self.tools = parent.tools
+        AppPointers.__init__(self, parent)
   
         # cross out played song
         self.add = tk.Button(self, text="+", command=self.suite.try_add)
@@ -374,9 +357,9 @@ class PoolControlRow(tk.Frame):
         # lock
         self.locked = tk.BooleanVar()
         self.lock = tk.Label(self)
-        self.lock.bind("<Button-1>", lambda e: self.tools.toggle_lock(var=self.locked, label=self.lock))
+        self.lock.bind("<Button-1>", lambda e: self.tools.gui.toggle_lock(var=self.locked, label=self.lock))
         # toggle to init TODO: hacky?
-        self.tools.toggle_lock(var=self.locked, label=self.lock) 
+        self.tools.gui.toggle_lock(var=self.locked, label=self.lock) 
         self.lock.pack(side="right")
 
         # keep all buttons in a list for lock toggle fn

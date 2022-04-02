@@ -4,17 +4,14 @@ import sqlite3
 import logging
 
 from gui.songdetail import SongDetailView
+from tools.apppointers import AppPointers
 
-class LibraryWindow(tk.Toplevel):
+class LibraryWindow(tk.Toplevel, AppPointers):
     """Class for the window for configuring program preferences."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(self, parent.frame)
-
-        self.parent = parent
-        self.app = parent.app
-        self.frame = parent.frame
-        self.settings = self.app.settings
+        AppPointers.__init__(self, parent)
 
         self.title("Library Manager")
 
@@ -45,11 +42,12 @@ class LibraryWindow(tk.Toplevel):
         self.settings.windows.library.set(False)
         self.destroy()
 
-class LibraryNotebook(ttk.Notebook):
+class LibraryNotebook(ttk.Notebook, AppPointers):
     """ttk notebook for managing several preference tabs."""
 
     def __init__(self, parent):
         ttk.Notebook.__init__(self, parent)
+        AppPointers.__init__(self, parent)
 
         self.app = parent.app
         
@@ -77,20 +75,17 @@ class LibraryNotebook(ttk.Notebook):
         # pack frame 
         self.pack(fill="both", expand=True)
 
-class SongBrowser(tk.PanedWindow):
+class SongBrowser(tk.PanedWindow, AppPointers):
     """Class for the Song Browser tab."""
 
     def __init__(self, parent):
         tk.PanedWindow.__init__(self, parent, orient="horizontal", sashwidth=10)
-
-        self.app = parent.app
-        self.suite = self
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         self.song = None
 
         self._data = None
-        self.data = self.app.tools.dbmanager.get_all_song_meta_from_db()
+        self.data = self.tools.dbmanager.get_all_song_meta_from_db()
 
         # widgets
         self.top = SongViewTop(self)
@@ -108,7 +103,7 @@ class SongBrowser(tk.PanedWindow):
             return "break"
    
 
-class SongViewTop(tk.Frame):
+class SongViewTop(tk.Frame, AppPointers):
     """Top half of the song browser, which contains the treview and info."""
 
     def __init__(self, parent):
@@ -116,9 +111,8 @@ class SongViewTop(tk.Frame):
             # old PanedWindow params
             # orient="horizontal", sashwidth=10
             )
+        AppPointers.__init__(self, parent)
 
-        self.app = parent.app
-        self.suite = parent.suite
         self.data = parent.data
         self.song = parent.song
 
@@ -139,13 +133,12 @@ class SongViewTop(tk.Frame):
         self.songdetail.pack(side="right", fill="y")
 
 
-class SongLibraryFilters(tk.Frame):
+class SongLibraryFilters(tk.Frame, AppPointers):
     """Class for song library filters"""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
+        AppPointers.__init__(self, parent)
 
         self.include_header = tk.Label(self, text="Include:")
         self.include_header.pack(side="left", anchor="w")
@@ -162,14 +155,12 @@ class SongLibraryFilters(tk.Frame):
         # so they're not deleted when you clean up
 
 
-class SongTreeFrame(tk.Frame):
+class SongTreeFrame(tk.Frame, AppPointers):
     """Class for the treeview and its scrollbar."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         self.library_filters = SongLibraryFilters(self)
         self.library_filters.pack(side="top", fill="both")
@@ -185,13 +176,12 @@ class SongTreeFrame(tk.Frame):
         self.search_filters.pack(side="top", fill="both")
 
 
-class SearchBar(tk.Frame):
+class SearchBar(tk.Frame, AppPointers):
     """Class for the Pool header & searchbar."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
+        AppPointers.__init__(self, parent)
 
         # label
         self.label = tk.Label(self, text="Search:")
@@ -208,14 +198,12 @@ class SearchBar(tk.Frame):
         self.clear = tk.Button(self, text="Clear", command=lambda *args: self.search.delete(0, 'end'))
         self.clear.pack(side="right", anchor="e")
 
-class SearchFilters(tk.Frame):
+class SearchFilters(tk.Frame, AppPointers):
     """Row of search filters."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         self.target_label = tk.Label(self, text="Targets:")
         self.target_label.pack(side="left", anchor="w")
@@ -245,14 +233,12 @@ class SearchFilters(tk.Frame):
         self.toggle_all.pack(side="left", anchor="w")
 
 
-class ScrolledSongTree(tk.Frame):
+class ScrolledSongTree(tk.Frame, AppPointers):
     """Attach a scrollbar to treeview."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         self._song_dict = None
 
@@ -310,7 +296,7 @@ class ScrolledSongTree(tk.Frame):
         if self.app.settings.library.cue_selection.get():
             self.app.deck.cued = song
 
-class SongViewBottom(tk.Frame):
+class SongViewBottom(tk.Frame, AppPointers):
     """Bottom half of the song browser, which contains misc options."""
 
     def __init__(self, parent):
@@ -321,8 +307,8 @@ class SongViewBottom(tk.Frame):
             # highlightbackground="light grey",
             # highlightthickness=2
             )
+        AppPointers.__init__(self, parent)
 
-        self.app = parent.app
         self.data = parent.data
         self.song = parent.song
 
@@ -335,14 +321,12 @@ class SongViewBottom(tk.Frame):
         self.cue_selection.pack(side="left", anchor="w")
 
 
-class SetlistBrowser(tk.Frame):
+class SetlistBrowser(tk.Frame, AppPointers):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         # widgets
         self.setlists = tk.Listbox(
@@ -353,14 +337,12 @@ class SetlistBrowser(tk.Frame):
         self.setlists.pack(side='left', fill='both', expand=True)
 
 
-class PoolBrowser(tk.Frame):
+class PoolBrowser(tk.Frame, AppPointers):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         # widgets 
         self.pools = tk.Listbox(
@@ -373,11 +355,12 @@ class PoolBrowser(tk.Frame):
         self.scrollbar = tk.Scrollbar(self, orient="vertical")
         self.scrollbar.pack(side="right", fill="y")
 
-class GigBrowser(tk.Frame):
+class GigBrowser(tk.Frame, AppPointers):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
+        AppPointers.__init__(self, parent)
 
         self.app = parent.app
         self.settings = parent.app.settings
@@ -393,15 +376,13 @@ class GigBrowser(tk.Frame):
         self.scrollbar = tk.Scrollbar(self, orient="vertical")
         self.scrollbar.pack(side="right", fill="y")
 
-class LibrarySettings(tk.Frame):
+class LibrarySettings(tk.Frame, AppPointers):
     """Class for defining Library behaviors. Settings also reproduced in
     the preferences window."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.settings = parent.app.settings
+        AppPointers.__init__(self, parent)
 
         # options
         self.keep_local = tk.Checkbutton(

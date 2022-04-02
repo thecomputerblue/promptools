@@ -37,6 +37,8 @@ class MainApplication(tk.Frame):
         self.root = frame
         self.frame = frame
         self.app = self
+        # lets gui components know they are suite level
+        self.suite = None 
 
         # init program settings
         # TODO: load previous settings from self.data

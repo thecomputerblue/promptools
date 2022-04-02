@@ -9,6 +9,8 @@ import logging
 from os import listdir
 from os.path import isfile, join, exists
 
+from tools.apppointers import AppPointers
+
 # helpers
 def scrub_text(text):
     """Remove text formatting for search comparison."""
@@ -17,16 +19,12 @@ def scrub_text(text):
     return text
 
 
-class BrowserSuite(tk.Frame):
+class BrowserSuite(tk.Frame, AppPointers):
     """Quick browser for files and the library database."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent.frame)
-
-        self.parent = parent
-        self.app = parent
-        self.suite = self
-        self.settings = parent.settings
+        AppPointers.__init__(self, parent)
 
         # search bar
         self.search = SearchBar(self)
@@ -59,17 +57,12 @@ class BrowserSuite(tk.Frame):
         # generate the file list and update the window
         # TODO: probably move this into the FilesTab class
 
-class SearchBar(tk.Frame):
+class SearchBar(tk.Frame, AppPointers):
     """Frame for the search bar and any options."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-
-        # orient
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-        self.settings = parent.settings
+        AppPointers.__init__(self, parent)
 
         # search query var
         self.query = tk.StringVar()
@@ -117,7 +110,7 @@ class SearchBar(tk.Frame):
         return i
 
 
-class BrowserNotebook(ttk.Notebook):
+class BrowserNotebook(ttk.Notebook, AppPointers):
     """Notebook whose pages are different targets for the quick search.
     By default this will have a file browser for quick import, and a
     simplified library browser (references the DB)."""
@@ -126,9 +119,7 @@ class BrowserNotebook(ttk.Notebook):
         ttk.Notebook.__init__(self, parent,
             padding=0
             )
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         self.library = LibraryTab(self)
         self.library.pack(fill="both", expand=True)
@@ -139,14 +130,12 @@ class BrowserNotebook(ttk.Notebook):
         self.add(self.files, text="Files")
 
 
-class LibraryTab(tk.Frame):
+class LibraryTab(tk.Frame, AppPointers):
     """Frame for the Library browser."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         self.tv = ScrolledTreeview(self)
         self.tv.pack(fill='both', expand=True)
@@ -221,14 +210,12 @@ class LibraryTab(tk.Frame):
         # t.heading(col, command=lambda: treeview_sort_column())
 
 
-class ScrolledTreeview(tk.Frame):
+class ScrolledTreeview(tk.Frame, AppPointers):
     """Attach a scrollbar to treeview."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         # library data tree (left side of frame)
         tree = ttk.Treeview(self, selectmode="browse", show="tree")
@@ -270,14 +257,12 @@ class ScrolledTreeview(tk.Frame):
         return self.app.tools.factory.new_song(dictionary=song_data)
 
 
-class FilesTab(tk.Frame):
+class FilesTab(tk.Frame, AppPointers):
     """Frame for the file browser."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        self.app = parent.app
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         # vars for file loading
         self.directory = self.app.settings.paths.texts.get()
@@ -355,12 +340,12 @@ class FilesTab(tk.Frame):
         pass
 
 
-class QuickSearchHeader(tk.Frame):
+class QuickSearchHeader(tk.Frame, AppPointers):
     """Class for the quick search bar header."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-        self.suite = parent.suite
+        AppPointers.__init__(self, parent)
 
         self.label = tk.Label(self, text="Quick Search")
         self.label.pack(side="left", fill="y", anchor="w")

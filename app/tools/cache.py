@@ -2,14 +2,16 @@ import weakref
 import logging
 import gc 
 
-class Cache:
+from tools.apppointers import AppPointers
+
+class Cache(AppPointers):
 	"""Class for caching. For now just using to track and batch-process
 	all active songs in the program (ie. if a DB entry is deleted, anything
 	currently in memory needs its references to that updated so when you save
 	back to DB there isn't any accidental overwriting. Expand later as needed."""
 
 	def __init__(self, app):
-		self.app = app
+		AppPointers.__init__(self, app)
 
 		self.songs = []
 

@@ -1,7 +1,9 @@
 import tkinter as tk
 import logging
 
-class CuedUp(tk.Frame):
+from tools.apppointers import AppPointers
+
+class CuedUp(tk.Frame, AppPointers):
     """Class that shows the song title cued for prompting."""
 
     # TODO: merge with preview, as this is basically just the header of
@@ -9,12 +11,7 @@ class CuedUp(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent.frame)
-
-        # orient
-        self.parent = parent
-        self.app = parent
-        self.suite = self
-        self.settings = parent.settings
+        AppPointers.__init__(self, parent)
 
         # vars
         self.selected = tk.StringVar()

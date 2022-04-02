@@ -8,20 +8,16 @@ import logging
 from gui.preferences import PreferencesWindow
 from gui.transposer import TransposerWindow
 from gui.library import LibraryWindow
+from tools.apppointers import AppPointers
 
-class MenuBar(tk.Frame):
+class MenuBar(tk.Frame, AppPointers):
     """Class for Menu options."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent.frame)
+        AppPointers.__init__(self, parent)
 
-        # TODO: thin this out...
-        self.parent = parent
-        self.app = parent
-        self.frame = parent.frame
-        self.settings = self.app.settings
         self.setlist = self.app.collections.setlist
-        self.data = self.app.data
 
         menu_bar = tk.Menu(self.master)
         self.master.config(menu=menu_bar)
@@ -454,12 +450,7 @@ class MenuBar(tk.Frame):
         """Delete orphaned songs from library."""
         # TODO: popup confirmation
         # TODO: fn into the library manager
-        self.app.tools.dbmanager.delete_orphaned_songs()
-
-
-
-
-
+        self.dbmanager.delete_orphaned_songs()
 
 
 

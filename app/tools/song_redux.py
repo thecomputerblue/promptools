@@ -15,6 +15,7 @@ import tools.words as words
 from tools.words import WordFactory
 
 from common.settings import Settings
+from tools.apppointers import AppPointers
 
 # redoing much of the song construction with the new style of song object
 # which will offer more flexibility and is far less bloated.
@@ -30,11 +31,11 @@ def timestamp():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 
 
-class SongFactory:
+class SongFactory(AppPointers):
     """New song factory class for producing / modifying SongNew objects."""
 
     def __init__(self, app):
-        self.app = app
+        AppPointers.__init__(self, app)
 
         # strategies for constructing songs from different sources.
         self.import_strategies = {
