@@ -20,15 +20,11 @@ def assign(part):
 def str_represents_int(s) -> bool:
     """Return True if s represents an int,
     including strings beginning with '+' or '-'."""
-
-    logging.info('str_represents_int in tools/transposer')
-
     if not s:
         return False
-
     return s[1:].isdigit() if s[0] in "-+" else s.isdigit()
 
-def recursive_qual_checker(quals):
+def recursive_qual_checker(quals) -> bool:
     """Used to confirm qualities are valid.
     Only pass the qualities part of a chord regex match."""
 
@@ -41,20 +37,49 @@ def recursive_qual_checker(quals):
         if quals.startswith(q):
             return recursive_qual_checker(quals.split(q)[-1])
 
-    return False
+def match_chord(match=re.regex.Match) -> bool:
+    """Evaluate transposible_ids regex match for chordiness."""
+
+    if not match:
+        return False
+
+    if match[3]:
+        quals = assign(match[4])
+        return recursive_qual_checker(quals)
+
+def slice_key(word):
+    """Slice a key, return [bracket, note, mode, bracket]"""
+
+    lb, chd, rb = word[0], word[1:-1], word[-1]
+    key, mode = [chd[:-1], chd[-1]] if chd[-1] in '-m' else [chd, '']
+
+    return [lb, key, mode, rb]
+
+def slice_chord(chd):
+    """Slice a chord, return [note, qualities]."""
+    l = len(chd)
+    strategies = {
+    l == 1: lambda: [chd, ''],
+    l == 2: lambda: [chd, ''] if chd[1] in 'b#' else [chd[:-1], chd[-1]],
+    l >= 3: lambda: [chd[:2], chd[2:]] if chd[1] in 'b#' else [chd[:1], chd[1:]],
+    }
+    for k, v in strategies.items():
+        if k:
+            return v()
+    logging.warning('slice_chord in transposer failed to choose a strategy')
 
 
 class Transposer(AppPointers):
-    """Process song objects into different transpositions, or convert to Nashville Numbers."""
+    """Using the above functions, provides an interface to transpose songs."""
 
     def __init__(self, parent):
         AppPointers.__init__(self, parent)
+        self.enabled = self.settings.transposer.enabled
 
     def transpose_tk(self, song, target): 
         """Transpose a tk tuple list."""
 
-        # if transposition isn't enabled, return.
-        if not self.settings.transposer.enabled.get():
+        if not self.enabled.get():
             return
 
         transposition = self.convert_transposition_to_int_tk(song=song, target=target)
@@ -90,7 +115,7 @@ class Transposer(AppPointers):
     def transpose_key_tk(self, word, song, transposition):
         """Transpose key, updating songs current key to ensure correct accidentals."""
 
-        lbr, note, minor, rbr = self.slice_key(word)
+        lbr, note, minor, rbr = slice_key(word)
         flats = ids.FLAT_MIN_IDS if minor else ids.FLAT_MAJ_IDS
 
         old_id = ids.NOTE_IDS.get(note)
@@ -105,7 +130,7 @@ class Transposer(AppPointers):
     def transpose_chord_tk(self, word, song, transposition):
         """Transpose chord."""
 
-        old_note, qualities = self.slice_chord(word)
+        old_note, qualities = slice_chord(word)
         note_id = ids.NOTE_IDS.get(old_note)
         new_id = (note_id + transposition) % 12
         new_note = ids.NOTE_ID_ACCIDENTALS[new_id][song.key.current_acc]
@@ -133,36 +158,12 @@ class Transposer(AppPointers):
 
         return new_top + slash + new_bass
 
-    def slice_key(self, word):
-        """Slice a key, return [bracket, note, mode, bracket]"""
-
-        lb, chd, rb = word[0], word[1:-1], word[-1]
-        key, mode = [chd[:-1], chd[-1]] if chd[-1] in '-m' else [chd, '']
-
-        return [lb, key, mode, rb]
-
-    def slice_chord(self, chd):
-        """Slice a chord, return [note, qualities]."""
-        l = len(chd)
-
-        strategies = {
-        l == 1: lambda: [chd, ''],
-        l == 2: lambda: [chd, ''] if chd[1] in 'b#' else [chd[:-1], chd[-1]],
-        l >= 3: lambda: [chd[:2], chd[2:]] if chd[1] in 'b#' else [chd[:1], chd[1:]],
-        }
-
-        for k, v in strategies.items():
-            if k:
-                return v()
-
-        logging.warning(f'slice_chord in transposer failed to return a value from "{chd}"')
-
     def slice_slash_chord(self, chord):
         """Slice slash chord and return [note, qualities, slash, bass]"""
 
         logging.info(f'slice_slash_chord recieved chord: {chord}')
         top, bass = chord.split('/')
-        slices = self.slice_chord(top)
+        slices = slice_chord(top)
 
         return [slices[0], slices[1], '/', bass]
 
@@ -177,7 +178,7 @@ class Transposer(AppPointers):
         strategies = [
         (isinstance(target, int),       lambda: (target + song.key.default_id - song.key.initial_id) % 12),
         (str_represents_int(target),    lambda: (int(target) + song.key.default_id - song.key.initial_id) % 12),
-        (not self.match_chord(match),   lambda: (song.key.default_id - song.key.initial_id) % 12),
+        (not match_chord(match),   lambda: (song.key.default_id - song.key.initial_id) % 12),
         (song.key.initial is not None,      lambda: (ids.NOTE_IDS.get(note) - song.key.initial_id) % 12),
         (song.key.initial is None,      lambda: (ids.NOTE_IDS.get(note) - song.key.default_id) % 12),
         ]
@@ -186,17 +187,6 @@ class Transposer(AppPointers):
             if s[0]:
                 return s[1]()
 
-    def match_chord(self, match=re.regex.Match) -> bool:
-        """Evaluate transposible_ids regex match for chordiness."""
-
-        if not match:
-            return False
-
-        if match[3]:
-            quals = assign(match[4])
-            return recursive_qual_checker(quals)
-
-        return False
 
     def show_colors_tk(self, frame, song):
         """Show colors from the tk formatted rep."""
@@ -242,7 +232,7 @@ class Transposer(AppPointers):
             nonlocal minor 
             nonlocal word
 
-            note, qualities = self.slice_chord(word)
+            note, qualities = slice_chord(word)
             note_id = ids.NOTE_IDS.get(note)
 
             nash_list = ids.NASH_MIN_FLATS if minor else ids.NASH_MAJ_FLATS
@@ -276,7 +266,7 @@ class Transposer(AppPointers):
             nonlocal minor 
             nonlocal word
 
-            _, note, minor, _ = self.slice_key(word)
+            _, note, minor, _ = slice_key(word)
             key_id = ids.NOTE_IDS.get(note)
 
         def ws_strat():
