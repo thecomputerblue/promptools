@@ -2,6 +2,7 @@ import tkinter as tk
 import logging
 
 from tools.apppointers import AppPointers
+
 # logging.basicConfig(level=logging.INFO)
 
 # helpers
@@ -10,20 +11,21 @@ def fs_coords(operator, talent):
     coords = {}
 
     # offset coords
-    coords['xoffs'] = talent.x
-    coords['yoffs'] = talent.y
+    coords["xoffs"] = talent.x
+    coords["yoffs"] = talent.y
 
     # screen sizes
-    coords['tw'] = talent.width
-    coords['th'] = talent.height 
-    coords['ow'] = operator.width
-    coords['oh'] = operator.height
+    coords["tw"] = talent.width
+    coords["th"] = talent.height
+    coords["ow"] = operator.width
+    coords["oh"] = operator.height
 
     return coords
 
+
 class TalentWindow(tk.Toplevel, AppPointers):
     """Class for the Talent POV, which should be identical to the TalentMonitor
-	but scaled to full screen on a second screen."""
+    but scaled to full screen on a second screen."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(
@@ -53,12 +55,11 @@ class TalentWindow(tk.Toplevel, AppPointers):
         self.song = None
 
         self.pixels = self.settings.scroll.pixels.get()
-        self.frozen = False #TODO: move to settings
+        self.frozen = False  # TODO: move to settings
 
         # fullscreen tkvar. trace to trigger toggle
         self.fullscreen = self.settings.view.fullscreen
         self.fullscreen.trace("w", lambda *args: self.toggle_fullscreen())
-
 
         # store window dimensions for fullscreen toggle
         self.store_winfo()
@@ -100,35 +101,20 @@ class TalentWindow(tk.Toplevel, AppPointers):
         # giving columns weight allows vertical expansion.
         self.grid_rowconfigure(0, weight=1)
 
-        # scroll bindings
-        self.bind("<space>", lambda _: self.app.monitor.toggle_scroll())
-        self.bind("<KeyPress-Shift_L>", lambda _: self.app.monitor.shift_scroll_on())
-        self.bind("<KeyRelease-Shift_L>", lambda _: self.app.monitor.shift_scroll_off())
-        self.bind("<KeyPress-Shift_R>", lambda _: self.app.monitor.shift_scroll_on())
-        self.bind("<KeyRelease-Shift_R>", lambda _: self.app.monitor.shift_scroll_off())
-        self.bind("<.>", lambda _: self.app.tools.scroll.chunk_scroll(direction="down"))
-        self.bind("<,>", lambda _: self.app.tools.scroll.chunk_scroll(direction="up"))
-        self.bind("</>", lambda _: self.app.tools.scroll.chunk_scroll(direction="right"))
-        self.bind("<z>", lambda _: self.app.tools.scroll.chunk_scroll(direction="left"))
-        self.bind("<Return>", lambda _: self.app.tools.scroll.carriage_return())
-        self.bind("<KeyPress-Escape>", self.esc_fs_toggle)
-
         # scaler
-        self.text_scaler = TextScaler(self) # TODO: move to app tools?
+        self.text_scaler = TextScaler(self)  # TODO: move to app tools?
         # self.config(cursor='pencil')
 
         # callbacks
-        self.app.deck.add_callback('live', self.push)
-        self.app.settings.scroll.add_callback(self.refresh_scroll)
+        self.deck.add_callback("live", self.push)
+        self.settings.scroll.add_callback(self.refresh_scroll)
 
     def refresh_scroll(self, *args):
         """Fetch scroll params."""
         self.pixels = self.settings.scroll.pixels.get()
 
     def push(self):
-        live = self.app.deck.live
-        # TODO: reset view test
-        self.app.tools.loader.push(frame=self, song=live, reset_view=True)
+        self.loader.push(frame=self, song=self.deck.live, reset_view=True)
 
     def store_winfo(self):
         """Snapshot winfo to restore later."""
@@ -148,60 +134,60 @@ class TalentWindow(tk.Toplevel, AppPointers):
     def receive_edits(self, tk_text_dump):
         """When editing monitor window, send the new text to this to update."""
         if self.frozen:
-            return 
+            return
         loader = self.app.tools.loader
         mon = self.app.monitor.text
         tal = self.text
         loader.clone_tk_text(mon, tal)
 
     def scroll(self, direction="down"):
-        """Scroll in direction by self.pixels"""
+        """Talent scroll behavior."""
+        x_scroll = self.text.xview_scroll
+        y_scroll = self.text.yview_scroll
         amt = self.scale_pixels_by_font_size(self.pixels)
-        amt = amt if direction=="down" or direction=="left" else -amt
-        if direction=="down" or direction=="up":
-            self.text.yview_scroll(amt, "pixels")
-        elif direction=="right" or direction=="left":
-            logging.info('talent scroll RIGHT')
-            # amt = amt*2 # scale l/r scroll
-            self.text.xview_scroll(amt, "pixels")
-
-    def carriage_return(self):
-        self.text.yview_scroll(1, "units")
-        self.text.xview_moveto(0)
+        if direction == "up":
+            y_scroll(-amt, "pixels")
+        elif direction == "down":
+            y_scroll(amt, "pixels")
+        elif direction == "right":
+            x_scroll(-amt, "pixels")
+        elif direction == "left":
+            x_scroll(amt, "pixels")
 
     def scale_pixels_by_font_size(self, amt):
         """Scale pixel increment by text size for more consistent speed on resize."""
         if not amt:
             return 0
         scaler = self.gen_font_scaler()
-        return max(1, int(amt*scaler))
+        return max(1, int(amt * scaler))
 
     def gen_font_scaler(self):
         """Generate a float which scales pixel rate in a helpful way."""
         base = self.text_scaler.font_size
-        normal = 44 # 'normal' font size. bigger skips more pixels, smaller fewer.
+        normal = 44  # 'normal' font size. bigger skips more pixels, smaller fewer.
         return base / normal
 
     def toggle_fullscreen(self):
         self.go_windowed() if self.fullscreen.get() else self.go_fullscreen()
-            
+
     def go_fullscreen(self):
-        logging.info('talent went window')
+        logging.info("talent went window")
         self.window.wm_attributes("-fullscreen", False)
-        self.window.wm_attributes('-topmost', False)
+        self.window.wm_attributes("-topmost", False)
         self.window.geometry(f"{self.window.win_x}x{self.window.win_y}")
 
     def go_windowed(self):
         c = fs_coords(
-            operator = self.suite.screens.operator,
-            talent = self.suite.screens.talent
-            )
-        logging.info('talent went fullscreen')
+            operator=self.suite.screens.operator, talent=self.suite.screens.talent
+        )
+        logging.info("talent went fullscreen")
         self.deiconify()
         self.window.store_winfo()
-        self.window.wm_attributes('-topmost', True)
+        self.window.wm_attributes("-topmost", True)
         self.window.wm_attributes("-fullscreen", True)
-        self.window.geometry(f"{c.get('tw')}x{c.get('th')}+{c.get('xoffs')}-{c.get('yoffs')}")
+        self.window.geometry(
+            f"{c.get('tw')}x{c.get('th')}+{c.get('xoffs')}-{c.get('yoffs')}"
+        )
 
 
 class PromptArrow(tk.Frame):
@@ -228,15 +214,15 @@ class PromptArrow(tk.Frame):
         x, y = 0, 80
 
         # Create the triangle polygon that will serve as the prompter arrow.
-        # TODO: storing this just creates an int. 
+        # TODO: storing this just creates an int.
         self.create_arrow(
             canvas=self.canvas,
             x=x,
             y=y,
             color=self.settings.color.get(),
             outline=self.settings.outline.get(),
-            borderwidth=self.settings.borderwidth.get()
-            )
+            borderwidth=self.settings.borderwidth.get(),
+        )
 
         # Make the canvas elements scale with the window.
         self.scaler = ArrowScaler(self)
@@ -255,11 +241,7 @@ class PromptArrow(tk.Frame):
     def create_canvas(self, *args, **kwargs):
         """Create the canvas."""
         canvas = tk.Canvas(
-            self,
-            bg="black",
-            highlightthickness=0,
-            borderwidth=0,
-            **kwargs
+            self, bg="black", highlightthickness=0, borderwidth=0, **kwargs
         )
 
         return canvas
@@ -273,15 +255,24 @@ class PromptArrow(tk.Frame):
         x2, y2 = x + 0, y + 100
 
         arrow = canvas.create_polygon(
-            x0, y0, x1, y1, x2, y2, fill=color, outline=outline, width=borderwidth, tags="arrow"
+            x0,
+            y0,
+            x1,
+            y1,
+            x2,
+            y2,
+            fill=color,
+            outline=outline,
+            width=borderwidth,
+            tags="arrow",
         )
 
         # return arrow
 
     def color_arrow(self):
-        color=self.settings.color.get(),
-        outline=self.settings.outline.get(),
-        borderwidth=self.settings.borderwidth.get()
+        color = (self.settings.color.get(),)
+        outline = (self.settings.outline.get(),)
+        borderwidth = self.settings.borderwidth.get()
         self.canvas.itemconfig("arrow", fill=color, outline=outline, width=borderwidth)
 
     def drag_start(self, event):
@@ -311,7 +302,7 @@ class PromptArrow(tk.Frame):
             foot=coords[5],
             deltas=self.deltas(event),
             win_xy=self.win_xy(),
-            )
+        )
         self.update_pos(event)
 
     def win_xy(self):
@@ -321,10 +312,10 @@ class PromptArrow(tk.Frame):
         # TODO: move out of this class since it isn't dependent on it
         if head < 0:
             canvas.move(obj, 0, 1)
-        elif foot > win_xy[1] and head > 0: 
+        elif foot > win_xy[1] and head > 0:
             canvas.move(obj, 0, -1)
         else:
-            canvas.move(obj, 0, deltas[1])  
+            canvas.move(obj, 0, deltas[1])
 
     def update_pos(self, event):
         self._drag_data["x"] = event.x
@@ -341,7 +332,7 @@ class PromptArrow(tk.Frame):
         # TODO: sibling currently disabled. may not use
 
         if not self.sibling:
-            logging.info('Havent\'t defined arrow sibling.')
+            logging.info("Havent't defined arrow sibling.")
             return
 
         # TODO: This obviously will need to scale so arrows are pointing
@@ -373,7 +364,9 @@ class ArrowScaler:
 
     def resize(self, event):
         """If frame size has changed, determine the scale difference."""
-        if event.widget != self.parent or (self.width == event.width and self.height == event.height):
+        if event.widget != self.parent or (
+            self.width == event.width and self.height == event.height
+        ):
             return
         wscale = float(event.width) / self.width
         hscale = float(event.height) / self.height
@@ -387,7 +380,7 @@ class ArrowScaler:
 
 
 class TextScaler:
-    """Track resizing of Talent window to update font size. """
+    """Track resizing of Talent window to update font size."""
 
     def __init__(self, parent):
         self.parent = parent
@@ -432,7 +425,7 @@ class TextScaler:
             return True
 
     def size_changed(self, event):
-        return self.width != event.width and self.height != event.height 
+        return self.width != event.width and self.height != event.height
 
     def refresh_font(self):
         """Update the font parameters."""
@@ -450,12 +443,15 @@ class TextScaler:
     def gen_font_size(self):
         """Formula for calculating font size."""
         s = self.settings.scalers
-        return int((self.width * s.talent.get() * s.all.get()) // 30) # <- TODO: // value could be stored in settings
+        return int(
+            (self.width * s.talent.get() * s.all.get()) // 30
+        )  # <- TODO: // value could be stored in settings
 
     def get_font_family(self):
         """Get font family from settings."""
-        logging.info('trying to get font family')
+        logging.info("trying to get font family")
         return self.settings.fonts.talent.family.get()
+
 
 class RightClickMenu(tk.Frame):
     """Menu for when you right click within monitor frame."""
@@ -471,7 +467,7 @@ class RightClickMenu(tk.Frame):
         self.fullscreen = False
 
         # main menu
-        main_menu = tk.Menu(self.parent, title='Talent Options')
+        main_menu = tk.Menu(self.parent, title="Talent Options")
         main_menu.add_checkbutton(label="Fullscreen", variable=self.window.fullscreen)
 
         self.main_menu = main_menu
@@ -480,7 +476,7 @@ class RightClickMenu(tk.Frame):
         """Popup right click menu."""
         # TODO: need to get screen info and offset x_root, and y_root as appropriate.
         try:
-            logging.info(f'popup coords: {event.x_root}, {event.y_root}')
+            logging.info(f"popup coords: {event.x_root}, {event.y_root}")
             self.main_menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.main_menu.grab_release()

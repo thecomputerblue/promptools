@@ -32,7 +32,7 @@ class PromptButton(tk.Frame, AppPointers):
 	def click(self):
 		"""What to do when clicked."""
 		
-		editing = self.settings.editor.enabled
+		editing = self.settings.edit.enabled
 		running = self.settings.scroll.running
 
 		# TODO: rename on_edit_mode to be more informative

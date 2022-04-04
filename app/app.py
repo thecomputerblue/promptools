@@ -25,7 +25,7 @@ from gui.cued import CuedUp
 from gui.menu import MenuBar
 from gui.metapane import MetaSuite
 from gui.helper import HelperBox
-
+from gui.controls import AppControls
 
 class MainApplication(tk.Frame):
     """Class for the main application."""
@@ -115,6 +115,9 @@ class MainApplication(tk.Frame):
         self.helper = HelperBox(self)
         self.helper.grid(row=3, column=0, sticky="nesw")
 
+        # keyboard / mouse / etc. mappings
+        self.controls = AppControls(self)
+
         # configure rows / columns to get right weights
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=0)
@@ -150,6 +153,10 @@ class MainApplication(tk.Frame):
 
 def main():
     """Application main loop."""
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
     root = tk.Tk()  # change to tkd.Tk if you end up using dnd package!
     root.title("PrompTools alpha")
 

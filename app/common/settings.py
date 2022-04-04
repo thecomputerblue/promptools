@@ -64,7 +64,7 @@ class Settings(AppPointers):
             self, "AutoScrollSettings"
         )  # TODO: move speed params etc here
         self.chunk = ChunkScrollSettings(self, "ChunkScrollSettings")
-        self.editor = EditSettings(self, "EditSettings")
+        self.edit = EditSettings(self, "EditSettings")
         self.fonts = FontSettings(self, "FontSettings")
         self.importer = ImportSettings(self, "ImportSettings")
         self.library = LibrarySettings(self, "LibrarySettings")

@@ -3,6 +3,12 @@ import logging
 
 from tools.apppointers import AppPointers
 
+# helpers
+def next_line(text):
+    text.yview_scroll(1, "units")
+    text.xview_moveto(0)
+
+
 class ScrollTool(AppPointers):
     """Class for scroll & follow behaviors."""
 
@@ -16,25 +22,27 @@ class ScrollTool(AppPointers):
         self._pos = None
         self.pos = self.settings.scroll.pos.get()
 
-        self.running = False
-
         # init frame counter for delay comp
         self.reset_scroll_frame_counter()
 
         # register callback so params get updated when settings change
         self.settings.scroll.add_callback(self.refresh)
 
+    @property
+    def running(self):
+        return self.settings.scroll.running
+
     def refresh(self):
         """Fetch all the scroll parameters and update."""
-        logging.info('refresh in ScrollTool')
+        logging.info("refresh in ScrollTool")
         self.pos = self.settings.scroll.pos.get()
-        self.running = self.settings.scroll.running.get()
+        # self.running = self.settings.scroll.running.get()
 
     @property
     def pos(self):
         return self._pos
 
-    @pos.setter 
+    @pos.setter
     def pos(self, new):
         pos = self.percent_to_pos(new)
         self._pos = self.percent_to_pos(new)
@@ -45,12 +53,12 @@ class ScrollTool(AppPointers):
         return int(scale * new // 1)
 
     def reset_scroll_frame_counter(self):
-        """Reset the frane counter for delay comp."""
+        """Reset the frame counter for delay comp."""
         self.next_frame = datetime.datetime.now()
 
     def scroll_loop(self):
         """Schedulet the autoscroll based on rate slider."""
-        if self.running:
+        if self.running.get():
             self.app.talent.scroll() if self.pos != 0 else None
             self.schedule_scroll()
         elif self.app.settings.scroll.mon_snap.get():
@@ -59,19 +67,20 @@ class ScrollTool(AppPointers):
     def scaled_sleep_time(self):
         """Sleep for the time set by the speed slider."""
         rates = self.app.settings.scroll.rates
-        return int(rates[self.pos-1]) if self.running else int(rates[-1])
+        return int(rates[self.pos - 1]) if self.running else int(rates[-1])
 
     def start_scroll(self):
         """When you start scroll from stopped, reset next frame."""
 
         self.next_frame = datetime.datetime.now()
-        self.schedule_scroll()
+        self.schedule_scroll(delay_comp=True)
 
-    def schedule_scroll(self):
+    def schedule_scroll(self, delay_comp=True):
         """Schedule next scroll, accounting for latency in the after queue."""
-        # bypass delay_comp by swapping tho the line immediately below this
-        # self.app.after(self.scaled_sleep_time(), self.scroll_loop)
-        self.app.after(self.delay_comp(), self.scroll_loop)
+        if delay_comp:
+            self.app.after(self.delay_comp(), self.scroll_loop)
+        else:
+            self.app_after(self.scaled_sleep_time(), self.scroll_loop)
 
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""
@@ -79,15 +88,13 @@ class ScrollTool(AppPointers):
         now = datetime.datetime.now()
         delta = max(datetime.timedelta(), self.next_frame - now)
         time = int(delta.total_seconds() * 1000)
-        fps = int(1000/time) if time else 0
-        print(f'ms: {time}, fps: {fps}')
+        fps = int(1000 / time) if time else 0
+        # print(f"ms: {time}, fps: {fps}") # comment in for readout on each tick while running
         return time
 
     def carriage_return(self):
-        """Advance 1 line and reset x_view."""
-        if self.app.settings.editor.enabled.get():
-            return
-        self.app.talent.carriage_return()
+        """Jump to next line and reset x scroll."""
+        next_line(self.talent.text) if not self.settings.edit.enabled.get() else None
 
     def chunk_scroll(self, direction):
         """Scrolls for a little bit."""
@@ -95,9 +102,9 @@ class ScrollTool(AppPointers):
         def toggle(chunk):
             chunk.enabled = False if chunk.enabled else True
 
-        logging.info(f'chunk scrolling in direction: {direction}')
+        logging.info(f"chunk scrolling in direction: {direction}")
         # do not chunk scroll when editing
-        if self.app.settings.editor.enabled.get():
+        if self.settings.edit.enabled.get():
             return
 
         app = self.app
@@ -120,20 +127,20 @@ class ScrollTool(AppPointers):
 
             # allow overlapping chunk scrolls as long as first is half done.
             # TODO: make this configurable
-            app.after(duration//2, lambda: toggle(chunk))
+            app.after(duration // 2, lambda: toggle(chunk))
 
             mon_snaps_to_talent_pos = app.settings.scroll.mon_snap.get()
             if mon_snaps_to_talent_pos:
                 app.after(duration, monitor.match_sibling_yview)
 
-# TODO: re-integrate the monitor refresh loop
+    # TODO: re-integrate the monitor refresh loop
     def monitor_refresh_loop(self):
         """Refresh loop for monitor update."""
         # TODO: only run this when talent is running.
         # Currently scheduling even when talent is not running.
         app = self.app
         monitor = app.monitor
-        ms = app.settings.scroll.mon_ms # TODO: MonitorSettings()
+        ms = app.settings.scroll.mon_ms  # TODO: MonitorSettings()
 
         # TODO: Get this running smoother someday. underlying tkinter issue imo
         if self.monitor_refresh_conditions():
@@ -147,8 +154,36 @@ class ScrollTool(AppPointers):
         if scroll.mon_follow.get():
             return scroll.running
 
+    # MOVED FROM MONITOR
 
-class AutoscrollBehavior():
+    def shift_scroll_on(self, event=None):
+        """Holding shift scrolls prompter."""
+
+        if self.monitor.editable.get():
+            return
+
+        self.running.set(True)
+        # self.schedule_scroll()
+        self.start_scroll()
+        logging.info("shift_scroll_on")
+
+    def shift_scroll_off(self, event=None):
+        """Releasing shift stops prompter."""
+        self.running.set(False)
+        logging.info("shift_scroll_off")
+
+    def toggle_scroll(self):
+        """Toggle autoscroll."""
+        if self.scroller.running.get():
+            self.scroller.running.set(False)
+            logging.info("toggle_scroll OFF")
+        elif not self.monitor.editable.get():
+            self.scroller.running.set(True)
+            self.start_scroll()
+            logging.info("toggle_scroll ON")
+
+
+class AutoscrollBehavior:
     """Define range of speed values for autoscroll speed slider as a list."""
 
     def __init__(self, smin=0.1, smax=0.001, steps=101, *args, **kwargs):
@@ -159,10 +194,10 @@ class AutoscrollBehavior():
         # hard limit loop speed for safety.
         smin = self.limit(smin)
         smax = self.limit(smax)
-        mult = 10 # mult to scale this up for my uses.
+        mult = 10  # mult to scale this up for my uses.
 
         # Max pixels per second
-        xps  = 1 / smax
+        xps = 1 / smax
         inc = xps / steps
 
         # Make an empty list of correct length.

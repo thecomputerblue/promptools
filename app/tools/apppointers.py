@@ -1,5 +1,5 @@
 import tkinter as tk 
-import logging
+# import logging
 
 
 class AppPointers:
@@ -8,7 +8,7 @@ class AppPointers:
 
     def __init__(self, parent, *args, **kwargs):
 
-        logging.info('initializing AppPointers')
+        # logging.info('initializing AppPointers')
         self.parent = parent
         self.app = parent.app
         self.suite = self if parent.suite == None else parent.suite
@@ -44,18 +44,20 @@ class AppPointers:
     @property
     def loader(self):
         return self.app.tools.loader
+
+    @property
+    def scroller(self):
+        return self.app.tools.scroll
+
+    @property
+    def talent(self):
+        return self.app.talent
+
+    # TODO: RENAME MONITOR INSTANCES TO EDITOR
+    @property
+    def monitor(self):
+        return self.app.monitor
     
-
-
-
-
-    
-    
-    
-    
-"""
-AppPointers.__init__(self, parent)
-from tools.apppointers import AppPointers
-
-
-"""
+    @property
+    def editor(self):
+        return self.app.monitor

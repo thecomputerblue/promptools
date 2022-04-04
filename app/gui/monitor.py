@@ -32,8 +32,8 @@ class TalentMonitor(tk.Frame, AppPointers):
         self.song = None
         self.loaded = time.time()
         self.running = self.settings.scroll.running
-        self.editable = self.settings.editor.enabled
-        self.tfollow = self.settings.editor.talent_follows_monitor_when_editing
+        self.editable = self.settings.edit.enabled
+        self.tfollow = self.settings.edit.talent_follows_monitor_when_editing
         self.color_tags = self.settings.tags.types
 
         # pointers TODO: probably not explicitly needed
@@ -73,72 +73,8 @@ class TalentMonitor(tk.Frame, AppPointers):
         # TODO: move all this,should not live here. will need to update local fns.
         self.menu = RightClickMenu(self)
 
-        # bind callbacks
-
-        # key bindings
-
         # scrollbar
         self.scrollbar.config(command=self.text.yview)
-
-        # Key bindings to update talent view while editing.
-        self.text.bind("<KeyRelease>", self.refresh_while_editing)
-        # TODO: simpler method for this one
-        # self.text.bind("<Button-1>", self.update_talent_view)
-        self.text.bind("<MouseWheel>", self.update_talent_view)
-
-        #edit toggle
-        self.text.bind("<Command-e>", self.toggle_edit)
-        self.bind("<Command-e>", self.toggle_edit)
-
-        # self.text.bind("<space>", lambda _: self.toggle_scroll())
-        # Make it so clicking in the talent window gives frame focus.
-        self.bind("<Button-1>", lambda _: self.on_focus())
-        self.text.bind("<Button-1>", lambda _: self.on_focus())
-
-        # Scroll key bindings. These need to be bound to inner & outer frame
-        # TODO: figure if there is a way to bind just once
-        self.bind("<space>", lambda _: self.toggle_scroll())
-        self.text.bind("<space>", lambda _: self.toggle_scroll())
-
-        self.bind("<KeyPress-Shift_L>", lambda _: self.shift_scroll_on())
-        self.text.bind("<KeyPress-Shift_L>", lambda _: self.shift_scroll_on())
-
-        self.bind("<KeyRelease-Shift_L>", lambda _: self.shift_scroll_off())
-        self.text.bind("<KeyRelease-Shift_L>", lambda _: self.shift_scroll_off())
-
-        self.bind("<KeyPress-Shift_R>", lambda _: self.shift_scroll_on())
-        self.text.bind("<KeyPress-Shift_R>", lambda _: self.shift_scroll_on())
-
-        self.bind("<KeyRelease-Shift_R>", lambda _: self.shift_scroll_off())
-        self.text.bind("<KeyRelease-Shift_R>", lambda _: self.shift_scroll_off())
-
-        # chunk scroll controls
-        # TODO: these should all move...
-        chunk_scroll = self.app.tools.scroll.chunk_scroll
-        self.bind("<.>", lambda _: chunk_scroll(direction="down"))
-        self.text.bind("<.>", lambda _: chunk_scroll(direction="down"))
-
-        self.bind("<,>", lambda _: chunk_scroll(direction="up"))
-        self.text.bind("<,>", lambda _: chunk_scroll(direction="up"))
-
-        self.bind("</>", lambda _: chunk_scroll(direction="left"))
-        self.text.bind("</>", lambda _: chunk_scroll(direction="left"))
-
-        self.bind("<z>", lambda _: chunk_scroll(direction="right"))
-        self.text.bind("<z>", lambda _: chunk_scroll(direction="right"))
-
-        carriage_return = self.app.tools.scroll.carriage_return
-        self.bind("<Return>", lambda _: carriage_return())
-        self.text.bind("<Return>", lambda _: carriage_return())
-
-        # Binding to get coords of selected text. Will use this later for applying color tags.
-        self.text.bind("<ButtonRelease>", lambda _: self.selection_info())
-
-        self.text.bind("<Double-Button-1>", self.double_clicked_text)
-        # self.text.bind("<BackSpace>", self.on_backspace)
-
-        # binding for popup menu
-        self.text.bind("<Button-2>", self.menu.do_popup)
 
         # callbacks
         self.app.deck.add_callback('live', self.push)
@@ -260,55 +196,18 @@ class TalentMonitor(tk.Frame, AppPointers):
         scroll = -pixels if direction == "up" else pixels
         self.text.yview_scroll(scroll, "pixels")
 
-    def shift_scroll_on(self, event=None):
-        """Holding shift scrolls prompter."""
-
-        if self.editable.get():
-            return
-
-        self.running.set(True)
-        self.schedule_scroll()
-        logging.info("shift_scroll_on")
-
-    def shift_scroll_off(self, event=None):
-        """Releasing shift stops prompter."""
-        self.running.set(False)
-        logging.info("shift_scroll_off")
-
-    def toggle_scroll(self):
-        """Toggle autoscroll."""
-
-        if self.editable.get():
-            return
-
-        scroll = self.app.settings.scroll
-
-        if scroll.running.get():
-            scroll.running.set(False)
-            logging.info('toggle_scroll OFF')
-        else:
-            scroll.running.set(True)
-            self.schedule_scroll()
-            logging.info('toggle_scroll ON')
-
     def toggle_edit(self, event):
         """Toggle editing from keyboard shortcut."""
 
         # pass True so it knows to manually invert the setting.
         self.app.menu.on_edit_mode(keyboard=True)
 
-    def schedule_scroll(self):
-        """Run autoscroll."""
-
-        # TODO: pass this along instead of storing explicitly
-        self.app.tools.scroll.start_scroll()
-
     def update_talent_view(self, event):
         # Don't do this when the prompter is running!
         self.text.focus_set()
 
         # only update if prompter isn't running and edit is enabled.
-        if not self.running.get() and self.editable.get():
+        if not self.scroller.running.get() and self.editable.get():
             # delay slightly to guarantee accurate yview.
             self.app.after(10, self.app.talent.match_sibling_yview)
             logging.info('talent snapped to mon')
@@ -433,7 +332,7 @@ class RightClickMenu(tk.Frame):
 
         # main menu
         main_menu = tk.Menu(self.parent, title='Edit')
-        main_menu.add_checkbutton(label="Edit Mode", variable=self.settings.editor.enabled, command=self.on_edit_mode)
+        main_menu.add_checkbutton(label="Edit Mode", variable=self.settings.edit.enabled, command=self.on_edit_mode)
         main_menu.add_separator()
         main_menu.add_command(label="Cut")
         main_menu.add_command(label="Copy")
@@ -601,7 +500,7 @@ class Toolbar(tk.Frame):
             )
 
         # trace editmode and update view when it changes.
-        self.editmode = self.app.settings.editor.enabled
+        self.editmode = self.app.settings.edit.enabled
         self.editmode.trace("w", lambda *args: self.toggle_bar())
 
     def toggle_bar(self):

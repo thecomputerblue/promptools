@@ -134,7 +134,7 @@ class MenuBar(tk.Frame, AppPointers):
         special_menu.add_command(label="Venue",state="disabled")
 
         # edit menu contents
-        edit_toggle = self.settings.editor.enabled
+        edit_toggle = self.settings.edit.enabled
         edit_menu = tk.Menu(menu_bar)
         edit_menu.add_checkbutton(label="Edit Mode", accelerator="Cmd+e", variable=edit_toggle, command=self.on_edit_mode) # TODO: context specific text
         edit_menu.add_separator()
@@ -418,14 +418,14 @@ class MenuBar(tk.Frame, AppPointers):
 
         # TODO: warn that you can't load a new song
         # with this shortcut in edit mode.
-        if app.deck.cued and not app.settings.editor.enabled.get():
+        if app.deck.cued and not app.settings.edit.enabled.get():
             app.tools.loader.load_cued_to_live(event)
 
     def on_edit_mode(self, keyboard=False):
         """Toggles edit mode."""
         # TODO: can probably roll this and just look at event
 
-        editable = self.settings.editor.enabled
+        editable = self.settings.edit.enabled
         monitor = self.app.monitor
         running = self.settings.scroll.running
 
