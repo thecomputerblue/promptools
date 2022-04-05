@@ -37,11 +37,9 @@ class MainApplication(tk.Frame):
         self.root = frame
         self.frame = frame
         self.app = self
-        # lets gui components know they are suite level
         self.suite = None 
 
         # init program settings
-        # TODO: load previous settings from self.data
         self.settings = Settings(self)
 
         # tools for creating and moving data within the app, and scrolling
@@ -58,8 +56,19 @@ class MainApplication(tk.Frame):
         # sqlite3 / data mgmt
         self.data = AppData(self)
 
-        # ALL GUI ELEMENTS BELOW~~~~~
+        # gui
+        self._init_gui()
+        self._config_gui_columns()
+        self._config_window_properties()
 
+        # keyboard / mouse / etc. mappings
+        self.controls = AppControls(self)
+
+        # menubar at the top of the app
+        self.menu = MenuBar(self)
+
+    def _init_gui(self):
+        """Initialize all gui elements."""
         # 2nd window for talent
         self.talent = TalentWindow(self)
 
@@ -110,18 +119,14 @@ class MainApplication(tk.Frame):
         self.helper = HelperBox(self)
         self.helper.grid(row=3, column=0, sticky="nesw")
 
-        # keyboard / mouse / etc. mappings
-        self.controls = AppControls(self)
-
+    def _config_gui_columns(self):
         # configure rows / columns to get right weights
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=0)
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=5)
 
-        # menubar at the top of the app
-        self.menu = MenuBar(self)
-
+    def _config_window_properties(self):
         # Set window attributes & icon
         self.tk.eval("tk::PlaceWindow . center")
         self.frame.resizable(False, False)
