@@ -85,7 +85,7 @@ class SongBrowser(tk.PanedWindow, AppPointers):
         self.song = None
 
         self._data = None
-        self.data = self.tools.dbmanager.get_all_song_meta_from_db()
+        self.data = self.tools.db_interface.get_all_song_meta_from_db()
 
         # widgets
         self.top = SongViewTop(self)
@@ -285,7 +285,7 @@ class ScrolledSongTree(tk.Frame, AppPointers):
         song_id = self.tree.set(sel, column="song_id")
 
         # retrieve and assign dict of the song, triggering callbacks
-        song_dict = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
+        song_dict = self.app.tools.db_interface.make_song_dict_from_db(song_id=song_id)
 
         song = self.app.tools.factory.new_song(dictionary=song_dict)
         print(f'SONG CREATED IN ON_TREE_SELECT: {song.name}')

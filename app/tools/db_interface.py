@@ -171,7 +171,7 @@ class DatabaseManager:
         could lead to a gig in slot 0, which would be overwritten by
         a workspace save."""
 
-        logging.info(f"gen_db_defaults in dbmanager: {db}")
+        logging.info(f"gen_db_defaults in db_interface: {db}")
         with open_db(self.db) as cur:
             self.gen_workspace(cur)
 
@@ -224,7 +224,7 @@ class DatabaseManager:
 
     def clear_db_gig_id(self, gig_id):
         """Clear everything associated with a gig_id in the db."""
-        logging.info(f'clear_db_gig_id in dbmanager, gig_id={gig_id}')
+        logging.info(f'clear_db_gig_id in db_interface, gig_id={gig_id}')
         with open_db(self.db) as cur:
             cur.execute("DELETE FROM gigs WHERE gig_id=?", (gig_id,))
             cur.execute("DELETE FROM gig_setlists WHERE gig_id=?", (gig_id,))

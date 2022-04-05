@@ -20,7 +20,6 @@ def merge(defaults, custom):
     """Merge two settings dicts, prioritizing custom"""
 
     if not custom:
-        logging.info("no custom")
         return defaults
 
     merge = {}

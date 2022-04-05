@@ -161,8 +161,8 @@ class LibraryTab(tk.Frame, AppPointers):
             self.tree.delete(item)
 
     def fetch_library(self):
-        dbmanager = self.app.tools.dbmanager
-        return dbmanager.get_all_song_meta_from_db(option='library')
+        db_interface = self.app.tools.db_interface
+        return db_interface.get_all_song_meta_from_db(option='library')
 
     def filter_library(self, data, query):
         """Return data filtered by query."""
@@ -253,7 +253,7 @@ class ScrolledTreeview(tk.Frame, AppPointers):
 
     def gen_song_from_sel(self, sel):
         song_id = self.tree.set(sel, column="song_id")
-        song_data = self.app.tools.dbmanager.make_song_dict_from_db(song_id=song_id)
+        song_data = self.app.tools.db_interface.make_song_dict_from_db(song_id=song_id)
         return self.app.tools.factory.new_song(dictionary=song_data)
 
 

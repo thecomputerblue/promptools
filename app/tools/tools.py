@@ -3,7 +3,7 @@ from tools.transposer import Transposer
 from tools.loader import LoadTool
 from tools.scroll import ScrollTool
 from tools.screens import Screens
-from tools.dbmanager import DatabaseManager
+from tools.db_interface import DatabaseManager
 from tools.guitools import GuiTools
 from tools.helper import Helper 
 
@@ -21,6 +21,6 @@ class AppTools():
         self.scroll = ScrollTool(app)
         # tool for loading songs between frames
         self.loader = LoadTool(app)
-        self.dbmanager = DatabaseManager(app)
+        self.db_interface = DatabaseManager(app)
         self.gui = GuiTools(app)
         self.helper = Helper(app)

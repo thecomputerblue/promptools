@@ -171,7 +171,7 @@ class GigData:
         self.load(gig_id=0)
 
     def dump(self, workspace=False):
-        self.app.tools.dbmanager.dump_gig(gig=self, workspace=False)
+        self.app.tools.db_interface.dump_gig(gig=self, workspace=False)
 
     @refresh
     def clear(self):
@@ -206,7 +206,7 @@ class GigData:
             logging.warning('Attempted load_gig without valid kwarg!!')
 
     def load_with_gig_id(self, gig_id: int):
-        gig_data = self.app.tools.dbmanager.make_gig_dict(gig_id)
+        gig_data = self.app.tools.db_interface.make_gig_dict(gig_id)
         self.load_from_gig_data(gig_data)
 
     @refresh

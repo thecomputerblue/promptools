@@ -106,11 +106,6 @@ class MainApplication(tk.Frame):
         self.collections = CollectionsSuite(self)
         self.collections.grid(row=0, column=0, rowspan=3, sticky="nesw")
 
-        # make some shorthand names.
-        # TODO: best practice?
-        self.setlist = self.collections.setlist
-        self.pool = self.collections.pool
-
         # this will be a tooltip box in the bottom left corner of the app
         self.helper = HelperBox(self)
         self.helper.grid(row=3, column=0, sticky="nesw")
@@ -149,7 +144,7 @@ class MainApplication(tk.Frame):
     def save_state(self):
         """Save app state by dumping settings and gig data."""
         self.settings.dump_settings()
-        self.tools.dbmanager.dump_gig(self.app.data.gig, workspace=True)
+        self.tools.db_interface.dump_gig(self.app.data.gig, workspace=True)
 
 def main():
     """Application main loop."""

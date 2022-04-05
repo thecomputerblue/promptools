@@ -17,8 +17,6 @@ class MenuBar(tk.Frame, AppPointers):
         tk.Frame.__init__(self, parent.frame)
         AppPointers.__init__(self, parent)
 
-        self.setlist = self.app.collections.setlist
-
         menu_bar = tk.Menu(self.master)
         self.master.config(menu=menu_bar)
 
@@ -349,7 +347,7 @@ class MenuBar(tk.Frame, AppPointers):
 
     def dump_setlist(self):
         """Temporary test function, dumps setlist collection to db."""
-        self.app.tools.dbmanager.dump_setlist(self.app.data.setlists.live)
+        self.app.tools.db_interface.dump_setlist(self.app.data.setlists.live)
 
     def reload_setlist(self):
         """Temporary test function, recovers setlist colelction from db, overwriting current."""
@@ -450,7 +448,7 @@ class MenuBar(tk.Frame, AppPointers):
         """Delete orphaned songs from library."""
         # TODO: popup confirmation
         # TODO: fn into the library manager
-        self.dbmanager.delete_orphaned_songs()
+        self.db_interface.delete_orphaned_songs()
 
 
 

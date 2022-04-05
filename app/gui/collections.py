@@ -20,11 +20,11 @@ class CollectionsSuite(tk.PanedWindow, AppPointers):
         AppPointers.__init__(self, parent)
 
         # make frames
-        self.pool = PoolAndSetlistsNotebook(self)
-        self.add(self.pool)
+        self.pool_and_setlists = PoolAndSetlistsNotebook(self)
+        self.add(self.pool_and_setlists)
 
-        self.setlist = SetlistFrame(self)
-        self.add(self.setlist)
+        self.live_setlist = SetlistFrame(self)
+        self.add(self.live_setlist)
 
         # reload collection data from db
         # self.app.data.reload_all_collections_from_db()

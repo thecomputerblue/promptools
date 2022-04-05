@@ -225,7 +225,7 @@ class LoadTool(AppPointers):
     def cue_from_library(self, tree_entry):
         """Cue a library song from a tree_entry."""
         
-        # get pass the tree_entry to the dbmanager, returning a song obj from lib
+        # get pass the tree_entry to the db_interface, returning a song obj from lib
         # push the song obj to deck
 
     def clone_tk_text(self, source, dest):

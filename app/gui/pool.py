@@ -28,13 +28,13 @@ class PoolAndSetlistsNotebook(ttk.Notebook, AppPointers):
 
         self.gig = self.app.data.gig
 
-        self.pool = PoolAndSetlistsFrame(self)
-        self.pool.pack(fill="both", expand=True)
-        self.add(self.pool, text="Song Pool")
+        self.pool_and_setlists = PoolAndSetlistsFrame(self)
+        self.pool_and_setlists.pack(fill="both", expand=True)
+        self.add(self.pool_and_setlists, text="Song Pool")
 
-        self.setlists = SetlistPage(self)
-        self.setlists.pack(fill="both", expand=True)
-        self.add(self.setlists, text="Setlists")
+        self.setlist_page = SetlistPage(self)
+        self.setlist_page.pack(fill="both", expand=True)
+        self.add(self.setlist_page, text="Setlists")
 
 class SetlistPage(tk.Frame, AppPointers):
     """Page for gig setlists."""

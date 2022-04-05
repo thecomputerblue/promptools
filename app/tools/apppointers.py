@@ -3,8 +3,10 @@ import tkinter as tk
 
 
 class AppPointers:
-    """Using multiple-inheritance, creates common interface in app modules
-    for accessing app components."""
+    """Multiple-inherit or instantiate this as an attribute
+    to give an object an interface for the rest of the app. Properties
+    within this class reduce the amount of dot notation to access nested
+    modules, and prevent accidental overwriting by the inheriting class."""
 
     def __init__(self, parent, *args, **kwargs):
 
@@ -12,10 +14,6 @@ class AppPointers:
         self.parent = parent
         self.app = parent.app
         self.suite = self if parent.suite == None else parent.suite
-
-    # storing shortcuts as properties so components can all initialize
-    # and call as needed, and so you can't overwrite these calls
-    # locally in the app components (raises an error if you try).
 
     @property
     def settings(self):
@@ -34,8 +32,8 @@ class AppPointers:
         return self.app.tools
 
     @property
-    def dbmanager(self):
-        return self.app.tools.dbmanager
+    def db_interface(self):
+        return self.app.tools.db_interface
 
     @property
     def helper(self):
@@ -61,3 +59,13 @@ class AppPointers:
     @property
     def editor(self):
         return self.app.monitor
+
+    @property
+    def setlists(self):
+        return self.app.collections.setlists
+
+    @property
+    def pool(self):
+        return self.app.collections.pool
+    
+    
