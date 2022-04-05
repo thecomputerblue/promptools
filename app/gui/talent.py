@@ -190,16 +190,17 @@ class TalentWindow(tk.Toplevel, AppPointers):
         )
 
 
-class PromptArrow(tk.Frame):
+class PromptArrow(tk.Frame, AppPointers):
     """Frame for scroll arrow."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
+        AppPointers.__init__(self, parent)
 
-        self.parent = parent
-        self.app = parent.app
-        self.settings = self.app.settings.arrow
-        # Sibling arrow for two-way positional update, not currently used...
+        # self.parent = parent
+        # self.app = parent.app
+        # self.settings = self.app.settings.arrow
+        # # Sibling arrow for two-way positional update, not currently used...
         self.sibling = None
 
         self.canvas = self.create_canvas(**kwargs)
@@ -219,9 +220,9 @@ class PromptArrow(tk.Frame):
             canvas=self.canvas,
             x=x,
             y=y,
-            color=self.settings.color.get(),
-            outline=self.settings.outline.get(),
-            borderwidth=self.settings.borderwidth.get(),
+            color=self.settings.arrow.color.get(),
+            outline=self.settings.arrow.outline.get(),
+            borderwidth=self.settings.arrow.borderwidth.get(),
         )
 
         # Make the canvas elements scale with the window.
@@ -236,7 +237,7 @@ class PromptArrow(tk.Frame):
         self.canvas.tag_bind("arrow", "<ButtonRelease-1>", self.drag_stop)
         self.canvas.tag_bind("arrow", "<B1-Motion>", self.drag)
 
-        self.settings.add_callback(self.color_arrow)
+        self.settings.arrow.add_callback(self.color_arrow)
 
     def create_canvas(self, *args, **kwargs):
         """Create the canvas."""
@@ -270,10 +271,15 @@ class PromptArrow(tk.Frame):
         # return arrow
 
     def color_arrow(self):
-        color = (self.settings.color.get(),)
-        outline = (self.settings.outline.get(),)
-        borderwidth = self.settings.borderwidth.get()
-        self.canvas.itemconfig("arrow", fill=color, outline=outline, width=borderwidth)
+        arrow = self.settings.arrow
+        color = (arrow.color.get(),)
+        outline = (arrow.outline.get(),)
+        borderwidth = arrow.borderwidth.get()
+        self.canvas.itemconfig(
+            "arrow",
+            fill=(arrow.color.get(),),
+            outline=(arrow.outline.get(),),
+            width=arrow.borderwidth.get())
 
     def drag_start(self, event):
         """Begining drag of an object"""

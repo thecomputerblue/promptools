@@ -552,7 +552,7 @@ class ArrowSettings(SettingsBaseClass):
         self.defaults = {
             "color": "#E44C62",
             "lighten": 0.5,
-            "borderwidth": 2,
+            "borderwidth": 4,
             "pos": 0.2,
             "scale": 1.0,
         }
@@ -570,7 +570,7 @@ class ArrowSettings(SettingsBaseClass):
         self.outline.set(colors.gen_outline_color(self.color.get(), self.lighten))
 
         self.borderwidth = tk.IntVar()
-        self.borderwidth.set(2)
+        self.borderwidth.set(inits.get("borderwidth"))
 
         self.pos = tk.DoubleVar()
         self.pos.set(0.2)
