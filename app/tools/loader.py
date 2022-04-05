@@ -3,19 +3,20 @@ from tools.song import Song
 from tkinter import font
 
 from tools.apppointers import AppPointers
+
+
 # helpers
 def unpack_pos(pos: str) -> list:
     """Convert tkinter pos to line and column integers.
     Does not subtract 1 (tkinter starts line count at 1)."""
-
     line, col = pos.split(".")
     return int(line), int(col)
 
 def pack_pos(line: int, col: int) -> str:
     """Merge line and column integers into tkinter format.
     Does NOT add 1, (tkinter start line count at 1)."""
-
     return str(line) + "." + str(col)
+
 
 class LoadTool(AppPointers):
     """Contain functions for loading songs between frames."""
@@ -31,9 +32,7 @@ class LoadTool(AppPointers):
             event = kwargs.get('event')
              # TODO: make sure event.widget is a listbox before trying to get curselection
             sel = event.widget.curselection() if event else None       
-
             method(self, *args, **kwargs)
-
             event.widget.selection_set(sel) if event else None
             event.widget.activate(sel) if event else None
 
@@ -213,13 +212,13 @@ class LoadTool(AppPointers):
     def show_colors(self, frame, song): 
 
         self.configure_text_tags(frame.text)
-        self.app.tools.transposer.show_colors_tk(frame, song)
+        self.tools.transposer.show_colors_tk(frame, song)
 
     def cue_from_file(self, filename=None):
         """Creates song obj from file and pushes to cue."""
 
-        file = self.app.browser.files.path
-        song = self.app.tools.factory.new_song(file=file)
+        file = self.gui.browser.files.path
+        song = self.tools.factory.new_song(file=file)
         self.app.deck.cued = song
 
     def cue_from_library(self, tree_entry):
@@ -262,8 +261,6 @@ class LoadTool(AppPointers):
     def get_key(self):
         """Return target key from transposer, or '0' if not enabled."""
         transposer = self.app.settings.transposer
-
         if transposer.enabled:
             return transposer.key.get()
-
         return '0'

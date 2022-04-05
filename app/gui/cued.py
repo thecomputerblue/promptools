@@ -10,7 +10,7 @@ class CuedUp(tk.Frame, AppPointers):
     # the preview frame.
 
     def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent.frame)
+        tk.Frame.__init__(self, parent)
         AppPointers.__init__(self, parent)
 
         # vars

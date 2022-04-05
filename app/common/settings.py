@@ -482,7 +482,9 @@ class FontSettings(SettingsBaseClass):
         properties = self.sub_merge(font)
         if not self.custom.get(font):
             self.custom[font] = {}
-        return Font(root=self.app, custom=self.custom.get(font), properties=properties)
+        return Font(
+            root=self.app.root, custom=self.custom.get(font), properties=properties
+        )
 
 
 class Font(tk.font.Font):

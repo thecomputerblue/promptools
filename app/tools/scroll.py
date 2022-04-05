@@ -59,14 +59,14 @@ class ScrollTool(AppPointers):
     def scroll_loop(self):
         """Schedulet the autoscroll based on rate slider."""
         if self.running.get():
-            self.app.talent.scroll() if self.pos != 0 else None
+            self.talent.scroll() if self.pos != 0 else None
             self.schedule_scroll()
-        elif self.app.settings.scroll.mon_snap.get():
-            self.app.monitor.match_sibling_yview()
+        elif self.settings.scroll.mon_snap.get():
+            self.monitor.match_sibling_yview()
 
     def scaled_sleep_time(self):
         """Sleep for the time set by the speed slider."""
-        rates = self.app.settings.scroll.rates
+        rates = self.settings.scroll.rates
         return int(rates[self.pos - 1]) if self.running else int(rates[-1])
 
     def start_scroll(self):
@@ -78,9 +78,9 @@ class ScrollTool(AppPointers):
     def schedule_scroll(self, delay_comp=True):
         """Schedule next scroll, accounting for latency in the after queue."""
         if delay_comp:
-            self.app.after(self.delay_comp(), self.scroll_loop)
+            self.gui.after(self.delay_comp(), self.scroll_loop)
         else:
-            self.app_after(self.scaled_sleep_time(), self.scroll_loop)
+            self.gui.after(self.scaled_sleep_time(), self.scroll_loop)
 
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""
@@ -123,15 +123,15 @@ class ScrollTool(AppPointers):
             chunk.enabled = True
 
             for i in range(0, duration, step):
-                app.after(i, talent.scroll, direction)
+                self.gui.after(i, talent.scroll, direction)
 
             # allow overlapping chunk scrolls as long as first is half done.
             # TODO: make this configurable
-            app.after(duration // 2, lambda: toggle(chunk))
+            self.gui.after(duration // 2, lambda: toggle(chunk))
 
             mon_snaps_to_talent_pos = app.settings.scroll.mon_snap.get()
             if mon_snaps_to_talent_pos:
-                app.after(duration, monitor.match_sibling_yview)
+                self.gui.after(duration, monitor.match_sibling_yview)
 
     # TODO: re-integrate the monitor refresh loop
     def monitor_refresh_loop(self):
@@ -146,7 +146,7 @@ class ScrollTool(AppPointers):
         if self.monitor_refresh_conditions():
             monitor.match_sibling_yview()
 
-        app.after(ms, self.monitor_refresh_loop)
+        self.gui.after(ms, self.monitor_refresh_loop)
 
     def monitor_refresh_conditions(self):
         """Conditions for monitor refresh loop to execute refresh."""

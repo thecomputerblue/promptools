@@ -2,6 +2,8 @@ import tkinter as tk
 import time
 import logging
 
+from tools.apppointers import AppPointers
+
 # helpers
 def strike(text):
     """Strikethru text."""
@@ -13,24 +15,15 @@ def number(n: int, name: str) -> str:
     # TODO: styles
     return '(' + str(n) + ') ' + name
 
-class SetlistFrame(tk.Frame):
+class SetlistFrame(tk.Frame, AppPointers):
     """Frame for showing the active setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
             self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
         )
-
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.suite = self
-        self.settings = self.app.settings.setlist
-        self.tools = self.app.tools.gui
-        self.gig = self.app.data.gig
-
-        # live setlist & songs
-        self.deck = self.app.deck
+        AppPointers.__init__(self, parent)
+        self.suite = self 
 
         # widgets
         self.header = SetlistHeader(self)
@@ -43,8 +36,8 @@ class SetlistFrame(tk.Frame):
         self.listbox.pack(side="top", fill="both", expand=True)
         self.listbox.bind("<<ListboxSelect>>", self.on_listbox_select)
 
-        self.controls = SetlistControlRow(self)
-        self.controls.pack(anchor="s", side="left", fill="both", expand=True)
+        self.control_row = SetlistControlRow(self)
+        self.control_row.pack(anchor="s", side="left", fill="both", expand=True)
 
         # popup menu
         self.menu = RightClickMenu(self)
@@ -58,13 +51,12 @@ class SetlistFrame(tk.Frame):
         self.make_listbox_strategies()
 
         # refresh once to show anything that was already loaded at init
-        self.listbox_update()
+        # self.listbox_update()
 
     # TODO: better method than a bunch of properties?
 
-    @property
-    def data(self):
-        return self.gig.setlists
+    def sync(self):
+        self.listbox_update()
 
     @property
     def pool(self):
@@ -88,9 +80,9 @@ class SetlistFrame(tk.Frame):
 
         def inner(self, *args, **kwargs):
 
-            sel = self.tools.get_sel(self.listbox)
+            sel = self.gui.get_sel(self.listbox)
             method(self, sel, *args, **kwargs)
-            self.tools.do_sel(self.listbox, sel) if sel is not None else None
+            self.gui.do_sel(self.listbox, sel) if sel is not None else None
 
         return inner
 
@@ -100,7 +92,7 @@ class SetlistFrame(tk.Frame):
         # TODO: move to guitools
 
         def inner(self, *args, **kwargs):
-            sel = self.tools.get_sel(self.listbox)
+            sel = self.gui.get_sel(self.listbox)
             if sel is None:
                 return
             method(self, sel, *args, **kwargs)
@@ -112,7 +104,7 @@ class SetlistFrame(tk.Frame):
 
         l = self.listbox
         sel = l.nearest(event.y)
-        self.tools.do_sel(self.listbox, sel)
+        self.gui.do_sel(self.listbox, sel)
         self.menu.do_popup(event, sel)
 
     @preserve_sel
@@ -136,7 +128,7 @@ class SetlistFrame(tk.Frame):
         dest = self.target_to_i(start_i=sel, target=target)
         self.gig.live_setlist.move(sel, dest)
         self.listbox_update()
-        self.tools.do_sel(self.listbox, dest)
+        self.gui.do_sel(self.listbox, dest)
 
     def target_to_i(self, start_i, target):
         """Convert a listbox target to an index."""
@@ -151,7 +143,7 @@ class SetlistFrame(tk.Frame):
     @pass_sel
     def on_toggle(self, sel, mark):
         """Toggle a songs presence within a marker list."""
-        self.data.toggle_mark(mark, self.songs[sel])
+        self.gig.toggle_mark(mark, self.songs[sel])
         self.listbox_update()
 
     @pass_sel
@@ -165,13 +157,13 @@ class SetlistFrame(tk.Frame):
         # TODO: this method will not work if you implement search
         # TODO: think of a way to automate this refresh callback
         self.deck.cued = self.songs[i] if self.songs else None
-        self.app.meta.song_detail.refresh_callback = self.listbox_update
+        self.gui.meta.song_detail.refresh_callback = self.listbox_update
 
     def make_listbox_strategies(self):
         """Define strategies for formatting listbox items."""
 
         # TODO: clunky...
-        colors = self.settings.colors
+        colors = self.settings.setlist.colors
         l = self.listbox
 
         self.listbox_strategies = {
@@ -219,16 +211,12 @@ class SetlistFrame(tk.Frame):
                 logging.info('color applied!')
                 break
 
-class SetlistHeader(tk.Frame):
+class SetlistHeader(tk.Frame, AppPointers):
     """Frame for the setlist header elements."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.suite = self.parent
+        AppPointers.__init__(self, parent)
 
         self.label = tk.Label(self, text="Active Setlist | ")
         self.label.pack(side="left", anchor="w", expand=True)
@@ -237,18 +225,12 @@ class SetlistHeader(tk.Frame):
         self.current.pack(side="right", anchor="w", expand=True)
 
 
-class SetlistControlRow(tk.Frame):
+class SetlistControlRow(tk.Frame, AppPointers):
     """Row for the setlist buttons for moving entries around."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-
-        # context
-        self.parent = parent
-        self.app = parent.app
-        self.settings = self.app.settings.setlist
-        self.suite = parent
-        self.tools = parent.tools
+        AppPointers.__init__(self, parent)
 
         # TODO: move these functions in?
         move = self.suite.move
@@ -294,10 +276,10 @@ class SetlistControlRow(tk.Frame):
         # lock
         # TODO: something funky in here... i think toggle_lock is getting the old
         # value instead of the newly assigned value in its conditional
-        self.locked = self.settings.locked
+        self.locked = self.settings.setlist.locked
         
         self.lock = tk.Label(self, text="\U0001F512" if self.locked.get() else "\U0001F513")
-        self.lock.bind("<Button-1>", lambda e: self.tools.toggle_lock(var=self.locked, label=self.lock, follow_fn=self.toggle_controls))
+        self.lock.bind("<Button-1>", lambda e: self.gui.toggle_lock(var=self.locked, label=self.lock, follow_fn=self.toggle_controls))
         self.lock.pack(side="right", anchor="e", expand=True)
         
         # TODO: hacky fix
@@ -354,7 +336,7 @@ class RightClickMenu(tk.Frame):
         """Construct menu when song is selected based on selection properties."""
 
         selection = self.sel
-        locked = self.suite.controls.locked.get()
+        locked = self.suite.control_row.locked.get()
 
         # context sensitive menu for selection
         strategies = {

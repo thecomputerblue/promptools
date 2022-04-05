@@ -22,9 +22,9 @@ def scrub_text(text):
 class BrowserSuite(tk.Frame, AppPointers):
     """Quick browser for files and the library database."""
 
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent.frame)
-        AppPointers.__init__(self, parent)
+    def __init__(self, gui, *args, **kwargs):
+        tk.Frame.__init__(self, gui.root)
+        AppPointers.__init__(self, gui)
 
         # search bar
         self.search = SearchBar(self)

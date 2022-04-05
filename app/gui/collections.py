@@ -9,15 +9,15 @@ class CollectionsSuite(tk.PanedWindow, AppPointers):
     """Paned frame for the song collections on the left side of the app.
     It shows the live setlist, and the gig song pool."""
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, gui, *args, **kwargs):
         tk.PanedWindow.__init__(self,
-            parent.frame,
+            gui.root,
             orient="vertical",
             sashwidth=5,
             bg="light blue",
             # showhandle=True
             )
-        AppPointers.__init__(self, parent)
+        AppPointers.__init__(self, gui)
 
         # make frames
         self.pool_and_setlists = PoolAndSetlistsNotebook(self)
@@ -28,3 +28,8 @@ class CollectionsSuite(tk.PanedWindow, AppPointers):
 
         # reload collection data from db
         # self.app.data.reload_all_collections_from_db()
+
+    def sync(self):
+        """Refresh views to match app state."""
+        self.pool_and_setlists.sync()
+        self.live_setlist.sync()

@@ -27,15 +27,15 @@ class TalentWindow(tk.Toplevel, AppPointers):
     """Class for the Talent POV, which should be identical to the TalentMonitor
     but scaled to full screen on a second screen."""
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, gui, *args, **kwargs):
         tk.Toplevel.__init__(
             self,
-            parent.frame,
+            gui.root,
             highlightthickness=10,
             highlightbackground="black",  # when frame is out of focus
             highlightcolor="black",
         )
-        AppPointers.__init__(self, parent)
+        AppPointers.__init__(self, gui)
 
         # context
         # self.parent = parent
@@ -125,7 +125,7 @@ class TalentWindow(tk.Toplevel, AppPointers):
         self.win_y = self.winfo_height()
 
     def match_sibling_yview(self):
-        mon_y = self.app.monitor.text.yview()
+        mon_y = self.monitor.text.yview()
         self.text.yview_moveto(mon_y[0])
 
     def esc_fs_toggle(self, event):
@@ -135,8 +135,8 @@ class TalentWindow(tk.Toplevel, AppPointers):
         """When editing monitor window, send the new text to this to update."""
         if self.frozen:
             return
-        loader = self.app.tools.loader
-        mon = self.app.monitor.text
+        loader = self.tools.loader
+        mon = self.monitor.text
         tal = self.text
         loader.clone_tk_text(mon, tal)
 

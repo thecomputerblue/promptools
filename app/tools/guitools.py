@@ -1,6 +1,8 @@
 import tkinter as tk 
-
 from tools.apppointers import AppPointers
+
+# TODO: with the gui now extracted to its own module, refactor these into the
+# gui module
 
 class GuiTools(AppPointers):
     """Class with generic methods for gui element manipulation. Using to avoid

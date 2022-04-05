@@ -5,7 +5,9 @@ import tkinter as tk
 from tkinter import ttk 
 import logging
 
-class GigDetailView(tk.Frame):
+from tools.apppointers import AppPointers
+
+class GigDetailView(tk.Frame, AppPointers):
     """Class for the setlist info box used in library
     and the right pane of the main window."""
 
@@ -15,7 +17,8 @@ class GigDetailView(tk.Frame):
             # relief="sunken",
             # borderwidth=2,
             )
-        self.app = parent.app
+        AppPointers.__init__(self, parent)
+
         self.song = parent.song
 
         # TODO: change to title

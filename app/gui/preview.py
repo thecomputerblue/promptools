@@ -1,18 +1,20 @@
 # preview the cued song
 
 import tkinter as tk
+from tools.apppointers import AppPointers
 
-class Preview(tk.Frame):
+class Preview(tk.Frame, AppPointers):
     """Frame for showing a preview of whatever is on deck to be prompted
     including any key changes."""
 
-    def __init__(self, parent, *args, **kwargs) -> None:
-        tk.Frame.__init__(self, parent.frame)
+    def __init__(self, gui, *args, **kwargs) -> None:
+        tk.Frame.__init__(self, gui.root)
+        AppPointers.__init__(self, gui)
 
-        # orient
-        self.parent = parent
-        self.app = parent
-        self.settings = parent.settings
+        # # orient
+        # self.parent = parent
+        # self.app = parent
+        # self.settings = parent.settings
 
         # vars
         self.song = None

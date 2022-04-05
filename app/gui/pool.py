@@ -26,8 +26,6 @@ class PoolAndSetlistsNotebook(ttk.Notebook, AppPointers):
             )
         AppPointers.__init__(self, parent)
 
-        self.gig = self.app.data.gig
-
         self.pool_and_setlists = PoolAndSetlistsFrame(self)
         self.pool_and_setlists.pack(fill="both", expand=True)
         self.add(self.pool_and_setlists, text="Song Pool")
@@ -35,6 +33,10 @@ class PoolAndSetlistsNotebook(ttk.Notebook, AppPointers):
         self.setlist_page = SetlistPage(self)
         self.setlist_page.pack(fill="both", expand=True)
         self.add(self.setlist_page, text="Setlists")
+
+    def sync(self):
+        self.pool_and_setlists.sync()
+        self.setlist_page.sync()
 
 class SetlistPage(tk.Frame, AppPointers):
     """Page for gig setlists."""
@@ -48,6 +50,9 @@ class SetlistPage(tk.Frame, AppPointers):
         self.dummy = tk.Label(self, text='implement setlists')
         self.dummy.pack()
 
+    def sync(self):
+        pass
+
 
 class PoolAndSetlistsFrame(tk.Frame, AppPointers):
     """Pane for showing the gig song pool and setlists."""
@@ -58,8 +63,6 @@ class PoolAndSetlistsFrame(tk.Frame, AppPointers):
         )
         AppPointers.__init__(self, parent)
         self.suite = self
-
-        self.gig = self.parent.gig
 
         # subframes
         self.header = PoolHeader(self)
@@ -90,13 +93,16 @@ class PoolAndSetlistsFrame(tk.Frame, AppPointers):
         self.gig.add_callback(self.listbox_update)
 
         # refresh once to show anything that was loaded at init.
-        self.listbox_update()
+        # self.listbox_update()
 
         # make strategies for updating listbox
         # TODO: implement colors
         # self.make_listbox_strategies()
 
     # TODO: better approach than a bunch of properties?
+
+    def sync(self): 
+        self.listbox_update()
 
     @property
     def pool(self):
@@ -251,7 +257,7 @@ class PoolAndSetlistsFrame(tk.Frame, AppPointers):
         # TODO: this method will not work if you implement search
         # TODO: think of a way to automate this refresh callback
         self.deck.cued = songs[i] if songs else None
-        self.app.meta.song_detail.refresh_callback = self.listbox_update
+        self.gui.meta.song_detail.refresh_callback = self.listbox_update
 
     def make_listbox_strategies(self):
         """Define strategies for formatting listbox items."""
@@ -357,9 +363,9 @@ class PoolControlRow(tk.Frame, AppPointers):
         # lock
         self.locked = tk.BooleanVar()
         self.lock = tk.Label(self)
-        self.lock.bind("<Button-1>", lambda e: self.tools.gui.toggle_lock(var=self.locked, label=self.lock))
+        self.lock.bind("<Button-1>", lambda e: self.gui.toggle_lock(var=self.locked, label=self.lock))
         # toggle to init TODO: hacky?
-        self.tools.gui.toggle_lock(var=self.locked, label=self.lock) 
+        # self.gui.toggle_lock(var=self.locked, label=self.lock) 
         self.lock.pack(side="right")
 
         # keep all buttons in a list for lock toggle fn

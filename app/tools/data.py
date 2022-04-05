@@ -9,7 +9,7 @@ class AppData(AppPointers):
     def __init__(self, app):
         AppPointers.__init__(self, app)
 
-        self.gig = GigData(self)
+        self.gigdata = GigData(self)
 
     @property
     def setlists(self):

@@ -5,7 +5,8 @@
 
 import tkinter as tk
 
-class ToolTip(object):
+class ToolTip: #(object) <- previously was importing from object,
+    # don't think this is needed in python 3.10
 
     def __init__(self, widget):
         self.widget = widget

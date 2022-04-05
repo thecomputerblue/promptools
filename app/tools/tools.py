@@ -22,5 +22,5 @@ class AppTools():
         # tool for loading songs between frames
         self.loader = LoadTool(app)
         self.db_interface = DatabaseManager(app)
-        self.gui = GuiTools(app)
+        # self.gui = GuiTools(app)
         self.helper = Helper(app)

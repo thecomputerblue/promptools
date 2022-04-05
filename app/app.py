@@ -24,20 +24,18 @@ from gui.bigbutton import PromptButton
 from gui.cued import CuedUp
 from gui.menu import MenuBar
 from gui.metapane import MetaSuite
-from gui.helper import HelperBox
+from gui.helpbox import HelpBox
 from gui.controls import AppControls
+from gui.gui import TkGui
 
-class MainApplication(tk.Frame):
+class MainApplication:
     """Class for the main application."""
 
-    def __init__(self, frame, *args, **kwargs) -> None:
-        tk.Frame.__init__(self, frame)
+    def __init__(self, root, *args, **kwargs) -> None:
 
-        # context
-        self.root = frame
-        self.frame = frame
         self.app = self
-        self.suite = None 
+        self.root = root
+        self.suite = None
 
         # init program settings
         self.settings = Settings(self)
@@ -56,16 +54,15 @@ class MainApplication(tk.Frame):
         # sqlite3 / data mgmt
         self.data = AppData(self)
 
-        # gui
-        self._init_gui()
-        self._config_gui_columns()
-        self._config_window_properties()
+        # all gui elements
+        self.gui = TkGui(app=self, root=root)
+        # initial sync with 
+        self.gui.sync()
 
         # keyboard / mouse / etc. mappings
         self.controls = AppControls(self)
 
-        # menubar at the top of the app
-        self.menu = MenuBar(self)
+        self._config_window_properties()
 
     def _init_gui(self):
         """Initialize all gui elements."""
@@ -76,6 +73,7 @@ class MainApplication(tk.Frame):
         self.monitor = TalentMonitor(self)
         self.monitor.grid(row=0, column=1, columnspan=2, sticky="nesw")
 
+        # big PROMPT button, to be made context sensitive, eventually
         self.bigbutton = PromptButton(self)
         self.bigbutton.grid(
             row=3,
@@ -116,8 +114,11 @@ class MainApplication(tk.Frame):
         self.collections.grid(row=0, column=0, rowspan=3, sticky="nesw")
 
         # this will be a tooltip box in the bottom left corner of the app
-        self.helper = HelperBox(self)
-        self.helper.grid(row=3, column=0, sticky="nesw")
+        self.helpbox = HelpBox(self)
+        self.helpbox.grid(row=3, column=0, sticky="nesw")
+
+        # menubar at the top of the app
+        self.menu = MenuBar(self)
 
     def _config_gui_columns(self):
         # configure rows / columns to get right weights
@@ -128,9 +129,9 @@ class MainApplication(tk.Frame):
 
     def _config_window_properties(self):
         # Set window attributes & icon
-        self.tk.eval("tk::PlaceWindow . center")
-        self.frame.resizable(False, False)
-        self.frame.iconbitmap("./assets/generic.ico")
+        self.root.tk.eval("tk::PlaceWindow . center")
+        self.root.resizable(False, False)
+        self.root.iconbitmap("./assets/generic.ico")
 
         # assign quit method
         self.root.protocol("WM_DELETE_WINDOW", self.quit_app)
@@ -162,7 +163,7 @@ def main():
 
     # TODO: decouple tkinter components from main app
     app = MainApplication(root)
-    app.mainloop()
+    app.gui.mainloop()
 
 
 if __name__ == "__main__":

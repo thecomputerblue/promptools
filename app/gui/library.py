@@ -9,9 +9,9 @@ from tools.apppointers import AppPointers
 class LibraryWindow(tk.Toplevel, AppPointers):
     """Class for the window for configuring program preferences."""
 
-    def __init__(self, parent, *args, **kwargs):
-        tk.Toplevel.__init__(self, parent.frame)
-        AppPointers.__init__(self, parent)
+    def __init__(self, gui, *args, **kwargs):
+        tk.Toplevel.__init__(self, gui.root)
+        AppPointers.__init__(self, gui)
 
         self.title("Library Manager")
 
@@ -23,13 +23,14 @@ class LibraryWindow(tk.Toplevel, AppPointers):
         win_h = 500
         self.geometry(f'{str(win_w)}x{str(win_h)}')
 
-        # TODO: stop window resizing
-        # self.resizable(width=False, height=False)
+        self.resizable(width=False, height=False)
 
         # always popup in center of operator window
-        x = int(self.app.winfo_screenwidth()/2 - win_w/2)
-        y = int(self.app.winfo_screenheight()/2 - win_h/2)
-        self.geometry(f'+{x}+{y}')
+        # x = int(self.gui.winfo_screenwidth()/2 - win_w/2)
+        # y = int(self.gui.winfo_screenheight()/2 - win_h/2)
+        # self.geometry(f'+{x}+{y}')
+        self.geometry(self.gui.screen_center(win_w, win_h))
+
 
         # destroy method 
         self.protocol("WM_DELETE_WINDOW",self.quit_window)
@@ -84,8 +85,8 @@ class SongBrowser(tk.PanedWindow, AppPointers):
 
         self.song = None
 
-        self._data = None
-        self.data = self.tools.db_interface.get_all_song_meta_from_db()
+        # self._data = None
+        self.song_data = self.tools.db_interface.get_all_song_meta_from_db()
 
         # widgets
         self.top = SongViewTop(self)
@@ -113,7 +114,7 @@ class SongViewTop(tk.Frame, AppPointers):
             )
         AppPointers.__init__(self, parent)
 
-        self.data = parent.data
+        self.song_data = parent.song_data
         self.song = parent.song
 
         # make sure to assign to self!!!
@@ -121,7 +122,7 @@ class SongViewTop(tk.Frame, AppPointers):
         self.tree = self.treeview.tree
 
         # dump library into tree
-        for i, meta in enumerate(self.data):
+        for i, meta in enumerate(self.song_data):
             song_id, lib_id, name, created, modified, comments, confidence, def_key = meta
             ordered = [song_id, lib_id, name, created, modified, confidence, def_key, comments]
             self.tree.insert(parent='', index="end", iid=i, values=ordered)
@@ -226,8 +227,8 @@ class SearchFilters(tk.Frame, AppPointers):
         self.confidence = tk.Checkbutton(self, text="Confidence")
         self.confidence.pack(side="left", anchor="w")
 
-        self.gig = tk.Checkbutton(self, text="Gig")
-        self.gig.pack(side="left", anchor="w")
+        self.gig_button = tk.Checkbutton(self, text="Gig")
+        self.gig_button.pack(side="left", anchor="w")
 
         self.toggle_all = tk.Button(self, text="Toggle All")
         self.toggle_all.pack(side="left", anchor="w")
@@ -309,7 +310,7 @@ class SongViewBottom(tk.Frame, AppPointers):
             )
         AppPointers.__init__(self, parent)
 
-        self.data = parent.data
+        self.song_data = parent.song_data
         self.song = parent.song
 
         self.cue_selection = tk.Checkbutton(
@@ -329,12 +330,12 @@ class SetlistBrowser(tk.Frame, AppPointers):
         AppPointers.__init__(self, parent)
 
         # widgets
-        self.setlists = tk.Listbox(
+        self.setlists_listbox = tk.Listbox(
             self,
             bg="lightgrey",
             fg="black",
             exportselection=False)
-        self.setlists.pack(side='left', fill='both', expand=True)
+        self.setlists_listbox.pack(side='left', fill='both', expand=True)
 
 
 class PoolBrowser(tk.Frame, AppPointers):
@@ -362,16 +363,13 @@ class GigBrowser(tk.Frame, AppPointers):
         tk.Frame.__init__(self, parent)
         AppPointers.__init__(self, parent)
 
-        self.app = parent.app
-        self.settings = parent.app.settings
-
         # widgets 
-        self.gigs = tk.Listbox(
+        self.gigs_list = tk.Listbox(
             self,
             bg="lightgrey",
             fg="black",
             exportselection=False)
-        self.gigs.pack(side='left', fill='both', expand=True)
+        self.gigs_list.pack(side='left', fill='both', expand=True)
 
         self.scrollbar = tk.Scrollbar(self, orient="vertical")
         self.scrollbar.pack(side="right", fill="y")

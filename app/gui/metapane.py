@@ -16,9 +16,9 @@ class MetaSuite(tk.PanedWindow, AppPointers):
     # TODO: maybe rename info suite
     # TODO: think I prefer this as a popup instead of constantly visible
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, gui, *args, **kwargs):
         tk.PanedWindow.__init__(self,
-            parent.frame,
+            gui.root,
             orient="vertical",
             sashwidth=5,
             borderwidth=5,
@@ -26,7 +26,7 @@ class MetaSuite(tk.PanedWindow, AppPointers):
             bg='pink',
             *args, **kwargs
             )
-        AppPointers.__init__(self, parent)
+        AppPointers.__init__(self, gui)
 
         # Current song, set, etc. whose info are being shown
         self.song = None

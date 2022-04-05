@@ -6,7 +6,7 @@ class TransposerWindow(tk.Toplevel, AppPointers):
     """Window for the Transposer tools."""
 
     def __init__(self, parent, *args, **kwargs):
-        tk.Toplevel.__init__(self, parent.app)
+        tk.Toplevel.__init__(self, parent)
         AppPointers.__init__(self, parent)
 
         self.parent = parent

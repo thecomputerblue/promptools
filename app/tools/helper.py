@@ -10,12 +10,13 @@ class Helper(AppPointers):
 	def __init__(self, app):
 		AppPointers.__init__(self, app)
 
-		self.stack = []
+		# TODO: stack
+		# self.stack = []
 
 	def popup(self, msg, dur=3000):
-		self.helper.popup(msg, dur)
+		self.gui.helpbox.popup(msg, dur)
 
 	def set(self, msg):
-		self.helper.set(msg)
+		self.gui.helpbox.set(msg)
 
 	# TODO: move dur to settings

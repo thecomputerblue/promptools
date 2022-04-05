@@ -13,9 +13,9 @@ from tools.apppointers import AppPointers
 class MenuBar(tk.Frame, AppPointers):
     """Class for Menu options."""
 
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent.frame)
-        AppPointers.__init__(self, parent)
+    def __init__(self, gui, *args, **kwargs):
+        tk.Frame.__init__(self, gui.root)
+        AppPointers.__init__(self, gui)
 
         menu_bar = tk.Menu(self.master)
         self.master.config(menu=menu_bar)
@@ -58,11 +58,10 @@ class MenuBar(tk.Frame, AppPointers):
 
         # main functions for shuttling songs around the app!
         file_menu.add_command(label="Add Song To Pool", accelerator="Cmd+o", command=self.on_add_song_to_pool)
-        self.app.bind_all("<Command-o>", lambda _: self.on_add_song_to_pool())
+
         file_menu.add_command(label="Add Song To Setlist", accelerator="Cmd+l", command=self.on_add_song_to_setlist)
-        self.app.bind_all("<Command-l>", lambda _: self.on_add_song_to_setlist())
+
         file_menu.add_command(label="Load Cued To Live", accelerator="Cmd+p", command=self.on_load_cued_to_live)
-        self.app.bind_all("<Command-p>", lambda event: self.on_load_cued_to_live(event))
 
         file_menu.add_separator()        
         file_menu.add_command(label="Import Song",state="disabled")
@@ -411,20 +410,18 @@ class MenuBar(tk.Frame, AppPointers):
 
         self.app.data.gig.live_setlist.add(live_song)
 
-    def on_load_cued_to_live(self, event):
-        app = self.app
-
-        # TODO: warn that you can't load a new song
-        # with this shortcut in edit mode.
-        if app.deck.cued and not app.settings.edit.enabled.get():
-            app.tools.loader.load_cued_to_live(event)
+    def on_load_cued_to_live(self):
+        if self.app.deck.cued and not self.app.settings.edit.enabled.get():
+            self.app.tools.loader.load_cued_to_live()
+        else:
+            self.helper.popup("Can't load a new song via shortcut in edit mode.")
 
     def on_edit_mode(self, keyboard=False):
         """Toggles edit mode."""
         # TODO: can probably roll this and just look at event
 
         editable = self.settings.edit.enabled
-        monitor = self.app.monitor
+        monitor = self.monitor
         running = self.settings.scroll.running
 
         # if the call originates from the keyboard, manually toggle.

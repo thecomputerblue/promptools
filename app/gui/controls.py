@@ -1,5 +1,4 @@
 # control mappings go here!
-import tkinter as tk
 import logging
 
 from tools.apppointers import AppPointers
@@ -11,8 +10,15 @@ class AppControls(AppPointers):
     def __init__(self, app):
         AppPointers.__init__(self, app)
 
+        self.init_global_controls(menu=self.app.gui.menu)
         self.init_talent_controls(talent=self.talent, scroller=self.scroller)
         self.init_monitor_controls(monitor=self.monitor, scroller=self.scroller)
+
+    def init_global_controls(self, menu):
+        """Controls that work anywhere in the app."""
+        self.gui.bind_all("<Command-o>", lambda _: menu.on_add_song_to_pool())
+        self.gui.bind_all("<Command-l>", lambda _: menu.on_add_song_to_setlist())
+        self.gui.bind_all("<Command-p>", lambda _: menu.on_load_cued_to_live())
 
     def init_talent_controls(self, talent, scroller):
         """Controls for the talent window."""

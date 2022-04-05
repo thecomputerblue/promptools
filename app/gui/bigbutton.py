@@ -5,16 +5,16 @@ from tools.apppointers import AppPointers
 class PromptButton(tk.Frame, AppPointers):
 	"""Class for the button that runs the teleprompter."""
 
-	def __init__(self, parent, *args, **kwargs):
+	def __init__(self, gui, *args, **kwargs):
 		"""Class for the big context sensitive button. Currently always prompts
 		whatever is previewed, will eventually react to context."""
-		tk.Frame.__init__(self, parent.frame,
+		tk.Frame.__init__(self, gui.root,
 			# highlightbackground='grey',
 			# highlightthickness=10,
 			borderwidth= 5,
 			relief='raised'
 			)
-		AppPointers.__init__(self, parent)
+		AppPointers.__init__(self, gui)
 
 		# big button
 		self.button = tk.Button(

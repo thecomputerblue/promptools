@@ -17,16 +17,16 @@ class TalentMonitor(tk.Frame, AppPointers):
     """Class for Text field that shows
     what the talent is seeing on the Teleprompter."""
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, gui, *args, **kwargs):
         tk.Frame.__init__(
             self,
-            parent.frame,
+            gui.root,
             highlightbackground="grey",  # when frame is out of focus
             highlightcolor="lightgreen",  # when frame is in focus
             highlightthickness=10,  # border width
             # background='black'
         )
-        AppPointers.__init__(self, parent)
+        AppPointers.__init__(self, gui)
 
         # relevant frame parameters
         self.song = None
@@ -143,8 +143,8 @@ class TalentMonitor(tk.Frame, AppPointers):
         if not self.song:
             return
 
-        live = self.app.data.gig.live_setlist.songs
-        markers = self.app.data.gig.markers
+        live = self.gig.live_setlist.songs
+        markers = self.gig.markers
 
         # tests for marking as played. if any return True, mark as played
         if self.song in live:
@@ -152,7 +152,7 @@ class TalentMonitor(tk.Frame, AppPointers):
 
             tests = (
             lambda:  self.elapsed_time() > self.settings.setlist.played_seconds.get(),
-            lambda: self.app.monitor.text.yview()[0] > self.settings.setlist.played_yview.get()
+            lambda: self.monitor.text.yview()[0] > self.settings.setlist.played_yview.get()
             )
 
             for test in tests:
@@ -200,7 +200,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         """Toggle editing from keyboard shortcut."""
 
         # pass True so it knows to manually invert the setting.
-        self.app.menu.on_edit_mode(keyboard=True)
+        self.gui.menu.on_edit_mode(keyboard=True)
 
     def update_talent_view(self, event):
         # Don't do this when the prompter is running!
@@ -209,7 +209,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         # only update if prompter isn't running and edit is enabled.
         if not self.scroller.running.get() and self.editable.get():
             # delay slightly to guarantee accurate yview.
-            self.app.after(10, self.app.talent.match_sibling_yview)
+            self.gui.after(10, self.talent.match_sibling_yview)
             logging.info('talent snapped to mon')
 
     def match_sibling_yview(self):
@@ -220,7 +220,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         # on monitor view for scrolling, always look at talent.
 
         # TODO: update reference to sibling.
-        talent_view = self.app.talent.text.yview()
+        talent_view = self.talent.text.yview()
 
         # get view area
         top, bottom = talent_view
@@ -228,7 +228,7 @@ class TalentMonitor(tk.Frame, AppPointers):
 
         self.text.yview_moveto(top)
 
-        # self.text.yview_moveto(self.app.talent.text.yview()[0])
+        # self.text.yview_moveto(self.talent.text.yview()[0])
 
     def refresh_while_editing(self, event):
 
@@ -238,11 +238,11 @@ class TalentMonitor(tk.Frame, AppPointers):
         # Dump monitor contents into talent window.
         # TODO: replace edited text only
         dump = self.text.dump("1.0", "end", tag=True, text=True)
-        self.app.talent.receive_edits(dump)
+        self.talent.receive_edits(dump)
 
         # TODO: toggle for follow behavior.
         if self.tfollow:
-            self.app.talent.match_sibling_yview()
+            self.talent.match_sibling_yview()
 
     @property
     def contents(self):
@@ -368,7 +368,7 @@ class RightClickMenu(tk.Frame):
 
         # get text frames
         mon_text = self.suite.text
-        talent_text = self.app.talent.text
+        talent_text = self.talent.text
         texts = [mon_text, talent_text]
 
         # if nothing is selected, select the cursor pos
@@ -421,7 +421,7 @@ class RightClickMenu(tk.Frame):
 
         # get text frames
         mon_text = self.suite.text
-        talent_text = self.app.talent.text
+        talent_text = self.talent.text
         texts = [mon_text, talent_text]
 
         # expand selection to whole word
@@ -447,7 +447,7 @@ class RightClickMenu(tk.Frame):
             text.config(state=state)
 
     def on_edit_mode(self):
-        self.app.menu.on_edit_mode()
+        self.gui.menu.on_edit_mode()
 
 
 class TagMenu(tk.Frame):
