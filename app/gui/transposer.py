@@ -10,7 +10,10 @@ class TransposerWindow(tk.Toplevel, AppPointers):
         AppPointers.__init__(self, parent)
 
         self.parent = parent
-        self.app = parent.app
+        self.app = parent.app # TODO: not needed? 
+        
+        # raise flag when the window is open    
+        self.settings.windows.transposer.set(True)
 
         # always top level window.
         self.attributes('-topmost', True)

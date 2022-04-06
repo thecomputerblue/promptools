@@ -1,6 +1,7 @@
 import logging
 
 from tools.apppointers import AppPointers
+from tools.history import SongHistory
 
 class SongDeck(AppPointers):
 	"""Implements an observer pattern so frames of the app
@@ -19,6 +20,8 @@ class SongDeck(AppPointers):
 		self._live = None
 		self._previous = None
 		self._focused = None
+		
+		self.history = SongHistory(app)
 
 		# refresh function assigned when a song is cued from pool / setlist 
 		self.refresh = None
@@ -80,6 +83,7 @@ class SongDeck(AppPointers):
 	@live.setter
 	def live(self, new):
 		self.previous = self._live
+		self.history.add(self._live)
 		self._live = new
 		self.push("live")
 

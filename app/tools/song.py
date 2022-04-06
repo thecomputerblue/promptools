@@ -484,6 +484,14 @@ class Song:
     def opened(self):
         return self.meta.opened
 
+    @property
+    def modified(self):
+        return self.meta.modified
+
+    @modified.setter 
+    def modified(self, new):
+        self.meta.modified = new
+    
     def transpose(self, transposer, target):
         """Circuitous method to call tranposer on the song."""
         transposer.transpose(song=self, target=target)
@@ -495,6 +503,11 @@ class Song:
         for i in range(len(tup)):
             output += tup[i][2]
         print(output)
+
+    def modified_stamp(self):
+        """Update the modified stamp."""
+        logging.info("updated 'modified' timestamp")
+        self.modified = timestamp()
 
 
 # TODO: dataclass?

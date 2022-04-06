@@ -8,6 +8,7 @@ import logging
 from gui.preferences import PreferencesWindow
 from gui.transposer import TransposerWindow
 from gui.library import LibraryWindow
+from gui.history import SongHistoryWindow
 from tools.apppointers import AppPointers
 
 class MenuBar(tk.Frame, AppPointers):
@@ -300,8 +301,8 @@ class MenuBar(tk.Frame, AppPointers):
         tool_menu = tk.Menu(menu_bar)
         tool_menu.add_cascade(label="Transposer", menu=transposer_menu, command=self.on_transposer_open)
         tool_menu.add_separator()
+        tool_menu.add_command(label="Song History", command=self.on_song_history_open)
         tool_menu.add_command(label="Batch Processor", state="disabled") # launch batch file processor
-        tool_menu.add_command(label="History", state="disabled")
         tool_menu.add_command(label="Debug Log", state="disabled")
 
         # build all the cascades last
@@ -385,9 +386,12 @@ class MenuBar(tk.Frame, AppPointers):
         self.talent_flag.set(4)
         self.app.talent.withdraw()
 
+    def on_song_history_open(self):
+        if not self.settings.windows.song_history.get():
+            self.song_history_window = SongHistoryWindow(self)
+
     def on_transposer_open(self):
         if not self.settings.windows.transposer.get():
-            self.settings.windows.transposer.set(True)
             self.transposer_window = TransposerWindow(self)
 
     def on_transposer_close(self):

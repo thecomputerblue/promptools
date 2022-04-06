@@ -26,11 +26,7 @@ class LibraryWindow(tk.Toplevel, AppPointers):
         self.resizable(width=False, height=False)
 
         # always popup in center of operator window
-        # x = int(self.gui.winfo_screenwidth()/2 - win_w/2)
-        # y = int(self.gui.winfo_screenheight()/2 - win_h/2)
-        # self.geometry(f'+{x}+{y}')
         self.geometry(self.gui.screen_center(win_w, win_h))
-
 
         # destroy method 
         self.protocol("WM_DELETE_WINDOW",self.quit_window)

@@ -14,19 +14,8 @@ from tools.data import AppData
 from tools.cache import Cache
 from tools.deck import SongDeck
 
-# gui components
-from gui.collections import CollectionsSuite
-from gui.browser import BrowserSuite
-from gui.talent import TalentWindow
-from gui.monitor import TalentMonitor
-from gui.preview import Preview
-from gui.bigbutton import PromptButton
-from gui.cued import CuedUp
-from gui.menu import MenuBar
-from gui.metapane import MetaSuite
-from gui.helpbox import HelpBox
-from gui.controls import AppControls
 from gui.gui import TkGui
+from gui.controls import AppControls
 
 class MainApplication:
     """Class for the main application."""
