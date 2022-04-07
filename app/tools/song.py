@@ -219,6 +219,7 @@ class SongFactory:
     def ingest_tk_text_dump_new(self, song, tk_text_dump):
         """Ingest from a text dump from a tktext widget. They dump a slightly
         different format from what Song stores so some prep is needed."""
+        # TODO: this function should be its own object. 
 
         def tagon_flag():
             """Update tag if word is a promptools tag type.

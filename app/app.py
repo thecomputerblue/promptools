@@ -22,6 +22,7 @@ class MainApplication:
 
     def __init__(self, root, *args, **kwargs) -> None:
 
+        
         self.app = self
         self.root = root
         self.suite = None
@@ -45,7 +46,7 @@ class MainApplication:
 
         # all gui elements
         self.gui = TkGui(app=self, root=root)
-        # initial sync with 
+        # push sync
         self.gui.sync()
 
         # keyboard / mouse / etc. mappings
@@ -53,74 +54,11 @@ class MainApplication:
 
         self._config_window_properties()
 
-    def _init_gui(self):
-        """Initialize all gui elements."""
-        # 2nd window for talent
-        self.talent = TalentWindow(self)
-
-        # main window widgets
-        self.monitor = TalentMonitor(self)
-        self.monitor.grid(row=0, column=1, columnspan=2, sticky="nesw")
-
-        # big PROMPT button, to be made context sensitive, eventually
-        self.bigbutton = PromptButton(self)
-        self.bigbutton.grid(
-            row=3,
-            column=1,
-            rowspan=1,
-            columnspan=2,
-            ipadx=0,
-            ipady=10,
-            sticky="nesw",
-            padx=5,
-            pady=5,
-        )
-
-        self.browser = BrowserSuite(self)
-        # self.browser = LibrarySuite(self) # this is the version that imports everything
-        self.browser.grid(
-            row=1,
-            column=1,
-            columnspan=1,
-            rowspan=2,
-            sticky="nesw",
-            padx=8,
-            pady=8,
-        )
-
-        # TODO: merge preview frame with cued since they will always live in that orientation
-        self.cued = CuedUp(self)
-        self.cued.grid(row=1, column=2, columnspan=1, sticky="nesw")
-
-        self.preview = Preview(self)
-        self.preview.grid(row=2, column=2, columnspan=1, sticky="nesw", padx=8, pady=8)
-
-        self.meta = MetaSuite(self)
-        self.meta.grid(row=0, column=3, sticky="nesw", rowspan=4) 
-
-        # setlist / song pool pane on the left
-        self.collections = CollectionsSuite(self)
-        self.collections.grid(row=0, column=0, rowspan=3, sticky="nesw")
-
-        # this will be a tooltip box in the bottom left corner of the app
-        self.helpbox = HelpBox(self)
-        self.helpbox.grid(row=3, column=0, sticky="nesw")
-
-        # menubar at the top of the app
-        self.menu = MenuBar(self)
-
-    def _config_gui_columns(self):
-        # configure rows / columns to get right weights
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=0)
-        self.columnconfigure(2, weight=1)
-        self.columnconfigure(3, weight=5)
-
     def _config_window_properties(self):
         # Set window attributes & icon
+        self.root.iconbitmap("./assets/generic.ico")
         self.root.tk.eval("tk::PlaceWindow . center")
         self.root.resizable(False, False)
-        self.root.iconbitmap("./assets/generic.ico")
 
         # assign quit method
         self.root.protocol("WM_DELETE_WINDOW", self.quit_app)

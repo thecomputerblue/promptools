@@ -283,6 +283,9 @@ class TalentMonitor(tk.Frame, AppPointers):
     def update_marks(self):
         self.app.setlist.update_marks()
 
+    def dump(self, tag=True) -> list:
+        """Dump the text widget to a list."""
+        return self.text.dump("1.0", "end", tag=tag, text=True)
 
 class RightClickMenu(tk.Frame):
     """Menu for when you right click within monitor frame."""
