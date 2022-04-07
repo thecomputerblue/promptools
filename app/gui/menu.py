@@ -10,6 +10,7 @@ from gui.transposer import TransposerWindow
 from gui.library import LibraryWindow
 from gui.history import SongHistoryWindow
 from tools.apppointers import AppPointers
+from gui.tempo import TempoToolWindow
 
 class MenuBar(tk.Frame, AppPointers):
     """Class for Menu options."""
@@ -302,6 +303,7 @@ class MenuBar(tk.Frame, AppPointers):
         tool_menu.add_cascade(label="Transposer", menu=transposer_menu, command=self.on_transposer_open)
         tool_menu.add_separator()
         tool_menu.add_command(label="Song History", command=self.on_song_history_open)
+        tool_menu.add_command(label="Tap Tempo", command=self.on_tempo_open)
         tool_menu.add_command(label="Batch Processor", state="disabled") # launch batch file processor
         tool_menu.add_command(label="Debug Log", state="disabled")
 
@@ -389,6 +391,12 @@ class MenuBar(tk.Frame, AppPointers):
     def on_song_history_open(self):
         if not self.settings.windows.song_history.get():
             self.song_history_window = SongHistoryWindow(self)
+
+    def on_tempo_open(self):
+        if not self.settings.windows.tempo.get():
+            logging.info('init tap tempo window')
+            self.tempo_window = TempoToolWindow(self)
+
 
     def on_transposer_open(self):
         if not self.settings.windows.transposer.get():

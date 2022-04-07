@@ -7,6 +7,7 @@ from tools.db_interface import DatabaseManager
 from tools.guitools import GuiTools
 from tools.helper import Helper 
 from tools.tk_text_interface import TkTextInterface
+from tools.tempo import TapTempo
 
 class AppTools():
     """Class for holding tools for the app.
@@ -40,3 +41,5 @@ class AppTools():
 
         # helpbox for tooltips & user-facing exceptions
         self.helper = Helper(app)
+
+        self.tempo = TapTempo(app)
