@@ -17,6 +17,7 @@ class SongHistoryWindow(tk.Toplevel, AppPointers):
         self._init_geometry()
         self._init_widgets()
         self._register_callbacks()
+        self.sync()
 
     def _init_config(self):
         """Initialize window config"""
@@ -77,23 +78,30 @@ class HistoryTreeview(tk.Frame, AppPointers):
 
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
-    def on_tree_select(self, event):
+    def on_tree_select(self, event) -> None:
         """Retrieve the selected song data to a dict."""
 
-        # get the selected row id
-        sel = self.tree.focus()
-        print(f'SELECTION IN HISTORY: {sel}')
+        # get the selected row id and convert to the index of the
+        # target song. since list is reversed, need to invert and
+        # subtract 1.
+        sel = -int(self.tree.focus()) - 1
         self.deck.cued = self.deck.history.fetch(sel)
 
     def clear_tree(self):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-    def sync(self):
+    def sync(self) -> None:
         self.clear_tree()
         history = self.deck.history.songs
-        if not history:
-            return 
+        self.populate_tree(self.format_history(history)) if history else None
+
+    def format_history(self, history) -> list:
+        """Pull + format song names + modified dates."""
         song_data = [(song.name, song.modified) for song in history]
+        song_data.reverse()
+        return song_data
+
+    def populate_tree(self, song_data) -> None:
         for i, song in enumerate(song_data):
             self.tree.insert(parent='', index="end", iid=i, values=song)
