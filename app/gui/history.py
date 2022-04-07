@@ -16,6 +16,7 @@ class SongHistoryWindow(tk.Toplevel, AppPointers):
         self._init_config()
         self._init_geometry()
         self._init_widgets()
+        self._register_callbacks()
 
     def _init_config(self):
         """Initialize window config"""
@@ -35,6 +36,13 @@ class SongHistoryWindow(tk.Toplevel, AppPointers):
         """Build window widgets."""
         self.treeview = HistoryTreeview(self)
         self.treeview.pack(expand=True, fill="both")
+
+    def _register_callbacks(self):
+        """Register to update when song updates."""
+        self.deck.add_callback('live', self.sync)
+
+    def sync(self):
+        self.treeview.sync()
 
     def quit_window(self):
         self.settings.windows.song_history.set(False) 
@@ -69,8 +77,6 @@ class HistoryTreeview(tk.Frame, AppPointers):
 
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
-        self.dump_history_to_tree()
-
     def on_tree_select(self, event):
         """Retrieve the selected song data to a dict."""
 
@@ -79,7 +85,12 @@ class HistoryTreeview(tk.Frame, AppPointers):
         print(f'SELECTION IN HISTORY: {sel}')
         self.deck.cued = self.deck.history.fetch(sel)
 
-    def dump_history_to_tree(self):
+    def clear_tree(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+    def sync(self):
+        self.clear_tree()
         history = self.deck.history.songs
         if not history:
             return 

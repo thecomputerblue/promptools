@@ -139,7 +139,7 @@ class MainApplication:
     def save_state(self):
         """Save app state by dumping settings and gig data."""
         self.settings.dump_settings()
-        self.tools.db_interface.dump_gig(self.app.data.gig, workspace=True)
+        self.tools.db_interface.dump_gig(self.data.gig, workspace=True)
 
 def main():
     """Application main loop."""
