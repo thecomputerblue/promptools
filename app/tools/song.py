@@ -33,8 +33,10 @@ class SongFactory:
         self.tagger = WordFactory()
         self.rtf_importer = RtfImporter()
 
-        # strategies for importing song text from different sources
+        # map kwargs to song construction strategies
+        # TODO: kinda hard to read...
         self.text_strategies = {
+
         lambda **kwargs: 'file' in kwargs: lambda song, **kwargs: 
         self.ingest_file_new(song, kwargs.get('file')),
 
@@ -49,10 +51,13 @@ class SongFactory:
 
         lambda **kwargs: 'dictionary' in kwargs: lambda song, **kwargs:
         self.ingest_song_dictionary(song, kwargs.get('dictionary'))
+
         }
 
+        # strategies for generating a name for a new song
         # TODO: probabl a less cluttered way to convey this
         self.naming_strategies = (
+
         (lambda song, string, name: name, 
             lambda song, string, name: name),
 

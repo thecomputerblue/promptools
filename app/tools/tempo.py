@@ -46,12 +46,12 @@ class TapTempo(AppPointers):
 
 		# number of taps needed to guess tempo
 		self.guess_at = 3
-		
+
 		# max number of taps used in tempo calc, 0 is unlimited
 		self.window = 6
 
 		# after self.clear_ms milliseconds, clear the taps buffer
-		self.reset_ms = 1500
+		self.reset_ms = 2000
 
 		# outer tempo ranges. readings over max halved until they're in tempo range.
 		self.tmin = 40

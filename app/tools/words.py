@@ -329,11 +329,9 @@ class WordFactory:
         """Get tuples of requested line neighbors."""
 
         linel = len(line)
-
         neighbors = []
         for n in requested:
             neighbors.append(line[n] if n <= linel and n >= 0 else False)
-
         return neighbors
 
     def ambiguous_digit(self, line, i, most, count):

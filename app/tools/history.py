@@ -30,10 +30,9 @@ class SongHistory(AppPointers):
 		dup.modified_stamp()
 		self._songs.append(dup)
 		self._limit()
-		self.log_names()
 
 	def _limit(self):
-		"""Limit song list."""
+		"""Limit number of songs stored in history. FIFO."""
 		if len(self.songs) > self.song_limit:
 			self._songs = self._songs[-self.song_limit:]
 
@@ -42,13 +41,13 @@ class SongHistory(AppPointers):
 			return
 		[c() for c in self.callbacks]
 
-	def log_names(self):
+	def log(self):
 		if not self.songs:
+			logging.info("Song History is empty.")
 			return
-		logging.info("SONG HISTORY IS:")
+		logging.info("Song History contains:")
 		for song in self.songs:
-			logging.info(song.name)
+			logging.info(f'    {song.name}')
 
 	def fetch(self, i):
-		print(i)
 		return deepcopy(self.songs[int(i)])
