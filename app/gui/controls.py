@@ -19,6 +19,7 @@ class AppControls(AppPointers):
         self.gui.bind_all("<Command-o>", lambda _: menu.on_add_song_to_pool())
         self.gui.bind_all("<Command-l>", lambda _: menu.on_add_song_to_setlist())
         self.gui.bind_all("<Command-p>", lambda _: menu.on_load_cued_to_live())
+        self.gui.bind_all("<Command-k>", lambda _: self.pp_style_fs_toggle())
 
     def init_talent_controls(self, talent, scroller):
         """Controls for the talent window."""
@@ -48,8 +49,8 @@ class AppControls(AppPointers):
         monitor.text.bind("<MouseWheel>", monitor.update_talent_view)
 
         #edit toggle
-        monitor.text.bind("<Command-e>", monitor.toggle_edit)
-        monitor.bind("<Command-e>", monitor.toggle_edit)
+        monitor.text.bind("<Command-e>", self.gui.menu.on_edit_mode)
+        monitor.bind("<Command-e>", self.gui.menu.on_edit_mode)
 
         # self.text.bind("<space>", lambda _: self.toggle_scroll())
         # Make it so clicking in the talent window gives frame focus.
@@ -97,3 +98,30 @@ class AppControls(AppPointers):
 
         # binding for popup menu
         monitor.text.bind("<Button-2>", monitor.menu.do_popup)
+
+    def pp_style_fs_toggle(self):
+        """Presentation prompter inspired fullscreen toggle. Automatically
+        switches off edit mode and goes full screen, or goes windowed and
+        switches on edit mode. On two-screen systems it will eventually NOT
+        toggle fullscreen on the talent screen, but instead toggle operator
+        modules so the edit view is large and uncluttered while prompting."""
+
+        self.pp_double() if self.app.tools.screens.are_multiple() else self.pp_single()
+
+    def pp_single(self):
+        logging.info('presentation prompter style toggle on 1 screen setup')
+        if self.talent.fullscreen.get():
+            self.talent.fullscreen.set(False)
+            self.monitor.editable.set(True)
+        else:
+            self.monitor.editable.set(False)
+            self.talent.fullscreen.set(True)
+        # if talent fullscreen:
+            # make windowed
+            # enable edit mode
+        # else:
+            # disable edit mode
+            # make fullscreen
+
+    def pp_double(self):
+        logging.info('presentation prompter style toggle on 2 screen setup')

@@ -13,6 +13,7 @@ from tools.apppointers import AppPointers
 def toggle_bool(arg):
     return not arg
 
+
 class TalentMonitor(tk.Frame, AppPointers):
     """Class for Text field that shows
     what the talent is seeing on the Teleprompter."""
@@ -39,7 +40,9 @@ class TalentMonitor(tk.Frame, AppPointers):
         # pointers TODO: probably not explicitly needed
         self.sel_start = None
         self.sel_end = None
-        self.cursor_pos = None # TODO: implement this can probably just call text directly
+        self.cursor_pos = (
+            None  # TODO: implement this can probably just call text directly
+        )
         self.selected_text = None
 
         self.toolbar = Toolbar(self)
@@ -77,8 +80,9 @@ class TalentMonitor(tk.Frame, AppPointers):
         self.scrollbar.config(command=self.text.yview)
 
         # callbacks
-        self.app.deck.add_callback('live', self.push)
+        self.app.deck.add_callback("live", self.push)
         self.settings.fonts.monitor.add_callback(self.refresh_font)
+        self.editable.trace("w", self.toggle_edit)
 
     def refresh_font(self):
         self.suite.text.tag_configure("size", font=self.settings.fonts.monitor)
@@ -99,7 +103,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         live = self.app.deck.live
         prev = self.app.deck.previous
         reset_view = False if live is prev else True
-        
+
         self.app.tools.loader.push(frame=self, song=live, reset_view=reset_view)
 
     @property
@@ -135,7 +139,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         # TODO: best
         self.song = factory.update_song(old=song, tk_text_dump=dump)
         # song = factory.update_song(old=song, tk_text_dump=dump)
-    
+
     def mark_played(self):
         """Mark song as played in setlist if it was loaded for
         enough time or yview is substantially below the top."""
@@ -148,16 +152,18 @@ class TalentMonitor(tk.Frame, AppPointers):
 
         # tests for marking as played. if any return True, mark as played
         if self.song in live:
-            logging.info('song and song in live')
+            logging.info("song and song in live")
 
             tests = (
-            lambda:  self.elapsed_time() > self.settings.setlist.played_seconds.get(),
-            lambda: self.monitor.text.yview()[0] > self.settings.setlist.played_yview.get()
+                lambda: self.elapsed_time()
+                > self.settings.setlist.played_seconds.get(),
+                lambda: self.monitor.text.yview()[0]
+                > self.settings.setlist.played_yview.get(),
             )
 
             for test in tests:
                 if test():
-                    markers['played'].append(self.song)
+                    markers["played"].append(self.song)
                     break
 
     def elapsed_time(self):
@@ -196,11 +202,17 @@ class TalentMonitor(tk.Frame, AppPointers):
         scroll = -pixels if direction == "up" else pixels
         self.text.yview_scroll(scroll, "pixels")
 
-    def toggle_edit(self, event):
+    def toggle_edit(self, event, *args):
         """Toggle editing from keyboard shortcut."""
 
-        # pass True so it knows to manually invert the setting.
-        self.gui.menu.on_edit_mode(keyboard=True)
+        if self.editable.get():
+            self.config(highlightcolor="yellow", highlightbackground="#6E5D00")
+            self.text.config(state="normal")
+            self.tools.scroll.running.set(False)
+        else:
+            self.config(highlightcolor="light green", highlightbackground="dark grey")
+            self.text.config(state="disabled")
+        self.on_focus()
 
     def update_talent_view(self, event):
         # Don't do this when the prompter is running!
@@ -210,7 +222,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         if not self.scroller.running.get() and self.editable.get():
             # delay slightly to guarantee accurate yview.
             self.gui.after(10, self.talent.match_sibling_yview)
-            logging.info('talent snapped to mon')
+            logging.info("talent snapped to mon")
 
     def match_sibling_yview(self):
         """Move monitor view to match talent view."""
@@ -287,6 +299,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         """Dump the text widget to a list."""
         return self.text.dump("1.0", "end", tag=tag, text=True)
 
+
 class RightClickMenu(tk.Frame):
     """Menu for when you right click within monitor frame."""
 
@@ -299,8 +312,8 @@ class RightClickMenu(tk.Frame):
         self.settings = self.app.settings
 
         # bookmark menu
-        special_menu = tk.Menu(self.parent, title='Special')
-        special_menu.add_command(label='Add Bookmark') # bookmark format: @B
+        special_menu = tk.Menu(self.parent, title="Special")
+        special_menu.add_command(label="Add Bookmark")  # bookmark format: @B
         # special_menu.add_command(label='Clear All Bookmarks')
         special_menu.add_separator()
         special_menu.add_command(label="City")
@@ -310,32 +323,48 @@ class RightClickMenu(tk.Frame):
         special_menu.add_command(label="Thanks")
 
         # tag menu
-        tag_menu = tk.Menu(self.parent, title='Tags')
-        tag_menu.add_command(label='Clear')
+        tag_menu = tk.Menu(self.parent, title="Tags")
+        tag_menu.add_command(label="Clear")
         tag_menu.add_separator()
-        tag_menu.add_command(label='Header', command=lambda: self.apply_tag(tag='header'))
-        tag_menu.add_command(label='Lyric', command=lambda: self.apply_tag(tag='lyric'))
-        tag_menu.add_command(label='BVs', command=lambda: self.apply_tag(tag='bvs'))
-        tag_menu.add_command(label='Chord', command=lambda: self.apply_tag(tag='chord'))
-        tag_menu.add_command(label='Key', command=lambda: self.apply_tag(tag='key'))
+        tag_menu.add_command(
+            label="Header", command=lambda: self.apply_tag(tag="header")
+        )
+        tag_menu.add_command(label="Lyric", command=lambda: self.apply_tag(tag="lyric"))
+        tag_menu.add_command(label="BVs", command=lambda: self.apply_tag(tag="bvs"))
+        tag_menu.add_command(label="Chord", command=lambda: self.apply_tag(tag="chord"))
+        tag_menu.add_command(label="Key", command=lambda: self.apply_tag(tag="key"))
 
         # style menu
-        style_menu = tk.Menu(self.parent, title='Style')
-        style_menu.add_command(label='Clear')
+        style_menu = tk.Menu(self.parent, title="Style")
+        style_menu.add_command(label="Clear")
         style_menu.add_separator()
-        style_menu.add_command(label='Bold', command=lambda: self.apply_style(style='bold'))
-        style_menu.add_command(label='Italic', command=lambda: self.apply_style(style='italic')) 
-        style_menu.add_command(label='Underline', command=lambda: self.apply_style(style='underline'))
-        style_menu.add_command(label='Strikethru', command=lambda: self.apply_style(style='strikethru'))
+        style_menu.add_command(
+            label="Bold", command=lambda: self.apply_style(style="bold")
+        )
+        style_menu.add_command(
+            label="Italic", command=lambda: self.apply_style(style="italic")
+        )
+        style_menu.add_command(
+            label="Underline", command=lambda: self.apply_style(style="underline")
+        )
+        style_menu.add_command(
+            label="Strikethru", command=lambda: self.apply_style(style="strikethru")
+        )
         style_menu.add_separator()
-        style_menu.add_command(label='Show')
-        style_menu.add_command(label='Hide')
+        style_menu.add_command(label="Show")
+        style_menu.add_command(label="Hide")
         style_menu.add_separator()
-        style_menu.add_command(label='Operator Only', command=lambda: self.apply_style(style='operator'))
+        style_menu.add_command(
+            label="Operator Only", command=lambda: self.apply_style(style="operator")
+        )
 
         # main menu
-        main_menu = tk.Menu(self.parent, title='Edit')
-        main_menu.add_checkbutton(label="Edit Mode", variable=self.settings.edit.enabled, command=self.on_edit_mode)
+        main_menu = tk.Menu(self.parent, title="Edit")
+        main_menu.add_checkbutton(
+            label="Edit Mode",
+            variable=self.settings.edit.enabled,
+            command=self.on_edit_mode,
+        )
         main_menu.add_separator()
         main_menu.add_command(label="Cut")
         main_menu.add_command(label="Copy")
@@ -376,22 +405,22 @@ class RightClickMenu(tk.Frame):
 
         # if nothing is selected, select the cursor pos
         if not start:
-            start = self.suite.text.index('insert')
-            end = self.suite.text.index('insert')
+            start = self.suite.text.index("insert")
+            end = self.suite.text.index("insert")
 
         # expand selection to whole word
-        start = mon_text.index(f'{start} wordstart')
-        end = mon_text.index(f'{end} wordend')
+        start = mon_text.index(f"{start} wordstart")
+        end = mon_text.index(f"{end} wordend")
 
         # TODO: on words with apostrophes like "don't" need to expand past
         # the apostrophe to cover whole word. Same goes for keys.
 
         for text in texts:
             # get editable state
-            state = text.cget('state')
+            state = text.cget("state")
 
             # make editable
-            text.config(state='normal')
+            text.config(state="normal")
 
             # remove any old tags
             self.remove_tags_in_selection(text=text, start=start, end=end)
@@ -428,17 +457,17 @@ class RightClickMenu(tk.Frame):
         texts = [mon_text, talent_text]
 
         # expand selection to whole word
-        start = mon_text.index(f'{start} wordstart')
-        end = mon_text.index(f'{end} wordend')
+        start = mon_text.index(f"{start} wordstart")
+        end = mon_text.index(f"{end} wordend")
 
-        logging.info(f'applying style {style} to text {contents}')
+        logging.info(f"applying style {style} to text {contents}")
 
         for text in texts:
             # get editable state
-            state = text.cget('state')
+            state = text.cget("state")
 
             # make editable
-            text.config(state='normal')
+            text.config(state="normal")
 
             # for styles, you don't want to remove old tags.
             # self.remove_tags_in_selection(text=text, start=start, end=end)
@@ -454,19 +483,19 @@ class RightClickMenu(tk.Frame):
 
 
 class TagMenu(tk.Frame):
-
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
 
         self.parent = parent
         self.app = parent.app
-        self.suite = parent.suite 
+        self.suite = parent.suite
 
-        menu = tk.Menu(self.parent, title='Tag')
+        menu = tk.Menu(self.parent, title="Tag")
 
 
 class TitleBar(tk.Frame):
     """Frame for the titlebar."""
+
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
 
@@ -474,48 +503,41 @@ class TitleBar(tk.Frame):
         self.app = parent.app
         self.suite = parent.suite
 
-        # widgets 
+        # widgets
         self.label = tk.Label(self, text="LIVE:")
         self.label.pack(side="left", anchor="w")
         self.name = tk.Label(self)
         self.name.pack(side="left", anchor="w", expand=True)
 
 
-class Toolbar(tk.Frame):
+class Toolbar(tk.Frame, AppPointers):
     """Holds the prompt and edit toolbars, showing one or the other
     depending on edit mode parameter."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
+        AppPointers.__init__(self, parent)
 
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-        self.settings = parent.settings
+        self.edit_toolbar = EditToolBar(self)
+        self.prompt_toolbar = PromptToolBar(self)
 
-        self.edit = EditToolBar(self)
-        self.prompt = PromptToolBar(self)
-
-        self.prompt.pack(
+        self.prompt_toolbar.pack(
             # fill="both",
             expand=False,
-            anchor="w"
-            )
+            anchor="w",
+        )
 
-        # trace editmode and update view when it changes.
-        self.editmode = self.app.settings.edit.enabled
-        self.editmode.trace("w", lambda *args: self.toggle_bar())
+        # refresh shown toolbar when edit mode changes
+        self.app.settings.edit.enabled.trace("w", lambda *args: self.toggle_bar())
 
     def toggle_bar(self):
         """Show the approrpiate toolbar depending on mode."""
-
-        # logging.info('EDIT TOGGLE triggered toggle_bar')
-        if self.editmode.get():
-            self.prompt.forget()
-            self.edit.pack()
+        if self.app.settings.edit.enabled.get():
+            self.prompt_toolbar.forget()
+            self.edit_toolbar.pack()
         else:
-            self.edit.forget()
-            self.prompt.pack()
+            self.edit_toolbar.forget()
+            self.prompt_toolbar.pack()
 
 
 class EditToolBar(tk.Frame):

@@ -32,3 +32,7 @@ class Screens():
         """Return secondary screen if one is attached, else primary."""
         # TODO: actually test that this isn't the primary
         return self.screens[-1]
+
+    def are_multiple(self):
+        self.scan()
+        return len(self.screens) > 1

@@ -430,30 +430,10 @@ class MenuBar(tk.Frame, AppPointers):
         else:
             self.helper.popup("Can't load a new song via shortcut in edit mode.")
 
-    def on_edit_mode(self, keyboard=False):
-        """Toggles edit mode."""
-        # TODO: can probably roll this and just look at event
-
-        editable = self.settings.edit.enabled
-        monitor = self.monitor
-        running = self.settings.scroll.running
-
-        # if the call originates from the keyboard, manually toggle.
-        if keyboard:
-            if editable.get():
-                editable.set(False)
-            else:
-                editable.set(True)
-
-        if editable.get():
-            # enable
-            monitor.config(highlightcolor="yellow", highlightbackground="#6E5D00")
-            monitor.text.config(state="normal")
-            running.set(False)
-        else:
-            # disable
-            monitor.config(highlightcolor="light green", highlightbackground="dark grey")
-            monitor.text.config(state="disabled")
+    def on_edit_mode(self, event=None):
+        """Toggle edit mode."""
+        logging.info('toggle edit')
+        self.monitor.editable.set(not self.monitor.editable.get())
 
     def delete_orphaned_songs(self):
         """Delete orphaned songs from library."""
