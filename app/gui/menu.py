@@ -9,8 +9,10 @@ from gui.preferences import PreferencesWindow
 from gui.transposer import TransposerWindow
 from gui.library import LibraryWindow
 from gui.history import SongHistoryWindow
-from tools.apppointers import AppPointers
 from gui.tempo import TempoToolWindow
+
+from tools.apppointers import AppPointers
+
 
 class MenuBar(tk.Frame, AppPointers):
     """Class for Menu options."""
@@ -37,7 +39,7 @@ class MenuBar(tk.Frame, AppPointers):
         workspace_menu.add_command(label="Reload",state="disabled")
         workspace_menu.add_separator()
         workspace_menu.add_checkbutton(label="Auto-Save On Exit",state="disabled")
-        # reload settings, 
+        # reload settings
         workspace_menu.add_checkbutton(label="Reload At Startup",state="disabled")
 
         # setlist cascade
@@ -149,11 +151,11 @@ class MenuBar(tk.Frame, AppPointers):
         # talent view menu
         self.talent_flag = tk.IntVar()
         talent_view_menu = tk.Menu(menu_bar)
-        talent_view_menu.add_checkbutton(label="Normal", onvalue=0, variable=self.talent_flag, command=self.on_normal)
-        talent_view_menu.add_checkbutton(label="Blank", onvalue=1, variable=self.talent_flag, command=self.on_blank)
-        talent_view_menu.add_checkbutton(label="Freeze", onvalue=2, variable=self.talent_flag, command=self.on_freeze)
-        talent_view_menu.add_checkbutton(label="Test", onvalue=3, variable=self.talent_flag, command=self.on_test)
-        talent_view_menu.add_checkbutton(label="Hide", onvalue=4, variable=self.talent_flag, command=self.on_hide)
+        talent_view_menu.add_checkbutton(label="Normal", onvalue=0, variable=self.talent_flag, command=self.on_normal,state="disabled")
+        talent_view_menu.add_checkbutton(label="Blank", onvalue=1, variable=self.talent_flag, command=self.on_blank,state="disabled")
+        talent_view_menu.add_checkbutton(label="Freeze", onvalue=2, variable=self.talent_flag, command=self.on_freeze,state="disabled")
+        talent_view_menu.add_checkbutton(label="Test", onvalue=3, variable=self.talent_flag, command=self.on_test,state="disabled")
+        talent_view_menu.add_checkbutton(label="Hide", onvalue=4, variable=self.talent_flag, command=self.on_hide,state="disabled")
         # minimize window
         # talent_view_menu.add_separator()
         # talent_view_menu.add_command(label="Settings")
