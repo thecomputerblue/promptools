@@ -17,12 +17,13 @@ from tools.deck import SongDeck
 from gui.gui import TkGui
 from gui.controls import AppControls
 
+
 class MainApplication:
     """Class for the main application."""
 
     def __init__(self, root, *args, **kwargs) -> None:
 
-        
+        # orientation pointers, used for tk & apppointer instances downstream
         self.app = self
         self.root = root
         self.suite = None
@@ -34,24 +35,29 @@ class MainApplication:
         # TODO: kinda convoluted struct
         self.tools = AppTools(self)
 
-        # track songs played / cued & manage callbacks
-        # TODO: seperate parts
+        # manage playlisting, play history, cue, etc. any song obj movement / assignment
+        # TODO: breakout these components as they become more comprehensive...
         self.deck = SongDeck(self)
 
-        # song cache, use weak references so old songs get gc'd
+        # tracks ALL song objects anywhere in the app. currently enforces stricter GC
+        # than python default by running frequent checks. by tracking all songs in one
+        # place i'll be able to update database references consistently when they change
+        # (ie. if a library ID changes it needs to be updated in all loaded song objects
+        # that use that ID.)
         self.cache = Cache(self)
 
         # sqlite3 / data mgmt
         self.data = AppData(self)
 
-        # all gui elements
+        # all tkinter elements
         self.gui = TkGui(app=self, root=root)
-        # push sync
+        # need to push sync after gui init so toggles, etc. match the program settings.
         self.gui.sync()
 
         # keyboard / mouse / etc. mappings
         self.controls = AppControls(self)
 
+        # grab bag of main window config
         self._config_window_properties()
 
     def _config_window_properties(self):
@@ -79,17 +85,20 @@ class MainApplication:
         self.settings.dump_settings()
         self.tools.db_interface.dump_gig(self.data.gig, workspace=True)
 
-def main():
-    """Application main loop."""
 
+def main():
+    # config logger
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
+    # tkinter gui root
     root = tk.Tk()  # change to tkd.Tk if you end up using dnd package!
     root.title("PrompTools alpha")
 
-    # TODO: decouple tkinter components from main app
+    # app instance
     app = MainApplication(root)
+
+    # tkinter mainloop
     app.gui.mainloop()
 
 
