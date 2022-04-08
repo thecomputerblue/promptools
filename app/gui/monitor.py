@@ -82,7 +82,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         # callbacks
         self.app.deck.add_callback("live", self.push)
         self.settings.fonts.monitor.add_callback(self.refresh_font)
-        self.editable.trace("w", self.toggle_edit)
+        self.editable.trace("w", self.after_edit_toggle)
 
     def refresh_font(self):
         self.suite.text.tag_configure("size", font=self.settings.fonts.monitor)
@@ -173,7 +173,7 @@ class TalentMonitor(tk.Frame, AppPointers):
     def double_clicked_text(self, event):
         """Force focus to text frame on double click."""
 
-        self.text.focus_set() if self.editable else None
+        self.text.focus_set() if self.editable.get() else None
 
     def selection_info(self):
         """For now, print information about selected text. Adapt this later to apply tags."""
@@ -202,7 +202,10 @@ class TalentMonitor(tk.Frame, AppPointers):
         scroll = -pixels if direction == "up" else pixels
         self.text.yview_scroll(scroll, "pixels")
 
-    def toggle_edit(self, event, *args):
+    def do_edit_toggle(self):
+        self.editable.set(not self.editable.get())
+
+    def after_edit_toggle(self, event, *args):
         """Toggle editing from keyboard shortcut."""
 
         if self.editable.get():

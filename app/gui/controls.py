@@ -49,8 +49,8 @@ class AppControls(AppPointers):
         monitor.text.bind("<MouseWheel>", monitor.update_talent_view)
 
         #edit toggle
-        monitor.text.bind("<Command-e>", self.gui.menu.on_edit_mode)
-        monitor.bind("<Command-e>", self.gui.menu.on_edit_mode)
+        monitor.text.bind("<Command-e>", lambda _: monitor.do_edit_toggle())
+        monitor.bind("<Command-e>", lambda _: monitor.do_edit_toggle())
 
         # self.text.bind("<space>", lambda _: self.toggle_scroll())
         # Make it so clicking in the talent window gives frame focus.

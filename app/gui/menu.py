@@ -137,7 +137,7 @@ class MenuBar(tk.Frame, AppPointers):
         # edit menu contents
         edit_toggle = self.settings.edit.enabled
         edit_menu = tk.Menu(menu_bar)
-        edit_menu.add_checkbutton(label="Edit Mode", accelerator="Cmd+e", variable=edit_toggle, command=self.on_edit_mode) # TODO: context specific text
+        edit_menu.add_checkbutton(label="Edit Mode", accelerator="Cmd+e", variable=edit_toggle) # TODO: context specific text
         edit_menu.add_separator()
         edit_menu.add_command(label="Undo",state="disabled")
         edit_menu.add_command(label="Redo",state="disabled")        
@@ -430,10 +430,6 @@ class MenuBar(tk.Frame, AppPointers):
         else:
             self.helper.popup("Can't load a new song via shortcut in edit mode.")
 
-    def on_edit_mode(self, event=None):
-        """Toggle edit mode."""
-        logging.info('toggle edit')
-        self.monitor.editable.set(not self.monitor.editable.get())
 
     def delete_orphaned_songs(self):
         """Delete orphaned songs from library."""
