@@ -234,16 +234,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         # the talent view is a dramatically different proportion. don't rely
         # on monitor view for scrolling, always look at talent.
 
-        # TODO: update reference to sibling.
-        talent_view = self.talent.text.yview()
-
-        # get view area
-        top, bottom = talent_view
-        # mid = (top + bottom) / 2
-
-        self.text.yview_moveto(top)
-
-        # self.text.yview_moveto(self.talent.text.yview()[0])
+        self.text.yview_moveto(self.talent.text.yview()[0])
 
     def refresh_while_editing(self, event):
 

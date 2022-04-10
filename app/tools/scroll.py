@@ -3,6 +3,7 @@ import logging
 
 from tools.apppointers import AppPointers
 
+# TODO: this probably belongs in gui since it is specific to tkinter gui
 # helpers
 def next_line(text):
     text.yview_scroll(1, "units")
@@ -60,6 +61,8 @@ class ScrollTool(AppPointers):
         """Schedulet the autoscroll based on rate slider."""
         if self.running.get():
             self.talent.scroll() if self.pos != 0 else None
+            # TODO: toggle for following line
+            # self.monitor.match_sibling_yview()
             self.schedule_scroll()
         elif self.settings.scroll.mon_snap.get():
             self.monitor.match_sibling_yview()
@@ -107,12 +110,10 @@ class ScrollTool(AppPointers):
         if self.settings.edit.enabled.get():
             return
 
-        app = self.app
-        settings = app.settings
-        scroll = app.settings.scroll
-        chunk = app.settings.chunk
-        talent = app.talent
-        monitor = app.monitor
+        scroll = self.settings.scroll
+        chunk = self.settings.chunk
+        talent = self.gui.talent
+        monitor = self.monitor
 
         if not chunk.enabled:
 
@@ -129,7 +130,7 @@ class ScrollTool(AppPointers):
             # TODO: make this configurable
             self.gui.after(duration // 2, lambda: toggle(chunk))
 
-            mon_snaps_to_talent_pos = app.settings.scroll.mon_snap.get()
+            mon_snaps_to_talent_pos = self.settings.scroll.mon_snap.get()
             if mon_snaps_to_talent_pos:
                 self.gui.after(duration, monitor.match_sibling_yview)
 
