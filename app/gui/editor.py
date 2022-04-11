@@ -31,8 +31,8 @@ class EditorMonitor(tk.Frame, AppPointers):
         AppPointers.__init__(self, gui)
 
         # relevant frame parameters
-        self.song = None
-        self.loaded = time.time()
+        self._song = None
+        self.load_time = time.time()
         self.running = self.settings.scroll.running
         self.editable = self.settings.edit.enabled
         self.tfollow = self.settings.edit.talent_follows_monitor_when_editing
@@ -81,7 +81,7 @@ class EditorMonitor(tk.Frame, AppPointers):
         self.scrollbar.config(command=self.text.yview)
 
         # callbacks
-        self.app.deck.add_callback("live", self.push)
+        self.deck.add_callback("live", self.push)
         self.settings.fonts.monitor.add_callback(self.refresh_font)
         self.editable.trace("w", self.after_edit_toggle)
 
@@ -100,12 +100,9 @@ class EditorMonitor(tk.Frame, AppPointers):
 
     def push(self):
         """Push live song to monitor with appropriate view reset."""
-
-        live = self.app.deck.live
-        prev = self.app.deck.previous
-        reset_view = False if live is prev else True
-
-        self.app.tools.loader.push(frame=self, song=live, reset_view=reset_view)
+        live, previous = self.deck.live, self.deck.previous 
+        reset_view = False if live is previous else True
+        self.loader.push(frame=self, song=live, reset_view=reset_view)
 
     @property
     def song(self):
@@ -114,72 +111,43 @@ class EditorMonitor(tk.Frame, AppPointers):
     @song.setter
     def song(self, new):
         """When you change the song, update loaded time."""
-
-        if not new:
-            self._song = None
-            return
-
         if new is self._song:
             return
-
-        self.mark_played()
+        self.try_mark_played(new)
+        self._update_titlebar(new)
+        self._update_load_time()
         self._song = new
-        self.loaded = time.time()
-        self.titlebar.name.config(text=new.name)
-        # self.app.setlist.listbox_update()
 
-    def commit_changes_to_song(self):
-        """Apply any edits made in monitor to the song object."""
-        # TODO: this is really roundabout and has been replaced... weed it out!
+    def _update_load_time(self):
+        self.load_time = time.time()
 
-        # song = self.app.deck.live
-        song = self.song
-        dump = self.text.dump("1.0", "end", tag=True, text=True)
-        factory = self.app.tools.factory
+    def _update_titlebar(self, song):
+        title = song.name if song else ""
+        self.titlebar.name.config(text=title)
 
-        # replace song object
-        # TODO: best
-        self.song = factory.update_song(old=song, tk_text_dump=dump)
-        # song = factory.update_song(old=song, tk_text_dump=dump)
-
-    def mark_played(self):
+    def try_mark_played(self, song):
         """Mark song as played in setlist if it was loaded for
         enough time or yview is substantially below the top."""
+        if song and self.play_checks():
+            self.gig.markers["played"].append(song)
 
-        if not self.song:
-            return
-
-        live = self.gig.live_setlist.songs
-        markers = self.gig.markers
-
-        # tests for marking as played. if any return True, mark as played
-        if self.song in live:
-            logging.info("song and song in live")
-
-            tests = (
-                lambda: self.elapsed_time()
-                > self.settings.setlist.played_seconds.get(),
-                lambda: self.monitor.text.yview()[0]
-                > self.settings.setlist.played_yview.get(),
-            )
-
-            for test in tests:
-                if test():
-                    markers["played"].append(self.song)
-                    break
+    def play_checks(self):
+        """Return True if conditions are met to mark song as played"""
+        if self.elapsed_time() > self.settings.setlist.played_seconds.get():
+            return True
+        if self.monitor.text.yview()[0] > self.settings.setlist.played_yview.get():
+            return True
 
     def elapsed_time(self):
         """Get elapsed time from last load action."""
-        return time.time() - self.loaded
+        return time.time() - self.load_time
 
     def double_clicked_text(self, event):
         """Force focus to text frame on double click."""
-
         self.text.focus_set() if self.editable.get() else None
 
     def selection_info(self):
         """For now, print information about selected text. Adapt this later to apply tags."""
-
         if self.text.tag_ranges(tk.SEL):
             first, last = tk.SEL_FIRST, tk.SEL_LAST
             # selected string, start and end coordinates
@@ -195,14 +163,6 @@ class EditorMonitor(tk.Frame, AppPointers):
             self.sel_end = None
 
         return (self.sel_start, self.sel_end, self.selected_text)
-
-    def y_advance(self, direction="down"):
-        """Advance scroll based on pixels size."""
-
-        # TODO: i think this is duplicated somewhere...
-        pixels = self.settings.scroll.pixels
-        scroll = -pixels if direction == "up" else pixels
-        self.text.yview_scroll(scroll, "pixels")
 
     def do_edit_toggle(self):
         self.editable.set(not self.editable.get())
@@ -231,11 +191,9 @@ class EditorMonitor(tk.Frame, AppPointers):
 
     def match_sibling_yview(self):
         """Move monitor view to match talent view."""
-
         # TODO: rounding errors cause this to get inaccurate, especially when
         # the talent view is a dramatically different proportion. don't rely
         # on monitor view for scrolling, always look at talent.
-
         self.text.yview_moveto(self.talent.text.yview()[0])
 
     def match_target_yview(self, target):
@@ -243,18 +201,15 @@ class EditorMonitor(tk.Frame, AppPointers):
         self.text.yview_moveto(target)     
 
     def refresh_while_editing(self, event):
+        """Brute force talent refresh. Will completely clear and reload talent
+        window every time an edit is made in editor. As text is lightweight,
+        this is inefficient but works fine. Eventually do this more elegantly."""
 
         if not self.editable.get():
             return
-
-        # Dump monitor contents into talent window.
-        # TODO: replace edited text only
         dump = self.text.dump("1.0", "end", tag=True, text=True)
         self.talent.receive_edits(dump)
-
-        # TODO: toggle for follow behavior.
-        if self.tfollow:
-            self.talent.match_sibling_yview()
+        self.talent.match_sibling_yview() if self.tfollow else None
 
     @property
     def contents(self):
@@ -264,36 +219,12 @@ class EditorMonitor(tk.Frame, AppPointers):
 
     @contents.setter
     def contents(self, new):
-        # Get monitor edit state.
+        # TODO: move edit toggle to decorator
         edit_state = self.text.cget("state")
-
-        # Enable editing to clear field.
         self.text.config(state="normal")
-
-        # Clear old monitor contents.
         self.text.delete("1.0", "end")
-
         self.app.active_text.set(new)
-
-        # Reset monitor edit state
-        # TODO: decorator
         self.text.config(state=edit_state)
-
-    def add_to_list(self, target):
-        """Add current song to target list (collection)."""
-
-        if not self.song:
-            return
-        factory = self.app.tools.factory
-        self.commit_changes_to_song()
-        target.add_song(song=self.song)
-
-    def get_info(self):
-        """Get info from current song obj."""
-        return self.song.meta.info if self.song else None
-
-    def update_marks(self):
-        self.app.setlist.update_marks()
 
     def dump(self, tag=True) -> list:
         """Dump the text widget to a list."""

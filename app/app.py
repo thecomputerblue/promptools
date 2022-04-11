@@ -62,7 +62,6 @@ class MainApplication:
         # keyboard / mouse / etc. mappings
         self.controls = AppControls(self)
 
-        # grab bag of main window config
         self._config_window_properties()
 
     def _config_window_properties(self):
@@ -96,7 +95,7 @@ def main():
     logger.setLevel(logging.INFO)
 
     # tkinter gui root
-    root = tk.Tk()  # change to tkd.Tk if you end up using dnd package!
+    root = tk.Tk()
     root.title("PrompTools alpha")
 
     # app instance
