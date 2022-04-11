@@ -1,5 +1,6 @@
 import datetime
 import logging
+import time
 
 from tools.apppointers import AppPointers
 
@@ -61,8 +62,6 @@ class ScrollTool(AppPointers):
         """Schedulet the autoscroll based on rate slider."""
         if self.running.get():
             self.talent.scroll() if self.pos != 0 else None
-            # TODO: toggle for following line
-            # self.monitor.match_sibling_yview()
             self.schedule_scroll()
         elif self.settings.scroll.mon_snap.get():
             self.monitor.match_sibling_yview()

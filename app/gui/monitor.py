@@ -35,7 +35,7 @@ class TalentMonitor(tk.Frame, AppPointers):
         self.running = self.settings.scroll.running
         self.editable = self.settings.edit.enabled
         self.tfollow = self.settings.edit.talent_follows_monitor_when_editing
-        self.color_tags = self.settings.tags.types
+        self.color_tags = self.settings.tags.tags
 
         # pointers TODO: probably not explicitly needed
         self.sel_start = None
@@ -236,6 +236,10 @@ class TalentMonitor(tk.Frame, AppPointers):
 
         self.text.yview_moveto(self.talent.text.yview()[0])
 
+    def match_target_yview(self, target):
+        """Genericized match_sibling_yview method requiring target yview arg."""
+        self.text.yview_moveto(target)     
+
     def refresh_while_editing(self, event):
 
         if not self.editable.get():
@@ -294,16 +298,12 @@ class TalentMonitor(tk.Frame, AppPointers):
         return self.text.dump("1.0", "end", tag=tag, text=True)
 
 
-class RightClickMenu(tk.Frame):
+class RightClickMenu(tk.Frame, AppPointers):
     """Menu for when you right click within monitor frame."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-        self.settings = self.app.settings
+        AppPointers.__init__(self, parent)
 
         # bookmark menu
         special_menu = tk.Menu(self.parent, title="Special")
