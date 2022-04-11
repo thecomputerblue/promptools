@@ -6,7 +6,7 @@ import logging
 from gui.collections import CollectionsSuite
 from gui.browser import BrowserSuite
 from gui.talent import TalentWindow
-from gui.monitor import TalentMonitor
+from gui.editor import EditorMonitor
 from gui.preview import Preview
 from gui.bigbutton import PromptButton
 from gui.cued import CuedUp
@@ -28,7 +28,7 @@ class TkGui(tk.Frame):
         self.talent = TalentWindow(self)
 
         # main window widgets
-        self.monitor = TalentMonitor(self)
+        self.monitor = EditorMonitor(self)
         self.monitor.grid(row=0, column=1, columnspan=2, sticky="nesw")
 
         # big PROMPT button, to be made context sensitive, eventually

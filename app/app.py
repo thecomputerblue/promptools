@@ -28,6 +28,11 @@ class MainApplication:
         self.root = root
         self.suite = None
 
+        # flag for state changes in workspace. not implemented yet. TODO
+        # might be a better place to store these kinds of flags, maybe
+        # in settings, maybe not.
+        self._anything_changed = True
+
         # init program settings
         self.settings = Settings(self)
 
@@ -61,26 +66,25 @@ class MainApplication:
         self._config_window_properties()
 
     def _config_window_properties(self):
-        # Set window attributes & icon
+        """Grab bag of window config."""
         self.root.iconbitmap("./assets/generic.ico")
         self.root.tk.eval("tk::PlaceWindow . center")
         self.root.resizable(False, False)
+        self.root.protocol("WM_DELETE_WINDOW", self.try_quit_app)
 
-        # assign quit method
-        self.root.protocol("WM_DELETE_WINDOW", self.quit_app)
-
-    def quit_app(self):
+    def try_quit_app(self):
         """What to do when you quit."""
+        self.ask_save() if self._anything_changed else self.root.destroy()
 
-        # TODO: see if state has changed since last save, only show message if it has.
+    def ask_save(self):
         choice = messagebox.askyesnocancel("Save State","Save state before quitting?")
         if choice is None:
             return
         elif choice == True:
-            self.save_state()
+            self.do_save()
         self.root.destroy()
 
-    def save_state(self):
+    def do_save(self):
         """Save app state by dumping settings and gig data."""
         self.settings.dump_settings()
         self.tools.db_interface.dump_gig(self.data.gig, workspace=True)

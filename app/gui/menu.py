@@ -359,7 +359,7 @@ class MenuBar(tk.Frame, AppPointers):
         self.app.data.reload_collection_from_db(collection)
 
     def on_exit(self):
-        self.app.quit_app()
+        self.app.try_quit_app()
 
     def on_talent_fullscreen(self):
         # TODO: fullscreen state can get decoupled from the checkbox, write in variable updates.

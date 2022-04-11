@@ -24,7 +24,7 @@ def fs_coords(operator, talent):
 
 
 class TalentWindow(tk.Toplevel, AppPointers):
-    """Class for the Talent POV, which should be identical to the TalentMonitor
+    """Class for the Talent POV, which should be identical to the EditorMonitor
     but scaled to full screen on a second screen."""
 
     def __init__(self, gui, *args, **kwargs):

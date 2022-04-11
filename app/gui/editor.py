@@ -15,7 +15,7 @@ def toggle_bool(arg):
     return not arg
 
 
-class TalentMonitor(tk.Frame, AppPointers):
+class EditorMonitor(tk.Frame, AppPointers):
     """Class for Text field that shows
     what the talent is seeing on the Teleprompter."""
 
