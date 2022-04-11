@@ -84,6 +84,7 @@ class SongDeck(AppPointers):
     def live(self, new):
         # dump edits back to live before unloading
         if self._live:
+            logging.info('dumping live text')
             self.dump_live_text()
         self.previous = self._live
         self.history.add(self._live)
@@ -119,11 +120,6 @@ class SongDeck(AppPointers):
 
     def dump_live_text(self):
         """Dump the editor text back to the song object"""
-        # TODO: HACK - this is a temporary fix until i refactor factory/ loader
-        # self.tools.factory.ingest_tk_text_dump_new(
-        #     song=self._live,
-        #     tk_text_dump=self.monitor.dump()
-        #     )
         self.tools.tk_text_interface.tkt_into_song(
             song=self.live,
             tkt=self.monitor.dump())

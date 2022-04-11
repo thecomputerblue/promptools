@@ -52,6 +52,12 @@ class AppControls(AppPointers):
         monitor.text.bind("<Command-e>", lambda _: monitor.do_edit_toggle())
         monitor.bind("<Command-e>", lambda _: monitor.do_edit_toggle())
 
+        monitor.text.bind("<Command-r>", lambda _: monitor.try_reload_song())
+        monitor.bind("<Command-r>", lambda _: monitor.try_reload_song())
+
+        monitor.text.bind("<Command-s>", lambda _: monitor.save_song())
+        monitor.bind("<Command-s>", lambda _: monitor.save_song())
+
         # self.text.bind("<space>", lambda _: self.toggle_scroll())
         # Make it so clicking in the talent window gives frame focus.
         monitor.bind("<Button-1>", lambda _: monitor.on_focus())

@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import time
 import logging
 
@@ -129,6 +130,7 @@ class TalentMonitor(tk.Frame, AppPointers):
 
     def commit_changes_to_song(self):
         """Apply any edits made in monitor to the song object."""
+        # TODO: this is really roundabout and has been replaced... weed it out!
 
         # song = self.app.deck.live
         song = self.song
@@ -296,6 +298,17 @@ class TalentMonitor(tk.Frame, AppPointers):
     def dump(self, tag=True) -> list:
         """Dump the text widget to a list."""
         return self.text.dump("1.0", "end", tag=tag, text=True)
+
+    def try_reload_song(self):
+        """Reload extant script from song object with prompt."""
+        if messagebox.askokcancel("Confirm Reload", "Reload song? Changes will be lost."):
+            self.tools.loader.push(frame=self, song=self.song, reset_view=False)
+
+    def save_song(self):
+        """Push tktext back to song obj."""
+        self.tools.tk_text_interface.tkt_into_song(
+            song=self.song,
+            tkt=self.monitor.dump())
 
 
 class RightClickMenu(tk.Frame, AppPointers):

@@ -50,4 +50,5 @@ class TkTextInterface(AppPointers):
         return ptt
 
     def tkt_into_song(self, song, tkt):
+        """Dum tkt into song object."""
         song.tk_tuples = self.tkt_to_ptt(tkt)
