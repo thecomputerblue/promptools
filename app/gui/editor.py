@@ -86,6 +86,13 @@ class EditorMonitor(tk.Frame, AppPointers):
         self.settings.fonts.monitor.add_callback(self.refresh_font)
         self.editable.trace("w", self.after_edit_toggle)
 
+        # config scroll behavior
+        # self.scroll_action = self.match_sibling_yview
+        self.scroll_action = self.do_nothing
+
+    def do_nothing(self):
+        pass
+        
     def refresh_font(self):
         self.suite.text.tag_configure("size", font=self.settings.fonts.monitor)
 

@@ -355,6 +355,7 @@ class AutoScrollSettings(SettingsBaseClass):
 
         # number of steps on scroll speed scale
         self.steps = self.setting(tk.IntVar, "steps", inits, True)
+        # self.steps.trace("w", lambda *args: self.talent.update_scroll_amt())
 
         # speed scale position in %. gets rounded to nearest setting.
         self.pos = self.setting(tk.DoubleVar, "pos", inits, True)

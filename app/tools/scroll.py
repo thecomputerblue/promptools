@@ -30,6 +30,14 @@ class ScrollTool(AppPointers):
         # register callback so params get updated when settings change
         self.settings.scroll.add_callback(self.refresh)
 
+        # this is a switch, when you toggle scrolling it gets pointed to a
+        # different function
+        self.next_scroll_action = self.break_scroll
+        # assign the scroll scheduler. delay_compensated_scheduler will add an
+        # offset to keep things going at the same rate if there is a delay
+        # instead of slowing down. generic_scheduler just goes by the scale.
+        self.scroll_scheduler = self.delay_compensated_scheduler
+
     @property
     def running(self):
         return self.settings.scroll.running
@@ -38,6 +46,7 @@ class ScrollTool(AppPointers):
         """Fetch all the scroll parameters and update."""
         logging.info("refresh in ScrollTool")
         self.pos = self.settings.scroll.pos.get()
+        self.talent.update_scroll_amt()
         # self.running = self.settings.scroll.running.get()
 
     @property
@@ -59,32 +68,59 @@ class ScrollTool(AppPointers):
         self.next_frame = datetime.datetime.now()
 
     def scroll_loop(self):
-        """Schedulet the autoscroll based on rate slider."""
-        if self.running.get():
-            self.talent.scroll() if self.pos != 0 else None
-            self.schedule_scroll()
-            # toggle next line to mon refresh
-            # self.monitor.match_sibling_yview()
-        elif self.settings.scroll.mon_snap.get():
-            self.monitor.match_sibling_yview()
+        """Schedule scroll, then do the next action."""
+        # TODO: need to manage the 'off' condition from the speed control
+        self.do_scrolls()
+        self.next_scroll_action()
+        # if self.running.get():
+        #     self.talent.scroll() if self.pos != 0 else None
+        #     self.schedule_scroll()
+        #     # toggle next line to mon refresh
+        #     # self.monitor.match_sibling_yview()
+        # elif self.settings.scroll.mon_snap.get():
+        #     self.monitor.match_sibling_yview()
+
+    def do_scrolls(self):
+        # TODO: switch to callback register for these fns
+        self.talent.scroll_action()
+        self.editor.scroll_action()
+
+    def start_scroll(self):
+        """When you start scroll from stopped, need to reset next frame,
+        and toggle the next_scroll action."""
+        self.scroller.running.set(True)
+        self.next_frame = datetime.datetime.now()
+        self.next_scroll_action = self.continue_scroll
+        self.next_scroll_action()
+
+    def continue_scroll(self):
+        """Schedule a scroll action, which will continue the loop."""
+        self.scroll_scheduler()
+
+    def break_scroll(self):
+        logging.info('break scroll!')
+        self.next_scroll_action = self.stop_scroll
+
+    def stop_scroll(self):
+        """When scrolling stops, do not call the scroll loop again! Also
+        refresh the monitor y view to match talent. Put any other break
+        actions in here too."""
+        self.scroller.running.set(False)
+        self.monitor.match_sibling_yview()
+
 
     def scaled_sleep_time(self):
         """Sleep for the time set by the speed slider."""
         rates = self.settings.scroll.rates
         return int(rates[self.pos - 1]) if self.running else int(rates[-1])
 
-    def start_scroll(self):
-        """When you start scroll from stopped, reset next frame."""
-
-        self.next_frame = datetime.datetime.now()
-        self.schedule_scroll(delay_comp=True)
-
-    def schedule_scroll(self, delay_comp=True):
+    def delay_compensated_scheduler(self):
         """Schedule next scroll, accounting for latency in the after queue."""
-        if delay_comp:
-            self.gui.after(self.delay_comp(), self.scroll_loop)
-        else:
-            self.gui.after(self.scaled_sleep_time(), self.scroll_loop)
+        self.gui.after(self.delay_comp(), self.scroll_loop)
+
+    def generic_scheduler(self):
+        """Schedule scroll without delay compensation."""
+        self.gui.after(self.scaled_sleep_time(), self.scroll_loop)
 
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""
@@ -159,30 +195,18 @@ class ScrollTool(AppPointers):
     # MOVED FROM MONITOR
 
     def shift_scroll_on(self, event=None):
-        """Holding shift scrolls prompter."""
-
-        if self.monitor.editable.get():
+        """Press-hold shift to begin prompter scroll."""
+        if self.monitor.editable.get() or self.running.get():
             return
-
-        self.running.set(True)
-        # self.schedule_scroll()
         self.start_scroll()
-        logging.info("shift_scroll_on")
 
     def shift_scroll_off(self, event=None):
         """Releasing shift stops prompter."""
-        self.running.set(False)
-        logging.info("shift_scroll_off")
+        self.break_scroll()
 
     def toggle_scroll(self):
         """Toggle autoscroll."""
-        if self.scroller.running.get():
-            self.scroller.running.set(False)
-            logging.info("toggle_scroll OFF")
-        elif not self.monitor.editable.get():
-            self.scroller.running.set(True)
-            self.start_scroll()
-            logging.info("toggle_scroll ON")
+        self.break_scroll() if self.scroller.running.get() else self.start_scroll()
 
 
 class AutoscrollBehavior:

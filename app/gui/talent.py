@@ -109,6 +109,10 @@ class TalentWindow(tk.Toplevel, AppPointers):
         self.deck.add_callback("live", self.push)
         self.settings.scroll.add_callback(self.refresh_scroll)
 
+        # config scroll
+        self.scroll_action = self.scroll
+        self.update_scroll_amt()
+
     def refresh_scroll(self, *args):
         """Fetch scroll params."""
         self.pixels = self.settings.scroll.pixels.get()
@@ -142,26 +146,24 @@ class TalentWindow(tk.Toplevel, AppPointers):
 
     def scroll(self, direction="down"):
         """Talent scroll behavior."""
-        x_scroll = self.text.xview_scroll
-        y_scroll = self.text.yview_scroll
-        amt = self.scale_pixels_by_font_size(self.pixels)
+        # TODO: plug in the direction elsewhere for modest savings
         if direction == "up":
-            y_scroll(-amt, "pixels")
+            self.text.yview_scroll(-self.scroll_amt, "pixels")
         elif direction == "down":
-            y_scroll(amt, "pixels")
+            self.text.yview_scroll(self.scroll_amt, "pixels")
         elif direction == "right":
-            x_scroll(-amt, "pixels")
+            self.text.xview_scroll(-self.scroll_amt, "pixels")
         elif direction == "left":
-            x_scroll(amt, "pixels")
+            x_self.text.xview_scrollscroll(self.scroll_amt, "pixels")
 
-    def scale_pixels_by_font_size(self, amt):
+    def update_scroll_amt(self):
+        self.scroll_amt = self.scale_pixels_by_font_size()
+
+    def scale_pixels_by_font_size(self):
         """Scale pixel increment by text size for more consistent speed on resize."""
-        if not amt:
-            return 0
-        scaler = self.gen_font_scaler()
-        return max(1, int(amt * scaler))
+        return 0 if not self.pixels else max(1, int(self.pixels * self.font_scaler()))
 
-    def gen_font_scaler(self):
+    def font_scaler(self):
         """Generate a float which scales pixel rate in a helpful way."""
         base = self.text_scaler.font_size
         normal = 44  # 'normal' font size. bigger skips more pixels, smaller fewer.
