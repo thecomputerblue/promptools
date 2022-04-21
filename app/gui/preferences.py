@@ -16,6 +16,7 @@ class PreferencesWindow(tk.Toplevel, AppPointers):
 
         # flag that this is open
         self.settings.windows.preferences.set(True)
+        self.attributes('-topmost', True)
 
         self.title("Preferences")
 

@@ -4,6 +4,7 @@ import time
 import logging
 
 from gui.prompttoolbar import PromptToolBar
+from gui.edittoolbar import EditToolBar
 from tools.apppointers import AppPointers
 
 # TODO: change the name of this to Editor, and its instance in app
@@ -326,6 +327,8 @@ class RightClickMenu(tk.Frame, AppPointers):
         finally:
             self.main_menu.grab_release()
 
+
+    # TODO: chop up these next few massive methods...
     def apply_tag(self, tag):
         """Apply a tag to selected text."""
 
@@ -477,16 +480,3 @@ class Toolbar(tk.Frame, AppPointers):
             self.edit_toolbar.forget()
             self.prompt_toolbar.pack()
 
-
-class EditToolBar(tk.Frame):
-    """Toolbar shown in edit mode."""
-
-    def __init__(self, parent):
-        tk.Frame.__init__(self, parent)
-
-        self.parent = parent
-        self.app = parent.app
-        self.suite = parent.suite
-
-        self.placeholder = tk.Label(self, text="PLACEHOLDER FOR EDIT TOOLBAR")
-        self.placeholder.pack(expand=True, fill="both", anchor="w")

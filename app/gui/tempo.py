@@ -19,8 +19,9 @@ class TempoToolWindow(tk.Toplevel, AppPointers):
 
     def _init_config(self):
         """Initialize window config"""
-        self.title('TT')
         self.settings.windows.tempo.set(True)
+        self.title('TT')
+        self.attributes('-topmost', True)
         self.protocol("WM_DELETE_WINDOW",self.quit_window)
 
     def _init_geometry(self):

@@ -63,6 +63,8 @@ class ScrollTool(AppPointers):
         if self.running.get():
             self.talent.scroll() if self.pos != 0 else None
             self.schedule_scroll()
+            # toggle next line to mon refresh
+            # self.monitor.match_sibling_yview()
         elif self.settings.scroll.mon_snap.get():
             self.monitor.match_sibling_yview()
 

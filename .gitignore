@@ -140,3 +140,4 @@ app/data/appdata.db
 app/data/settings.json
 *.json
 app/data/settings.json
+local

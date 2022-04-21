@@ -21,8 +21,9 @@ class SongHistoryWindow(tk.Toplevel, AppPointers):
 
     def _init_config(self):
         """Initialize window config"""
-        self.title('Song History')
         self.settings.windows.song_history.set(True)
+        self.title('Song History')
+        self.attributes('-topmost', True)
         self.protocol("WM_DELETE_WINDOW",self.quit_window)
 
     def _init_geometry(self):

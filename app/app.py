@@ -5,6 +5,7 @@ import logging
 # allows drag-n-drop, was a bit sketchy last time i used it. not using for now.
 # import tkinterDnD as tkd
 
+
 # app settings
 from common.settings import Settings
 
@@ -44,6 +45,7 @@ class MainApplication:
         # TODO: breakout these components as they become more comprehensive...
         self.deck = SongDeck(self)
 
+        # not exactly a cache
         # tracks ALL song objects anywhere in the app. currently enforces stricter GC
         # than python default by running frequent checks. by tracking all songs in one
         # place i'll be able to update database references consistently when they change
