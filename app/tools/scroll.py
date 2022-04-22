@@ -106,13 +106,7 @@ class ScrollTool(AppPointers):
         refresh the monitor y view to match talent. Put any other break
         actions in here too."""
         self.scroller.running.set(False)
-        self.monitor.match_sibling_yview()
-
-
-    def scaled_sleep_time(self):
-        """Sleep for the time set by the speed slider."""
-        rates = self.settings.scroll.rates
-        return int(rates[self.pos - 1]) if self.running else int(rates[-1])
+        self.editor.match_talent_yview()
 
     def delay_compensated_scheduler(self):
         """Schedule next scroll, accounting for latency in the after queue."""
@@ -122,13 +116,19 @@ class ScrollTool(AppPointers):
         """Schedule scroll without delay compensation."""
         self.gui.after(self.scaled_sleep_time(), self.scroll_loop)
 
+    def scaled_sleep_time(self):
+        """Sleep for the time set by the speed slider."""
+        rates = self.settings.scroll.rates
+        return int(rates[self.pos - 1]) if self.running else int(rates[-1])
+
     def delay_comp(self):
         """Return ms with delay compensation for smoother autoscroll."""
+        # TODO: side effect + return in same method = bad
         self.next_frame += datetime.timedelta(milliseconds=self.scaled_sleep_time())
         now = datetime.datetime.now()
         delta = max(datetime.timedelta(), self.next_frame - now)
         time = int(delta.total_seconds() * 1000)
-        fps = int(1000 / time) if time else 0
+        # fps = int(1000 / time) if time else 0
         # print(f"ms: {time}, fps: {fps}") # comment in for readout on each tick while running
         return time
 

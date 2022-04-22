@@ -128,9 +128,8 @@ class TalentWindow(tk.Toplevel, AppPointers):
         self.win_x = self.winfo_width()
         self.win_y = self.winfo_height()
 
-    def match_sibling_yview(self):
-        mon_y = self.monitor.text.yview()
-        self.text.yview_moveto(mon_y[0])
+    def match_editor_yview(self):
+        self.text.yview_moveto(self.editor.text.yview()[0])
 
     def esc_fs_toggle(self, event):
         self.fullscreen.set(False if self.fullscreen.get() else True)
@@ -154,13 +153,15 @@ class TalentWindow(tk.Toplevel, AppPointers):
         elif direction == "right":
             self.text.xview_scroll(-self.scroll_amt, "pixels")
         elif direction == "left":
-            x_self.text.xview_scrollscroll(self.scroll_amt, "pixels")
+            self.text.xview_scroll(self.scroll_amt, "pixels")
+        self.editor.talent_y = self.text.yview()[0]
 
     def update_scroll_amt(self):
         self.scroll_amt = self.scale_pixels_by_font_size()
 
     def scale_pixels_by_font_size(self):
         """Scale pixel increment by text size for more consistent speed on resize."""
+        logging.info('scale_pixels_by_font_size')
         return 0 if not self.pixels else max(1, int(self.pixels * self.font_scaler()))
 
     def font_scaler(self):

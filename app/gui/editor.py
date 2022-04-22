@@ -88,10 +88,23 @@ class EditorMonitor(tk.Frame, AppPointers):
 
         # config scroll behavior
         # self.scroll_action = self.match_sibling_yview
-        self.scroll_action = self.do_nothing
+        self.scroll_action = self.periodic_update
+        self.gen = self.periodic_gen(10)
 
+    # scroll actions
     def do_nothing(self):
         pass
+
+    def periodic_update(self):
+        """Returns next action from the scroll generator, which will only
+        refresh every x frames (see self.periodic_gen method)."""
+        next(self.gen)
+
+    def periodic_gen(self, x=2):
+        while True:
+            for i in range(x):
+                yield
+            self.match_talent_yview()
         
     def refresh_font(self):
         self.suite.text.tag_configure("size", font=self.settings.fonts.monitor)
@@ -194,10 +207,10 @@ class EditorMonitor(tk.Frame, AppPointers):
         # only update if prompter isn't running and edit is enabled.
         if not self.scroller.running.get() and self.editable.get():
             # delay slightly to guarantee accurate yview.
-            self.gui.after(10, self.talent.match_sibling_yview)
+            self.gui.after(10, self.talent.match_editor_yview)
             logging.info("talent snapped to mon")
 
-    def match_sibling_yview(self):
+    def match_talent_yview(self):
         """Move monitor view to match talent view."""
         # TODO: rounding errors cause this to get inaccurate, especially when
         # the talent view is a dramatically different proportion. don't rely
@@ -205,7 +218,7 @@ class EditorMonitor(tk.Frame, AppPointers):
         self.text.yview_moveto(self.talent.text.yview()[0])
 
     def match_target_yview(self, target):
-        """Genericized match_sibling_yview method requiring target yview arg."""
+        """Genericized match_talent_yview method requiring target yview arg."""
         self.text.yview_moveto(target)     
 
     def refresh_while_editing(self, event):
@@ -217,7 +230,7 @@ class EditorMonitor(tk.Frame, AppPointers):
             return
         dump = self.text.dump("1.0", "end", tag=True, text=True)
         self.talent.receive_edits(dump)
-        self.talent.match_sibling_yview() if self.tfollow else None
+        self.talent.match_editor_yview() if self.tfollow else None
 
     @property
     def contents(self):
