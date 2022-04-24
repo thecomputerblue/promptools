@@ -10,6 +10,7 @@ from gui.transposer import TransposerWindow
 from gui.library import LibraryWindow
 from gui.history import SongHistoryWindow
 from gui.tempo import TempoToolWindow
+from gui.txt_export_window import TxtExportWindow 
 
 from tools.apppointers import AppPointers
 
@@ -306,6 +307,7 @@ class MenuBar(tk.Frame, AppPointers):
         tool_menu.add_separator()
         tool_menu.add_command(label="Song History", command=self.on_song_history_open)
         tool_menu.add_command(label="Tap Tempo", command=self.on_tempo_open)
+        tool_menu.add_command(label="Txt Export", command=self.on_txt_export)
         tool_menu.add_command(label="Batch Processor", state="disabled") # launch batch file processor
         tool_menu.add_command(label="Debug Log", state="disabled")
 
@@ -436,6 +438,10 @@ class MenuBar(tk.Frame, AppPointers):
         # TODO: popup confirmation
         # TODO: fn into the library manager
         self.db_interface.delete_orphaned_songs()
+
+    def on_txt_export(self):
+        self.txt_export_window = TxtExportWindow(self)
+        # self.app.tools.txt_exporter.get_text(song=self.app.deck.live)
 
 
 

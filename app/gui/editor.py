@@ -30,16 +30,25 @@ class EditorMonitor(tk.Frame, AppPointers):
             # background='black'
         )
         AppPointers.__init__(self, gui)
+        self._init_locals()
+        self._make_selection_pointers()
+        self._make_shorthands()
+        self._init_widgets()
+        self._make_callbacks()
+        self._init_scroll_interface()
 
-        # relevant frame parameters
+    def _init_locals(self):
+        """Grab bag of stuff needed..."""
         self._song = None
         self.load_time = time.time()
-        self.running = self.settings.scroll.running
-        self.editable = self.settings.edit.enabled
-        self.tfollow = self.settings.edit.talent_follows_monitor_when_editing
-        self.color_tags = self.settings.tags.tags
 
-        # pointers TODO: probably not explicitly needed
+    def _init_scroll_interface(self):
+        """Scaffolding to handle local scroll."""
+        self.scroll_action = self.periodic_update
+        self.gen = self.periodic_gen(10)
+
+    def _make_selection_pointers(self):
+        # TODO: probably don't need most of these
         self.sel_start = None
         self.sel_end = None
         self.cursor_pos = (
@@ -47,6 +56,19 @@ class EditorMonitor(tk.Frame, AppPointers):
         )
         self.selected_text = None
 
+    def _make_shorthands(self):
+        """Expose some nested settings more cleanly to the module."""
+        self.running = self.settings.scroll.running
+        self.editable = self.settings.edit.enabled
+        self.tfollow = self.settings.edit.talent_follows_monitor_when_editing
+        self.color_tags = self.settings.tags.tags
+
+    def _make_callbacks(self):
+        self.deck.add_callback("live", self.push)
+        self.settings.fonts.monitor.add_callback(self.refresh_font)
+        self.editable.trace("w", self.after_edit_toggle)
+
+    def _init_widgets(self):
         self.toolbar = Toolbar(self)
         self.toolbar.grid(row=0, column=0, columnspan=5)
 
@@ -81,16 +103,6 @@ class EditorMonitor(tk.Frame, AppPointers):
         # scrollbar
         self.scrollbar.config(command=self.text.yview)
 
-        # callbacks
-        self.deck.add_callback("live", self.push)
-        self.settings.fonts.monitor.add_callback(self.refresh_font)
-        self.editable.trace("w", self.after_edit_toggle)
-
-        # config scroll behavior
-        # self.scroll_action = self.match_sibling_yview
-        self.scroll_action = self.periodic_update
-        self.gen = self.periodic_gen(10)
-
     # scroll actions
     def do_nothing(self):
         pass
@@ -104,7 +116,7 @@ class EditorMonitor(tk.Frame, AppPointers):
         while True:
             for i in range(x):
                 yield
-            self.match_talent_yview()
+            self.app.gui.talent.text.after_idle(self.match_talent_yview)
         
     def refresh_font(self):
         self.suite.text.tag_configure("size", font=self.settings.fonts.monitor)
@@ -215,11 +227,7 @@ class EditorMonitor(tk.Frame, AppPointers):
         # TODO: rounding errors cause this to get inaccurate, especially when
         # the talent view is a dramatically different proportion. don't rely
         # on monitor view for scrolling, always look at talent.
-        self.text.yview_moveto(self.talent.text.yview()[0])
-
-    def match_target_yview(self, target):
-        """Genericized match_talent_yview method requiring target yview arg."""
-        self.text.yview_moveto(target)     
+        self.text.yview_moveto(self.talent.text.yview()[0]) 
 
     def refresh_while_editing(self, event):
         """Brute force talent refresh. Will completely clear and reload talent

@@ -289,20 +289,12 @@ class PoolAndSetlistsFrame(tk.Frame, AppPointers):
 
     @preserve_sel
     def listbox_update(self, sel=None):
-
         self.listbox.delete(0, "end")
-
-        songs = self.songs
-        if not songs:
+        if not self.songs:
             return
-
-        logging.info(f'listbox_update names: {self.names}')
         for i, name in enumerate(self.names):
-            name = strike(name) if songs[i] in self.markers.get('played') else name
             self.listbox.insert("end", name)
-            # TODO: implement color_item for pool
-            # self.color_item(i)
-
+            
     def color_item(self, i:int) -> None:
         """Apply appropriate color to a listbox item."""
 

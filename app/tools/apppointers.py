@@ -78,11 +78,11 @@ class AppPointers:
 
     @property
     def setlists(self):
-        return self.app.collections.setlists
+        return self.app.data.setlists
 
     @property
     def pool(self):
-        return self.app.collections.pool
+        return self.app.data.pool
 
     
 

@@ -544,6 +544,7 @@ class WindowSettings(SettingsBaseClass):
         self.metadata = tk.BooleanVar()
         self.song_history = tk.BooleanVar()
         self.tempo = tk.BooleanVar()
+        self.txt_exporter = tk.BooleanVar()
 
 
 class ArrowSettings(SettingsBaseClass):

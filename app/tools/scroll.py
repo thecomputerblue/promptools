@@ -72,14 +72,7 @@ class ScrollTool(AppPointers):
         # TODO: need to manage the 'off' condition from the speed control
         self.do_scrolls()
         self.next_scroll_action()
-        # if self.running.get():
-        #     self.talent.scroll() if self.pos != 0 else None
-        #     self.schedule_scroll()
-        #     # toggle next line to mon refresh
-        #     # self.monitor.match_sibling_yview()
-        # elif self.settings.scroll.mon_snap.get():
-        #     self.monitor.match_sibling_yview()
-
+        
     def do_scrolls(self):
         # TODO: switch to callback register for these fns
         self.talent.scroll_action()

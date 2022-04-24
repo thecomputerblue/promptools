@@ -8,6 +8,7 @@ from tools.guitools import GuiTools
 from tools.helper import Helper 
 from tools.tk_text_interface import TkTextInterface
 from tools.tempo import TapTempo
+from tools.txt_exporter import TxtExporter
 
 class AppTools():
     """Class for holding tools for the app.
@@ -43,3 +44,6 @@ class AppTools():
         self.helper = Helper(app)
 
         self.tempo = TapTempo(app)
+
+        # tool for exporting to text files
+        self.txt_exporter = TxtExporter(app)

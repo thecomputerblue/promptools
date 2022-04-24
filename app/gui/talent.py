@@ -154,7 +154,7 @@ class TalentWindow(tk.Toplevel, AppPointers):
             self.text.xview_scroll(-self.scroll_amt, "pixels")
         elif direction == "left":
             self.text.xview_scroll(self.scroll_amt, "pixels")
-        self.editor.talent_y = self.text.yview()[0]
+        self.text.update_idletasks()
 
     def update_scroll_amt(self):
         self.scroll_amt = self.scale_pixels_by_font_size()

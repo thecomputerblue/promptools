@@ -14,6 +14,9 @@ from tools.words import WordFactory
 
 from common.settings import Settings
 
+# tags to ignore getting plan text from tk tuples. the "text" part of the tuple
+# is used by tkinter for the tag name, so it interferes 
+TK_TAGS_IGNORE = ('tagon')
 
 # Helper functions
 def assign(part):
@@ -442,6 +445,10 @@ class Song:
     @library_id.setter 
     def library_id(self, new):
         self.meta.library_id = new
+
+    @property
+    def plain_text(self):
+        return ''.join([tup[2] for tup in self.tk_tuples if tup[1] not in TK_TAGS_IGNORE])
 
     def strip_info(self, info):
         """Strip doesn't remove leading / trailing newlines for some reason..."""
