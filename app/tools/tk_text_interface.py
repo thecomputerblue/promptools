@@ -5,7 +5,8 @@ import logging
 from tools.apppointers import AppPointers
 
 class TkTextInterface(AppPointers):
-    """Contain functions for loading songs between frames."""
+    """Translate tk_text tag format into other formats
+    for loading between modules."""
 
     def __init__(self, app):
         AppPointers.__init__(self, app)
@@ -14,8 +15,8 @@ class TkTextInterface(AppPointers):
         self.types = self.app.settings.tags.types
 
     def tkt_to_ptt(self, tkt):
-        """Convert tkinter text to promptools tuples, the format which promptools
-        song objects store."""
+        """Convert tkinter text to promptools tuples,
+        the format which promptools song objects store."""
         # TODO: convoluted struct
 
         def tagon_flag():
@@ -52,3 +53,4 @@ class TkTextInterface(AppPointers):
     def tkt_into_song(self, song, tkt):
         """Dum tkt into song object."""
         song.tk_tuples = self.tkt_to_ptt(tkt)
+
