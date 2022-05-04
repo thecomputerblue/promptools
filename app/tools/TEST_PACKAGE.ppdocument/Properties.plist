@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>appBuildNumber</key>
+	<integer>722</integer>
+	<key>appVersion</key>
+	<string>5.8.1</string>
+	<key>bookmarks</key>
+	<array>
+		<dict>
+			<key>data</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGFxhYJHZlcnNpb25YJG9iamVjdHNZJGFy
+			Y2hpdmVyVCR0b3ASAAGGoKQHCA8QVSRudWxs0wkKCwwNDlRuYW1l
+			VHR5cGVWJGNsYXNzgAIQAIADUNIREhMUWiRjbGFzc25hbWVYJGNs
+			YXNzZXNaUFBCb29rbWFya6IVFlpQUEJvb2ttYXJrWE5TT2JqZWN0
+			XxAPTlNLZXllZEFyY2hpdmVy0RkaVHJvb3SAAQgRGiMtMjc8QklO
+			U1pcXmBhZnF6hYiTnK6xtgAAAAAAAAEBAAAAAAAAABsAAAAAAAAA
+			AAAAAAAAAAC4
+			</data>
+			<key>locations</key>
+			<string>1, 2</string>
+		</dict>
+	</array>
+	<key>extendedMetadata</key>
+	<dict>
+		<key>attachmentNames</key>
+		<array/>
+		<key>bookmarkNames</key>
+		<array/>
+	</dict>
+	<key>fileFormatNumber</key>
+	<integer>5</integer>
+	<key>scrollbarPosition</key>
+	<real>0.0</real>
+	<key>selectedRanges</key>
+	<array>
+		<string>{0, 0}</string>
+	</array>
+	<key>speed</key>
+	<real>5.999999999999997</real>
+	<key>systemVersion</key>
+	<string>10.12.5</string>
+	<key>windowFrame</key>
+	<string>{{80, 87}, {1360, 790}}</string>
+</dict>
+</plist>

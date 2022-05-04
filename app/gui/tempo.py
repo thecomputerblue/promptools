@@ -4,6 +4,8 @@ import logging
 
 from tools.apppointers import AppPointers
 
+# TODO: button to assign generated tempo to live song.
+
 class TempoToolWindow(tk.Toplevel, AppPointers):
     """Popup viewer for history. Should load to preview when you click an entry."""
 

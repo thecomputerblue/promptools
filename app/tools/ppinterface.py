@@ -3,13 +3,16 @@ import base64
 import pandoc
 import os
 
-# writing some stuff to interface with presentation prompter
+# building tools to export songs / setlists directly into presentation
+# prompter. so far can successfully dump a plain string and arbitrary
+# bookmarks into a PP doc.
 
-# first I'm going to reconstruct the properties list that pp applies to its rtf documents.
-# this will eventually allow me to export setlists to PP with bookmarks, and even
-# potentially preserve yview or scroll speed since those are stored in the plist
+# TODO: develop this file to contain a full fledged export tool,
+# and plug it in to promptools.
 
-# defining some basic stuff I see in these plist files
+# i think i need to convert song (or setlist) to formatted HTML,
+# then use pandoc to convert that into .rtf. read something about
+# django templates maybe being a solution... do some research.
 
 # PP plist files all contain this. not sure what it is but i'm including it.
 RAW_TOKEN = "YnBsaXN0MDDUAQIDBAUGFxhYJHZlcnNpb25YJG9iamVjdHNZJGFy" + \
@@ -30,7 +33,7 @@ class PPPropertyList:
 	def __init__(self, *args, **kwargs):
 		self.bookmarks = PPBookmarks()
 		self.extendedMetadata = PPExtendedMetadata()
-		self.speed = 5.9999999999999973
+		self.speed = 7
 
 	def get(self):
 		"""Return the dict to make the plist file."""
@@ -94,6 +97,12 @@ class PPExtendedMetadata:
 package = "TEST_PACKAGE.ppdocument"
 content = package + "/Content.rtfd"
 
+
+# TODO: refactor all this into appropriate classes with more comprehensive
+# interfacing. should be able to feed in promptools doc & desired output path
+# and have the doc created. then should be able to auto-open in PP (have
+# some code that does this on my original transposer script v1, look that up)
+
 def make_pp_package():
 	make_pp_outer_package()
 	make_content_wrapper()
@@ -113,9 +122,11 @@ def dump_test_props():
 		plistlib.dump(props.get(), fp)
 
 def dump_test_str():
+	# actual rtf is nested in .rtfd package inside .ppdocument package.
 	file = content + "/TXT.rtf"
 	text = "Proof of concept, exporting to rtf from string"
 	doc = pandoc.read(text)
+	doc.backgroundcolor = "white"
 	pandoc.write(doc=doc, file=file)
 
 def dump_test_pkg():
