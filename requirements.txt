@@ -1,1 +1,5 @@
 striprtf == 0.0.16
+
+# upcoming:
+# tkhtmlview == 0.1.0.post1
+# pandoc == 2.2
