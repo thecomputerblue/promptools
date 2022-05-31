@@ -2,16 +2,16 @@
 import tkinter as tk
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # TODO: button to assign generated tempo to live song.
 
-class TempoToolWindow(tk.Toplevel, AppPointers):
+class TempoToolWindow(tk.Toplevel, PrompToolsAPI):
     """Popup viewer for history. Should load to preview when you click an entry."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self._init_config()
         self._init_widgets()

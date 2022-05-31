@@ -1,11 +1,11 @@
 # export active song or entire setlist to .txt file.
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class TxtExporter(AppPointers):
+class TxtExporter(PrompToolsAPI):
 	def __init__(self, app):
-		AppPointers.__init__(self, app)
+		PrompToolsAPI.__init__(self, app)
 
 		# lines between consecutive docs on an export
 		self.lines_between = 5

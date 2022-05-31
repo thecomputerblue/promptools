@@ -5,7 +5,7 @@ import logging
 
 from gui.prompttoolbar import PromptToolBar
 from gui.edittoolbar import EditToolBar
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # TODO: change the name of this to Editor, and its instance in app
 # to editor. Will require fixing a bunch of references but will be
@@ -16,7 +16,7 @@ def toggle_bool(arg):
     return not arg
 
 
-class EditorMonitor(tk.Frame, AppPointers):
+class EditorMonitor(tk.Frame, PrompToolsAPI):
     """Class for Text field that shows
     what the talent is seeing on the Teleprompter."""
 
@@ -29,7 +29,7 @@ class EditorMonitor(tk.Frame, AppPointers):
             highlightthickness=10,  # border width
             # background='black'
         )
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
         self._init_locals()
         self._make_selection_pointers()
         self._make_shorthands()
@@ -134,8 +134,8 @@ class EditorMonitor(tk.Frame, AppPointers):
     def push(self):
         """Push live song to monitor with appropriate view reset."""
         live, previous = self.deck.live, self.deck.previous 
-        reset_view = False if live is previous else True
-        self.loader.push(frame=self, song=live, reset_view=reset_view)
+        reset = False if live is previous else True
+        self.loader.push(frame=self, song=live, reset=reset)
 
     @property
     def song(self):
@@ -262,7 +262,7 @@ class EditorMonitor(tk.Frame, AppPointers):
     def try_reload_song(self):
         """Reload extant script from song object with prompt."""
         if messagebox.askokcancel("Confirm Reload", "Reload song? Changes will be lost."):
-            self.tools.loader.push(frame=self, song=self.song, reset_view=False)
+            self.tools.loader.push(frame=self, song=self.song, reset=False)
 
     def save_song(self):
         """Push tktext back to song obj."""
@@ -271,12 +271,12 @@ class EditorMonitor(tk.Frame, AppPointers):
             tkt=self.monitor.dump())
 
 
-class RightClickMenu(tk.Frame, AppPointers):
+class RightClickMenu(tk.Frame, PrompToolsAPI):
     """Menu for when you right click within monitor frame."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # bookmark menu
         special_menu = tk.Menu(self.parent, title="Special")
@@ -479,13 +479,13 @@ class TitleBar(tk.Frame):
         self.name.pack(side="left", anchor="w", expand=True)
 
 
-class Toolbar(tk.Frame, AppPointers):
+class Toolbar(tk.Frame, PrompToolsAPI):
     """Holds the prompt and edit toolbars, showing one or the other
     depending on edit mode parameter."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.edit_toolbar = EditToolBar(self)
         self.prompt_toolbar = PromptToolBar(self)

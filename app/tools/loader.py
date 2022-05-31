@@ -2,7 +2,7 @@ import logging
 from tools.song import Song
 from tkinter import font
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 
 # helpers
@@ -18,11 +18,13 @@ def pack_pos(line: int, col: int) -> str:
     return str(line) + "." + str(col)
 
 
-class LoadTool(AppPointers):
+class LoadTool(PrompToolsAPI):
     """Contain functions for loading songs between frames."""
 
     def __init__(self, app):
-        AppPointers.__init__(self, app)
+        PrompToolsAPI.__init__(self, app)
+        # assign loader method
+        self.on_load = self.show_colors
 
     def preserve_sel(method):
         """Preserve selection while executing a method."""
@@ -38,16 +40,14 @@ class LoadTool(AppPointers):
 
         return inner
 
+    @property
+    def view_should_reset(self):
+        """Reset frame conditions..."""
+        return False if self.app.deck.live is self.app.deck.cued else True
 
-    def with_tk_text(self, widget, wrapped, reset=None):
+    def with_tk_text(self, widget, wrapped, reset):
         """Snapshot a text widget, perform an action, restore state.
         Pass wrapped functiona as lambda with arguments."""
-
-        # TODO: change to decorator fn
-
-        # reset view if cue and live mismatch
-        if reset is None:
-            reset = False if self.app.deck.live is self.app.deck.cued else True
 
         edit_state, yview = self.get_state_and_yview(widget)
         self.clear_tktext(widget)
@@ -74,7 +74,11 @@ class LoadTool(AppPointers):
         to song so it is up to date when shown."""
 
         # TODO: redundant, weed this out
-        self.transpose_song(song=song, key=key) if self.keychange_enabled() else None
+        self.transpose_song(song=song, key=key) if self.keychange_enabled else None
+
+    @property
+    def keychange_enabled(self):
+        return self.app.settings.transposer.enabled.get()
 
     def transpose_song(self, song, key):
         """Pass song & key into the transposer."""
@@ -84,48 +88,12 @@ class LoadTool(AppPointers):
 
     def reset_song(self, song):
         """Reset song to original key."""
-
         self.app.tools.transposer.reset(song=song)
-
-    def load_with_settings(self, frame, song):
-        """Show song with the correct color, etc. settings."""
-
-        # TODO: refactor
-        if not self.song_changes_enabled():
-            self.show_raw(frame, song)
-        elif self.colors_enabled():
-            self.configure_text_tags(frame.text)
-            self.app.tools.transposer.show_colors_tk(frame, song)
-        else:
-            self.show_plain(self, song)
-
-        # size tag across entire doc makes it scalable
-        # TODO: check for extant size tag and don't apply if it already exists
-        self.add_size_tag(frame.text)
 
     def add_size_tag(self, text):
         """Tag tk_text contents with size tag so auto-resizer works."""
-
+        # TODO: confirm there isn't already a tag there... probably move this too
         text.tag_add("size", "1.0", "end")
-
-    def song_changes_enabled(self):
-        """Return True if Nashville mode or transposition enabled."""
-        return (
-            self.keychange_enabled() or self.nashmode_enabled() or self.colors_enabled()
-        )
-
-    def keychange_enabled(self):
-        """Return True if keychange is enabled."""
-        return self.app.settings.transposer.enabled.get()
-
-    def nashmode_enabled(self):
-        """Return True if Nashville mode enabled."""
-        # TODO: un nest this toggle!
-        return self.app.settings.transposer.nashville.get()
-
-    def colors_enabled(self):
-        """Return True if colors are enabled."""
-        return not self.app.settings.importer.raw.get()
 
     def configure_text_tags(self, text, talent=False):
         """Apply tag settings to the tkinter text tags."""
@@ -152,7 +120,7 @@ class LoadTool(AppPointers):
         t = self.app.settings.transposer
         return t.key.get() if t.enabled.get() else '0'
 
-    def push(self, frame, song, reset_view=None):
+    def push(self, frame, song, reset):
         """Push song to a target frame with settings."""
 
         logging.info('push in LoadTool')
@@ -166,7 +134,7 @@ class LoadTool(AppPointers):
         self.with_tk_text(
             widget=frame.text,
             wrapped=lambda: self.show_with_options(frame),
-            reset=reset_view
+            reset=reset
             )
 
     def show_with_options(self, frame):
@@ -176,41 +144,25 @@ class LoadTool(AppPointers):
 
         # TODO: preview transposition hinges on this call. backwards logic...
         self.update_song_mods(song, key)
-
-        strategies = {
-        self.show_raw_conditions: self.show_raw,
-        self.show_color_conditions: self.show_colors,
-        self.show_plain_conditions: self.show_plain
-        }
-
-        for k,v in strategies.items():
-            v(frame, song) if k() else None
-
+        self.on_load(frame, song)
         self.add_size_tag(frame.text)
 
         # TODO: decorator wrapper function for frame state
         # reset undo stack.
         frame.text.edit_reset()
 
-    def show_raw(self):
+    # TODO: migrate these to a class
+    def show_raw(self, *args):
+        logging.info('TODO: write LoadTool show_raw method')
         # TODO: write new show raw method
         pass
 
-    def show_raw_conditions(self):
-        return not (self.keychange_enabled() or self.nashmode_enabled() or self.colors_enabled())
-
-    def show_color_conditions(self):
-        return self.colors_enabled()
-
-    def show_plain(self):
+    def show_plain(self, *args):
         # TODO: write new show plain method
+        logging.info('TODO: write LoadTool show_plain method')
         pass
 
-    def show_plain_conditions(self):
-        return not (self.colors_enabled())
-
     def show_colors(self, frame, song): 
-
         self.configure_text_tags(frame.text)
         self.tools.transposer.show_colors_tk(frame, song)
 
@@ -227,13 +179,14 @@ class LoadTool(AppPointers):
         # get pass the tree_entry to the db_interface, returning a song obj from lib
         # push the song obj to deck
 
-    def clone_tk_text(self, source, dest):
+    def clone_tk_text(self, source, dest, reset):
         """Clone a tk_text frames contents & formatting to another."""
 
         dump = source.dump("1.0", "end", tag=True, text=True)
         self.with_tk_text(
             widget=dest,
-            wrapped=lambda: self.insert_tk_text(dest, dump)
+            wrapped=lambda: self.insert_tk_text(dest, dump),
+            reset=reset
             )
 
     def insert_tk_text(self, widget, dump):

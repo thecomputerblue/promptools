@@ -2,7 +2,7 @@ import tkinter as tk
 import time
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # helpers
 def strike(text):
@@ -17,14 +17,14 @@ def number(n: int, name: str) -> str:
     return "(" + str(n) + ") " + name
 
 
-class SetlistFrame(tk.Frame, AppPointers):
+class SetlistFrame(tk.Frame, PrompToolsAPI):
     """Frame for showing the active setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
             self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
         )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
         self.suite = self
 
         # widgets
@@ -231,12 +231,12 @@ class SetlistFrame(tk.Frame, AppPointers):
                 break
 
 
-class SetlistHeader(tk.Frame, AppPointers):
+class SetlistHeader(tk.Frame, PrompToolsAPI):
     """Frame for the setlist header elements."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.label = tk.Label(self, text="Active Setlist | ")
         self.label.pack(side="left", anchor="w", expand=True)
@@ -245,12 +245,12 @@ class SetlistHeader(tk.Frame, AppPointers):
         self.current.pack(side="right", anchor="w", expand=True)
 
 
-class SetlistControlRow(tk.Frame, AppPointers):
+class SetlistControlRow(tk.Frame, PrompToolsAPI):
     """Row for the setlist buttons for moving entries around."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # TODO: move these functions in?
         move = self.suite.move

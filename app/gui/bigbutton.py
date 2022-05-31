@@ -1,8 +1,8 @@
 import tkinter as tk
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class PromptButton(tk.Frame, AppPointers):
+class PromptButton(tk.Frame, PrompToolsAPI):
 	"""Class for the button that runs the teleprompter."""
 
 	def __init__(self, gui, *args, **kwargs):
@@ -14,7 +14,7 @@ class PromptButton(tk.Frame, AppPointers):
 			borderwidth= 5,
 			relief='raised'
 			)
-		AppPointers.__init__(self, gui)
+		PrompToolsAPI.__init__(self, gui)
 
 		# big button
 		self.button = tk.Button(

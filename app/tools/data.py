@@ -1,13 +1,13 @@
 import sqlite3
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class AppData(AppPointers):
+class AppData(PrompToolsAPI):
     """Class for app data used in saving and recalling workspace, settings."""
 
     def __init__(self, app):
-        AppPointers.__init__(self, app)
+        PrompToolsAPI.__init__(self, app)
 
         self.gigdata = GigData(self)
 

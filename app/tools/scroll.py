@@ -2,7 +2,7 @@ import datetime
 import logging
 import time
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # TODO: this probably belongs in gui since it is specific to tkinter gui
 # helpers
@@ -11,11 +11,11 @@ def next_line(text):
     text.xview_moveto(0)
 
 
-class ScrollTool(AppPointers):
+class ScrollTool(PrompToolsAPI):
     """Class for scroll & follow behaviors."""
 
     def __init__(self, parent):
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # autoscroll rates
         self.rates = self.app.settings.scroll.rates

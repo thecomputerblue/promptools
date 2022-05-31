@@ -4,14 +4,14 @@ import sqlite3
 import logging
 
 from gui.songdetail import SongDetailView
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class LibraryWindow(tk.Toplevel, AppPointers):
+class LibraryWindow(tk.Toplevel, PrompToolsAPI):
     """Class for the window for configuring program preferences."""
 
     def __init__(self, gui, *args, **kwargs):
         tk.Toplevel.__init__(self, gui.root)
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
 
         self.title("Library Manager")
 
@@ -39,12 +39,12 @@ class LibraryWindow(tk.Toplevel, AppPointers):
         self.settings.windows.library.set(False)
         self.destroy()
 
-class LibraryNotebook(ttk.Notebook, AppPointers):
+class LibraryNotebook(ttk.Notebook, PrompToolsAPI):
     """ttk notebook for managing several preference tabs."""
 
     def __init__(self, parent):
         ttk.Notebook.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.app = parent.app
         
@@ -72,12 +72,12 @@ class LibraryNotebook(ttk.Notebook, AppPointers):
         # pack frame 
         self.pack(fill="both", expand=True)
 
-class SongBrowser(tk.PanedWindow, AppPointers):
+class SongBrowser(tk.PanedWindow, PrompToolsAPI):
     """Class for the Song Browser tab."""
 
     def __init__(self, parent):
         tk.PanedWindow.__init__(self, parent, orient="horizontal", sashwidth=10)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.song = None
 
@@ -100,7 +100,7 @@ class SongBrowser(tk.PanedWindow, AppPointers):
             return "break"
    
 
-class SongViewTop(tk.Frame, AppPointers):
+class SongViewTop(tk.Frame, PrompToolsAPI):
     """Top half of the song browser, which contains the treview and info."""
 
     def __init__(self, parent):
@@ -108,7 +108,7 @@ class SongViewTop(tk.Frame, AppPointers):
             # old PanedWindow params
             # orient="horizontal", sashwidth=10
             )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.song_data = parent.song_data
         self.song = parent.song
@@ -130,12 +130,12 @@ class SongViewTop(tk.Frame, AppPointers):
         self.songdetail.pack(side="right", fill="y")
 
 
-class SongLibraryFilters(tk.Frame, AppPointers):
+class SongLibraryFilters(tk.Frame, PrompToolsAPI):
     """Class for song library filters"""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.include_header = tk.Label(self, text="Include:")
         self.include_header.pack(side="left", anchor="w")
@@ -152,12 +152,12 @@ class SongLibraryFilters(tk.Frame, AppPointers):
         # so they're not deleted when you clean up
 
 
-class SongTreeFrame(tk.Frame, AppPointers):
+class SongTreeFrame(tk.Frame, PrompToolsAPI):
     """Class for the treeview and its scrollbar."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.library_filters = SongLibraryFilters(self)
         self.library_filters.pack(side="top", fill="both")
@@ -173,12 +173,12 @@ class SongTreeFrame(tk.Frame, AppPointers):
         self.search_filters.pack(side="top", fill="both")
 
 
-class SearchBar(tk.Frame, AppPointers):
+class SearchBar(tk.Frame, PrompToolsAPI):
     """Class for the Pool header & searchbar."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # label
         self.label = tk.Label(self, text="Search:")
@@ -195,12 +195,12 @@ class SearchBar(tk.Frame, AppPointers):
         self.clear = tk.Button(self, text="Clear", command=lambda *args: self.search.delete(0, 'end'))
         self.clear.pack(side="right", anchor="e")
 
-class SearchFilters(tk.Frame, AppPointers):
+class SearchFilters(tk.Frame, PrompToolsAPI):
     """Row of search filters."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.target_label = tk.Label(self, text="Targets:")
         self.target_label.pack(side="left", anchor="w")
@@ -230,12 +230,12 @@ class SearchFilters(tk.Frame, AppPointers):
         self.toggle_all.pack(side="left", anchor="w")
 
 
-class ScrolledSongTree(tk.Frame, AppPointers):
+class ScrolledSongTree(tk.Frame, PrompToolsAPI):
     """Attach a scrollbar to treeview."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self._song_dict = None
 
@@ -293,7 +293,7 @@ class ScrolledSongTree(tk.Frame, AppPointers):
         if self.app.settings.library.cue_selection.get():
             self.app.deck.cued = song
 
-class SongViewBottom(tk.Frame, AppPointers):
+class SongViewBottom(tk.Frame, PrompToolsAPI):
     """Bottom half of the song browser, which contains misc options."""
 
     def __init__(self, parent):
@@ -304,7 +304,7 @@ class SongViewBottom(tk.Frame, AppPointers):
             # highlightbackground="light grey",
             # highlightthickness=2
             )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.song_data = parent.song_data
         self.song = parent.song
@@ -318,12 +318,12 @@ class SongViewBottom(tk.Frame, AppPointers):
         self.cue_selection.pack(side="left", anchor="w")
 
 
-class SetlistBrowser(tk.Frame, AppPointers):
+class SetlistBrowser(tk.Frame, PrompToolsAPI):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # widgets
         self.setlists_listbox = tk.Listbox(
@@ -334,12 +334,12 @@ class SetlistBrowser(tk.Frame, AppPointers):
         self.setlists_listbox.pack(side='left', fill='both', expand=True)
 
 
-class PoolBrowser(tk.Frame, AppPointers):
+class PoolBrowser(tk.Frame, PrompToolsAPI):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # widgets 
         self.pools = tk.Listbox(
@@ -352,12 +352,12 @@ class PoolBrowser(tk.Frame, AppPointers):
         self.scrollbar = tk.Scrollbar(self, orient="vertical")
         self.scrollbar.pack(side="right", fill="y")
 
-class GigBrowser(tk.Frame, AppPointers):
+class GigBrowser(tk.Frame, PrompToolsAPI):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # widgets 
         self.gigs_list = tk.Listbox(
@@ -370,13 +370,13 @@ class GigBrowser(tk.Frame, AppPointers):
         self.scrollbar = tk.Scrollbar(self, orient="vertical")
         self.scrollbar.pack(side="right", fill="y")
 
-class LibrarySettings(tk.Frame, AppPointers):
+class LibrarySettings(tk.Frame, PrompToolsAPI):
     """Class for defining Library behaviors. Settings also reproduced in
     the preferences window."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # options
         self.keep_local = tk.Checkbutton(

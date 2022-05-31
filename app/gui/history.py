@@ -4,14 +4,14 @@ import tkinter as tk
 from tkinter import ttk
 import logging 
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class SongHistoryWindow(tk.Toplevel, AppPointers):
+class SongHistoryWindow(tk.Toplevel, PrompToolsAPI):
     """Popup viewer for history. Should load to preview when you click an entry."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self._init_config()
         self._init_geometry()
@@ -51,11 +51,11 @@ class SongHistoryWindow(tk.Toplevel, AppPointers):
         self.destroy()
 
 
-class HistoryTreeview(tk.Frame, AppPointers): 
+class HistoryTreeview(tk.Frame, PrompToolsAPI): 
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # library data tree (left side of frame)
         tree = ttk.Treeview(self, selectmode="browse")

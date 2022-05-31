@@ -3,9 +3,9 @@ import logging
 
 from gui.setlist import SetlistFrame
 from gui.pool import PoolAndSetlistsFrame, PoolAndSetlistsNotebook
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class CollectionsSuite(tk.PanedWindow, AppPointers):
+class CollectionsSuite(tk.PanedWindow, PrompToolsAPI):
     """Paned frame for the song collections on the left side of the app.
     It shows the live setlist, and the gig song pool."""
 
@@ -17,7 +17,7 @@ class CollectionsSuite(tk.PanedWindow, AppPointers):
             bg="light blue",
             # showhandle=True
             )
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
 
         # make frames
         self.pool_and_setlists = PoolAndSetlistsNotebook(self)

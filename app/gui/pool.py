@@ -5,7 +5,7 @@ import copy
 import logging
 import string
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # helpers
 def scrub_text(text):
@@ -17,14 +17,14 @@ def scrub_text(text):
 def alphabetize_songs(songs):
     return sorted(songs, key=lambda song: song.name)
 
-class PoolAndSetlistsNotebook(ttk.Notebook, AppPointers):
+class PoolAndSetlistsNotebook(ttk.Notebook, PrompToolsAPI):
     """Two pages for song pool and setlists respectively."""
 
     def __init__(self, parent, *args, **kwargs):
         ttk.Notebook.__init__(self, parent,
             padding=0
             )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.pool_and_setlists = PoolAndSetlistsFrame(self)
         self.pool_and_setlists.pack(fill="both", expand=True)
@@ -38,14 +38,14 @@ class PoolAndSetlistsNotebook(ttk.Notebook, AppPointers):
         self.pool_and_setlists.sync()
         self.setlist_page.sync()
 
-class SetlistPage(tk.Frame, AppPointers):
+class SetlistPage(tk.Frame, PrompToolsAPI):
     """Page for gig setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
             self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
         )        
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.dummy = tk.Label(self, text='implement setlists')
         self.dummy.pack()
@@ -54,14 +54,14 @@ class SetlistPage(tk.Frame, AppPointers):
         pass
 
 
-class PoolAndSetlistsFrame(tk.Frame, AppPointers):
+class PoolAndSetlistsFrame(tk.Frame, PrompToolsAPI):
     """Pane for showing the gig song pool and setlists."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(
             self, parent, highlightthickness=2, borderwidth=2, relief="sunken"
         )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
         self.suite = self
 
         # subframes
@@ -309,12 +309,12 @@ class PoolAndSetlistsFrame(tk.Frame, AppPointers):
         self.listbox.insert("end", item)
 
 
-class PoolHeader(tk.Frame, AppPointers):
+class PoolHeader(tk.Frame, PrompToolsAPI):
     """Class for the Pool header & searchbar."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # label
         self.label = tk.Label(self, text="Search")
@@ -332,12 +332,12 @@ class PoolHeader(tk.Frame, AppPointers):
         self.clear.pack(side="right", anchor="e")
 
 
-class PoolControlRow(tk.Frame, AppPointers):
+class PoolControlRow(tk.Frame, PrompToolsAPI):
     """Row for the setlist buttons for moving entries around."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
   
         # cross out played song
         self.add = tk.Button(self, text="+", command=self.suite.try_add)

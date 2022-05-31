@@ -7,7 +7,7 @@ import logging
 import common.res as res
 import common.ids as ids
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # helper functions
 # TODO: many of the Transposer class functions could go here,
@@ -69,11 +69,11 @@ def slice_chord(chd):
     logging.warning('slice_chord in transposer failed to choose a strategy')
 
 
-class Transposer(AppPointers):
+class Transposer(PrompToolsAPI):
     """Using the above functions, provides an interface to transpose songs."""
 
     def __init__(self, parent):
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
         self.enabled = self.settings.transposer.enabled
 
     def transpose_tk(self, song, target): 

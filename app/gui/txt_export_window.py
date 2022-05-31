@@ -1,13 +1,13 @@
 import logging
 import tkinter as tk
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class TxtExportWindow(tk.Toplevel, AppPointers):
+class TxtExportWindow(tk.Toplevel, PrompToolsAPI):
     """Window for the text exporter."""
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self._init_config()
         self._init_widgets()

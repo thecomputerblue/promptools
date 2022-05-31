@@ -10,7 +10,7 @@ import io
 
 import tools.colors as colors
 from tools.scroll import AutoscrollBehavior
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # TODO: when eventually porting to kivy/pyqt you'll need to migrate
 # all the tkinter references in here.
@@ -39,11 +39,11 @@ def fps_to_ms(fps):
     return
 
 
-class Settings(AppPointers):
+class Settings(PrompToolsAPI):
     """Class for managing program wide settings."""
 
     def __init__(self, parent):
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # path for custom settings file
         self.custom_path = "./data/settings.json"

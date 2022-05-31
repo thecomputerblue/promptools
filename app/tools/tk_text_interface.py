@@ -2,14 +2,14 @@
 import tkinter as tk
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class TkTextInterface(AppPointers):
+class TkTextInterface(PrompToolsAPI):
     """Translate tk_text tag format into other formats
     for loading between modules."""
 
     def __init__(self, app):
-        AppPointers.__init__(self, app)
+        PrompToolsAPI.__init__(self, app)
 
         self.styles = self.app.settings.tags.styles
         self.types = self.app.settings.tags.types

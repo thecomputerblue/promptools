@@ -2,18 +2,11 @@ import tkinter as tk
 # import logging
 
 
-class AppPointers:
-    """Multiple-inherit or instantiate this as an attribute
-    to give an object an interface for the rest of the app. Properties
-    within this class reduce the amount of dot notation to access nested
-    modules, and prevent accidental overwriting by the inheriting class."""
+class PrompToolsAPI:
+    """API to simplify communication between modules. TODO: As of 5/31/22
+    multiple-inherited to a bunch of modules, plan to change this..."""
 
     def __init__(self, parent, *args, **kwargs):
-
-        # attributes in the init method can be overwritten by modules
-        # inheriting AppPointers. might do this for settings, where in
-        # many modules it would be most useful to override the pointer
-        # to a specific settings module.
         self.parent = parent
         self.app = parent.app
         self.suite = self if parent.suite == None else parent.suite

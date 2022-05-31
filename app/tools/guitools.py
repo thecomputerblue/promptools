@@ -1,16 +1,16 @@
 import tkinter as tk 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # TODO: with the gui now extracted to its own module, refactor these into the
 # gui module
 
-class GuiTools(AppPointers):
+class GuiTools(PrompToolsAPI):
     """Class with generic methods for gui element manipulation. Using to avoid
     duplicate methods between modules. As you find redundant functions, migrate
     here. """
 
     def __init__(self, app, *args, **kwargs):
-        AppPointers.__init__(self, app)
+        PrompToolsAPI.__init__(self, app)
 
     def toggle_lock(self, label, var, follow_fn=None, *args, **kwargs):
         """Generic lock toggle method. Follow fn_ will execute after lock toggle."""

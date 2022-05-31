@@ -1,14 +1,14 @@
 # control mappings go here!
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class AppControls(AppPointers):
+class AppControls(PrompToolsAPI):
     """Class for initializing all proprietary keyboard / mouse / controller
     functionality in promptools."""
 
     def __init__(self, app):
-        AppPointers.__init__(self, app)
+        PrompToolsAPI.__init__(self, app)
 
         self._init_global_controls(menu=self.app.gui.menu)
         self._init_talent_controls(talent=self.talent, scroller=self.scroller)

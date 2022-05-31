@@ -2,16 +2,16 @@
 from copy import deepcopy
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class SongHistory(AppPointers):
+class SongHistory(PrompToolsAPI):
 	"""Stores a list of songs by copying song objects. Implemented so that
 	when the live song changes, the old one is copied into this objects
 	song list. This gives the app a 'snapshot' of the song in whatever state
 	it was in before it was unloaded, so it can be recovered if needed."""
 
 	def __init__(self, app):
-		AppPointers.__init__(self, app)
+		PrompToolsAPI.__init__(self, app)
 		self._songs = []
 		self.callbacks = []
 		# max length of history. delete older songs

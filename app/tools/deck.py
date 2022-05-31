@@ -1,9 +1,9 @@
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 from tools.history import SongHistory
 
-class SongDeck(AppPointers):
+class SongDeck(PrompToolsAPI):
     """Implements an observer pattern so frames of the app
     update correctly when a param is loaded to live, unloaded,
     or cued."""
@@ -12,7 +12,7 @@ class SongDeck(AppPointers):
     # it for more comprehensive triggers.
 
     def __init__(self, app):
-        AppPointers.__init__(self, app)
+        PrompToolsAPI.__init__(self, app)
         
         self.callbacks = {}
 
@@ -74,7 +74,7 @@ class SongDeck(AppPointers):
     def cued(self, new):
         self._cued = new
         self.push("cued")
-        self.focused = new
+        self.focused = self.cued
 
     @property
     def live(self):

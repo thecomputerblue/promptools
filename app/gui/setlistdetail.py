@@ -5,9 +5,9 @@ import tkinter as tk
 from tkinter import ttk 
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class GigDetailView(tk.Frame, AppPointers):
+class GigDetailView(tk.Frame, PrompToolsAPI):
     """Class for the setlist info box used in library
     and the right pane of the main window."""
 
@@ -17,7 +17,7 @@ class GigDetailView(tk.Frame, AppPointers):
             # relief="sunken",
             # borderwidth=2,
             )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.song = parent.song
 

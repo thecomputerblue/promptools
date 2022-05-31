@@ -9,7 +9,7 @@ import logging
 from os import listdir
 from os.path import isfile, join, exists
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # helpers
 def scrub_text(text):
@@ -19,12 +19,12 @@ def scrub_text(text):
     return text
 
 
-class BrowserSuite(tk.Frame, AppPointers):
+class BrowserSuite(tk.Frame, PrompToolsAPI):
     """Quick browser for files and the library database."""
 
     def __init__(self, gui, *args, **kwargs):
         tk.Frame.__init__(self, gui.root)
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
 
         # search bar
         self.search = SearchBar(self)
@@ -57,12 +57,12 @@ class BrowserSuite(tk.Frame, AppPointers):
         # generate the file list and update the window
         # TODO: probably move this into the FilesTab class
 
-class SearchBar(tk.Frame, AppPointers):
+class SearchBar(tk.Frame, PrompToolsAPI):
     """Frame for the search bar and any options."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # search query var
         self.query = tk.StringVar()
@@ -110,7 +110,7 @@ class SearchBar(tk.Frame, AppPointers):
         return i
 
 
-class BrowserNotebook(ttk.Notebook, AppPointers):
+class BrowserNotebook(ttk.Notebook, PrompToolsAPI):
     """Notebook whose pages are different targets for the quick search.
     By default this will have a file browser for quick import, and a
     simplified library browser (references the DB)."""
@@ -119,7 +119,7 @@ class BrowserNotebook(ttk.Notebook, AppPointers):
         ttk.Notebook.__init__(self, parent,
             padding=0
             )
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.library = LibraryTab(self)
         self.library.pack(fill="both", expand=True)
@@ -130,12 +130,12 @@ class BrowserNotebook(ttk.Notebook, AppPointers):
         self.add(self.files, text="Files")
 
 
-class LibraryTab(tk.Frame, AppPointers):
+class LibraryTab(tk.Frame, PrompToolsAPI):
     """Frame for the Library browser."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.tv = ScrolledTreeview(self)
         self.tv.pack(fill='both', expand=True)
@@ -210,12 +210,12 @@ class LibraryTab(tk.Frame, AppPointers):
         # t.heading(col, command=lambda: treeview_sort_column())
 
 
-class ScrolledTreeview(tk.Frame, AppPointers):
+class ScrolledTreeview(tk.Frame, PrompToolsAPI):
     """Attach a scrollbar to treeview."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # library data tree (left side of frame)
         tree = ttk.Treeview(self, selectmode="browse", show="tree")
@@ -257,12 +257,12 @@ class ScrolledTreeview(tk.Frame, AppPointers):
         return self.app.tools.factory.new_song(dictionary=song_data)
 
 
-class FilesTab(tk.Frame, AppPointers):
+class FilesTab(tk.Frame, PrompToolsAPI):
     """Frame for the file browser."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # vars for file loading
         self.directory = self.app.settings.paths.texts.get()
@@ -340,12 +340,12 @@ class FilesTab(tk.Frame, AppPointers):
         pass
 
 
-class QuickSearchHeader(tk.Frame, AppPointers):
+class QuickSearchHeader(tk.Frame, PrompToolsAPI):
     """Class for the quick search bar header."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.label = tk.Label(self, text="Quick Search")
         self.label.pack(side="left", fill="y", anchor="w")

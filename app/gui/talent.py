@@ -1,7 +1,7 @@
 import tkinter as tk
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -23,7 +23,7 @@ def fs_coords(operator, talent):
     return coords
 
 
-class TalentWindow(tk.Toplevel, AppPointers):
+class TalentWindow(tk.Toplevel, PrompToolsAPI):
     """Class for the Talent POV, which should be identical to the EditorMonitor
     but scaled to full screen on a second screen."""
 
@@ -35,7 +35,7 @@ class TalentWindow(tk.Toplevel, AppPointers):
             highlightbackground="black",  # when frame is out of focus
             highlightcolor="black",
         )
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
 
         # context
         # self.parent = parent
@@ -118,7 +118,7 @@ class TalentWindow(tk.Toplevel, AppPointers):
         self.pixels = self.settings.scroll.pixels.get()
 
     def push(self):
-        self.loader.push(frame=self, song=self.deck.live, reset_view=True)
+        self.loader.push(frame=self, song=self.deck.live, reset=True)
 
     def store_winfo(self):
         """Snapshot winfo to restore later."""
@@ -193,12 +193,12 @@ class TalentWindow(tk.Toplevel, AppPointers):
         )
 
 
-class PromptArrow(tk.Frame, AppPointers):
+class PromptArrow(tk.Frame, PrompToolsAPI):
     """Frame for scroll arrow."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # self.parent = parent
         # self.app = parent.app

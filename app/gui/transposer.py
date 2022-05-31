@@ -1,13 +1,13 @@
 import tkinter as tk
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class TransposerWindow(tk.Toplevel, AppPointers):
+class TransposerWindow(tk.Toplevel, PrompToolsAPI):
     """Window for the Transposer tools."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.parent = parent
         self.app = parent.app # TODO: not needed? 

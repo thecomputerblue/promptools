@@ -1,13 +1,13 @@
 import tkinter as tk
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class GuiMethods(AppPointers):
+class GuiMethods(PrompToolsAPI):
     """Handles dependency injection of widget functionality."""
 
     def __init__(self, gui):
-        AppPointers.__init__(self, gui.app)
+        PrompToolsAPI.__init__(self, gui.app)
 
     def do_toggle_lock(self, label, var):
         """Generic lock toggle method. Follow fn_ will execute after lock toggle."""

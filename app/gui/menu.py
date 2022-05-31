@@ -12,15 +12,15 @@ from gui.history import SongHistoryWindow
 from gui.tempo import TempoToolWindow
 from gui.txt_export_window import TxtExportWindow 
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 
-class MenuBar(tk.Frame, AppPointers):
+class MenuBar(tk.Frame, PrompToolsAPI):
     """Class for Menu options."""
 
     def __init__(self, gui, *args, **kwargs):
         tk.Frame.__init__(self, gui.root)
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
 
         menu_bar = tk.Menu(self.master)
         self.master.config(menu=menu_bar)

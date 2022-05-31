@@ -1,7 +1,7 @@
 # little tap tempo calc to be used later to filter library by tempo!
 import time
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
 # helpers
 def diffs(times):
@@ -33,13 +33,13 @@ def limit(t, tmin, tmax):
 	return t
 
 
-class TapTempo(AppPointers):
+class TapTempo(PrompToolsAPI):
 	"""Simple tap tempo calculator by me. Takes average of time between
 	a taps and converts to BPM as float. App can truncate to appropriate
 	digits."""
 
 	def __init__(self, app):
-		AppPointers.__init__(self, app)
+		PrompToolsAPI.__init__(self, app)
 
 		# track last several taps
 		self._queue = []

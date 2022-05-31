@@ -9,9 +9,9 @@ import logging
 
 from gui.songdetail import SongDetailView
 from gui.setlistdetail import GigDetailView
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class MetaSuite(tk.PanedWindow, AppPointers):
+class MetaSuite(tk.PanedWindow, PrompToolsAPI):
     """Frame for metadata on the right pane"""
     # TODO: maybe rename info suite
     # TODO: think I prefer this as a popup instead of constantly visible
@@ -26,7 +26,7 @@ class MetaSuite(tk.PanedWindow, AppPointers):
             bg='pink',
             *args, **kwargs
             )
-        AppPointers.__init__(self, gui)
+        PrompToolsAPI.__init__(self, gui)
 
         # Current song, set, etc. whose info are being shown
         self.song = None

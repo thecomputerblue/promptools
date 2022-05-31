@@ -5,14 +5,14 @@ from tkinter import ttk
 from tkinter.colorchooser import askcolor
 import logging
 
-from tools.apppointers import AppPointers
+from tools.api import PrompToolsAPI
 
-class PreferencesWindow(tk.Toplevel, AppPointers):
+class PreferencesWindow(tk.Toplevel, PrompToolsAPI):
     """Class for the window for configuring program preferences."""
 
     def __init__(self, parent, *args, **kwargs):
         tk.Toplevel.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # flag that this is open
         self.settings.windows.preferences.set(True)
@@ -46,12 +46,12 @@ class PreferencesWindow(tk.Toplevel, AppPointers):
         self.destroy()
 
 
-class PreferencesNotebook(ttk.Notebook, AppPointers):
+class PreferencesNotebook(ttk.Notebook, PrompToolsAPI):
     """ttk notebook for managing several preference tabs."""
 
     def __init__(self, parent):
         ttk.Notebook.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         general_tab = GeneralTab(self)
         general_tab.pack(fill="both", expand=True)
@@ -70,23 +70,23 @@ class PreferencesNotebook(ttk.Notebook, AppPointers):
         # self.pack(expand=True)
 
 
-class GeneralTab(tk.Frame, AppPointers):
+class GeneralTab(tk.Frame, PrompToolsAPI):
     """Class for the General Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.testcheck = tk.Checkbutton(self, text="Test checkbox")
         self.testcheck.pack(anchor="w")
 
 
-class ImportExportTab(tk.Frame, AppPointers):
+class ImportExportTab(tk.Frame, PrompToolsAPI):
     """Class for the Import/Export Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         # Settings
         self.import_label = tk.Label(self, text="Import Settings")
@@ -99,12 +99,12 @@ class ImportExportTab(tk.Frame, AppPointers):
         self.import_raw.pack(anchor="w")
 
 
-class TalentTab(tk.Frame, AppPointers):
+class TalentTab(tk.Frame, PrompToolsAPI):
     """Class for the Talent Settings tab."""
 
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        AppPointers.__init__(self, parent)
+        PrompToolsAPI.__init__(self, parent)
 
         self.view_label = tk.Label(self, text="View")
         self.view_label.pack(anchor="w")
